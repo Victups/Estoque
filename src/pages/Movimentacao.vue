@@ -173,7 +173,7 @@
                 loading-text="Carregando movimentações..."
                 :search="search"
               >
-                <template #item.tipo_movimento="{ item }">
+                <template v-slot:[`item.tipo_movimento`]="{ item }">
                   <v-chip
                     :color="item.tipo_movimento === 'entrada' ? 'success' : 'error'"
                     size="small"
@@ -188,23 +188,23 @@
                   </v-chip>
                 </template>
 
-                <template #item.quantidade="{ item }">
+                <template v-slot:[`item.quantidade`]="{ item }">
                   <span class="font-weight-bold">
                     {{ formatNumber(item.quantidade) }}
                   </span>
                 </template>
 
-                <template #item.preco_unitario="{ item }">
+                <template v-slot:[`item.preco_unitario`]="{ item }">
                   {{ formatCurrency(item.preco_unitario) }}
                 </template>
 
-                <template #item.valor_total="{ item }">
+                <template v-slot:[`item.valor_total`]="{ item }">
                   <span class="font-weight-bold text-primary">
                     {{ formatCurrency(item.quantidade * item.preco_unitario) }}
                   </span>
                 </template>
 
-                <template #item.localizacao="{ item }">
+                <template v-slot:[`item.localizacao`]="{ item }">
                   <div v-if="item.tipo_movimento === 'entrada' && item.localizacao_destino_nome">
                     <v-chip color="success" size="small" variant="tonal">
                       <v-icon class="mr-1" icon="mdi-arrow-right" size="small" />
@@ -220,11 +220,11 @@
                   <span v-else class="text-grey">-</span>
                 </template>
 
-                <template #item.data_mov="{ item }">
+                <template v-slot:[`item.data_mov`]="{ item }">
                   {{ formatDate(item.data_mov) }}
                 </template>
 
-                <template #item.actions="{ item }">
+                <template v-slot:[`item.actions`]="{ item }">
                   <v-tooltip location="top" text="Ver detalhes">
                     <template #activator="{ props }">
                       <v-btn
@@ -467,6 +467,10 @@
                       <v-col cols="6" md="3">
                         <div class="text-caption">Custo Unitário</div>
                         <div class="font-weight-bold">{{ formatCurrency(selectedLote.custo_unitario) }}</div>
+                      </v-col>
+                      <v-col v-if="(selectedLote as any).preco_venda != null" cols="6" md="3">
+                        <div class="text-caption">Preço de Venda</div>
+                        <div class="font-weight-bold">{{ formatCurrency((selectedLote as any).preco_venda) }}</div>
                       </v-col>
                       <v-col v-if="selectedLote.id_localizacao" cols="12">
                         <div class="text-caption">Localização Atual</div>
@@ -815,7 +819,7 @@
 
     // Ordenar por data de validade (FIFO - First In, First Out)
     // Lotes que vencem primeiro devem ser usados primeiro
-    const lotesOrdenados = [...productLotes].sort((a, b) =>
+    const lotesOrdenados = [...productLotes].toSorted((a, b) =>
       new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime(),
     )
 
@@ -957,9 +961,14 @@
       if (lote) {
         selectedLote.value = lote
 
-        // Preencher preço unitário automaticamente
-        if (lote.custo_unitario) {
-          formData.value.preco_unitario = lote.custo_unitario
+        // Preencher preço: nas entradas sugerir custo; nas saídas sugerir preço de venda do lote (se houver)
+        if (dialogType.value === 'entrada') {
+          if (lote.custo_unitario) formData.value.preco_unitario = lote.custo_unitario
+        } else {
+          const precoVenda = (lote as any).preco_venda
+          formData.value.preco_unitario = typeof precoVenda === 'number' && precoVenda > 0
+            ? precoVenda
+            : (lote.custo_unitario || 0)
         }
 
         // Para saída, preencher a localização de origem automaticamente
@@ -972,6 +981,7 @@
           codigo: lote.codigo_lote,
           quantidade: lote.quantidade,
           custo_unitario: lote.custo_unitario,
+          preco_venda: (lote as any).preco_venda,
           localizacao_id: lote.id_localizacao,
           data_validade: lote.data_validade,
         })
@@ -986,6 +996,22 @@
 
     saving.value = true
     try {
+      // Confirmação: não permitir preço de saída menor que o custo sem confirmação
+      if (
+        dialogType.value === 'saida'
+        && selectedLote.value
+        && typeof selectedLote.value.custo_unitario === 'number'
+        && formData.value.preco_unitario < selectedLote.value.custo_unitario
+      ) {
+        const confirmar = window.confirm(
+          'O preço de saída está abaixo do custo do lote. Deseja continuar mesmo assim?'
+        )
+        if (!confirmar) {
+          saving.value = false
+          return
+        }
+      }
+
       const movementData: Omit<StockMovement, 'id'> = {
         id_produto: formData.value.id_produto,
         id_lote: formData.value.id_lote,

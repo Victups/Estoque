@@ -25,7 +25,10 @@ declare module 'vue-router/auto-routes' {
     '/Movimentacao': RouteRecordInfo<'/Movimentacao', '/Movimentacao', Record<never, never>, Record<never, never>>,
     '/Produtos': RouteRecordInfo<'/Produtos', '/Produtos', Record<never, never>, Record<never, never>>,
     '/Profile': RouteRecordInfo<'/Profile', '/Profile', Record<never, never>, Record<never, never>>,
+    '/Registrer': RouteRecordInfo<'/Registrer', '/Registrer', Record<never, never>, Record<never, never>>,
     '/Relatorios': RouteRecordInfo<'/Relatorios', '/Relatorios', Record<never, never>, Record<never, never>>,
+    '/UserManagementPage': RouteRecordInfo<'/UserManagementPage', '/UserManagementPage', Record<never, never>, Record<never, never>>,
+    '/UserManagementPageTyped': RouteRecordInfo<'/UserManagementPageTyped', '/UserManagementPageTyped', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -67,8 +70,20 @@ declare module 'vue-router/auto-routes' {
       routes: '/Profile'
       views: never
     }
+    'src/pages/Registrer.vue': {
+      routes: '/Registrer'
+      views: never
+    }
     'src/pages/Relatorios.vue': {
       routes: '/Relatorios'
+      views: never
+    }
+    'src/pages/UserManagementPage.vue': {
+      routes: '/UserManagementPage'
+      views: never
+    }
+    'src/pages/UserManagementPageTyped.vue': {
+      routes: '/UserManagementPageTyped'
       views: never
     }
   }

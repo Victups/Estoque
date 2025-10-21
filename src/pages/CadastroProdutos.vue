@@ -75,6 +75,22 @@
                     />
                   </v-col>
 
+                  <v-col cols="12" md="6">
+                    <v-checkbox
+                      v-model="productForm.is_perecivel"
+                      color="warning"
+                      density="comfortable"
+                      hide-details="auto"
+                      hint="Marque se o produto possui data de validade obrigatória"
+                      label="Produto Perecível"
+                      persistent-hint
+                    >
+                      <template #prepend>
+                        <v-icon color="warning">mdi-calendar-alert</v-icon>
+                      </template>
+                    </v-checkbox>
+                  </v-col>
+
                   <!-- SEÇÃO 2: Classificação -->
                   <v-col cols="12">
                     <v-divider class="my-4" />
@@ -186,7 +202,7 @@
                     </h3>
                   </v-col>
 
-                  <v-col cols="12" md="4">
+                  <v-col cols="12" md="3">
                     <v-text-field
                       v-model.number="loteForm.quantidade"
                       density="comfortable"
@@ -201,29 +217,48 @@
                     />
                   </v-col>
 
-                  <v-col cols="12" md="4">
+                  <v-col cols="12" md="3">
                     <v-text-field
-                      v-model.number="loteForm.custo_unitario"
+                      v-model="custoUnitarioInput"
                       density="comfortable"
                       hide-details="auto"
                       label="Custo Unitário (R$) *"
                       min="0"
+                      prefix="R$"
                       prepend-inner-icon="mdi-currency-usd"
                       :rules="[validation.required]"
                       step="0.01"
-                      type="number"
+                      type="text"
                       variant="outlined"
+                      @update:model-value="onCustoUnitarioInput"
                     />
                   </v-col>
 
-                  <v-col cols="12" md="4">
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                      v-model="precoVendaInput"
+                      density="comfortable"
+                      hide-details="auto"
+                      label="Preço de Venda (R$) *"
+                      min="0"
+                      prefix="R$"
+                      prepend-inner-icon="mdi-cash"
+                      :rules="[validation.required]"
+                      step="0.01"
+                      type="text"
+                      variant="outlined"
+                      @update:model-value="onPrecoVendaInput"
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="3">
                     <v-text-field
                       v-model="loteForm.data_validade"
                       density="comfortable"
                       hide-details="auto"
-                      label="Data de Validade *"
+                      :label="productForm.is_perecivel ? 'Data de Validade *' : 'Data de Validade'"
                       prepend-inner-icon="mdi-calendar"
-                      :rules="[validation.required]"
+                      :rules="dataValidadeRules"
                       type="date"
                       variant="outlined"
                     />
@@ -328,6 +363,10 @@
                             <div class="font-weight-bold">{{ formatCurrency(loteForm.custo_unitario) }}</div>
                           </v-col>
                           <v-col cols="6" md="3">
+                            <div class="text-caption text-grey">Preço de Venda</div>
+                            <div class="font-weight-bold">{{ formatCurrency(loteForm.preco_venda) }}</div>
+                          </v-col>
+                          <v-col cols="6" md="3">
                             <div class="text-caption text-grey">Valor Total</div>
                             <div class="font-weight-bold text-primary">
                               {{ formatCurrency(loteForm.quantidade * loteForm.custo_unitario) }}
@@ -429,6 +468,7 @@
     nome: '',
     codigo: '',
     descricao: '',
+    is_perecivel: false,
     id_unidade_medida: null as number | null,
     id_marca: null as number | null,
     id_categoria: null as number | null,
@@ -441,9 +481,42 @@
   const loteForm = ref({
     quantidade: 0,
     custo_unitario: 0,
+    preco_venda: 0,
     data_validade: '',
     id_localizacao: null as number | null,
   })
+
+  // Máscara de moeda BRL para inputs (exibição) e sincronização numérica
+  const custoUnitarioInput = ref<string>('')
+  const precoVendaInput = ref<string>('')
+
+  function formatBRLFromCents (cents: number): string {
+    const value = (cents / 100).toFixed(2)
+    const [ints = '0', decs = '00'] = value.split('.')
+    const intsFormatted = ints.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${intsFormatted},${decs}`
+  }
+
+  function toCents (raw: string): number {
+    const digits = (raw || '').replace(/\D/g, '')
+    return digits ? Number.parseInt(digits, 10) : 0
+  }
+
+  function toNumber (raw: string): number {
+    return Number((toCents(raw) / 100).toFixed(2))
+  }
+
+  function onCustoUnitarioInput (val: string): void {
+    const formatted = formatBRLFromCents(toCents(val))
+    custoUnitarioInput.value = formatted
+    loteForm.value.custo_unitario = toNumber(formatted)
+  }
+
+  function onPrecoVendaInput (val: string): void {
+    const formatted = formatBRLFromCents(toCents(val))
+    precoVendaInput.value = formatted
+    loteForm.value.preco_venda = toNumber(formatted)
+  }
 
   // Computed
   const localizacoesOptions = computed(() => {
@@ -459,6 +532,13 @@
   const localizacaoSelecionada = computed(() => {
     if (!loteForm.value.id_localizacao) return null
     return localizacoes.value.find(loc => loc.id === loteForm.value.id_localizacao)
+  })
+
+  const dataValidadeRules = computed(() => {
+    if (productForm.value.is_perecivel) {
+      return [validation.required]
+    }
+    return [] // Opcional se não for perecível
   })
 
   // Methods
@@ -501,6 +581,7 @@
         nome: productForm.value.nome,
         codigo: productForm.value.codigo || '',
         descricao: productForm.value.descricao,
+        is_perecivel: productForm.value.is_perecivel,
         id_unidade_medida: productForm.value.id_unidade_medida!,
         id_marca: productForm.value.id_marca!,
         id_categoria: productForm.value.id_categoria!,
@@ -524,6 +605,7 @@
         data_entrada: new Date().toISOString().split('T')[0] || '',
         responsavel_cadastro: 1, // TODO: pegar do authStore
         custo_unitario: loteForm.value.custo_unitario,
+        preco_venda: loteForm.value.preco_venda,
         usuario_log_id: null,
         id_localizacao: loteForm.value.id_localizacao!,
       }
@@ -560,6 +642,7 @@
       nome: '',
       codigo: '',
       descricao: '',
+      is_perecivel: false,
       id_unidade_medida: null,
       id_marca: null,
       id_categoria: null,
@@ -571,9 +654,13 @@
     loteForm.value = {
       quantidade: 0,
       custo_unitario: 0,
+      preco_venda: 0,
       data_validade: '',
       id_localizacao: null,
     }
+
+    custoUnitarioInput.value = ''
+    precoVendaInput.value = ''
 
     formRef.value?.reset()
   }
