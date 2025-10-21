@@ -210,11 +210,12 @@
 </template>
 
 <script lang="ts" setup>
-  import type { State } from '../types'
+  import type { State } from '@/types'
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { UfService } from '../services/api'
-  import { useAuthStore } from '../stores/auth'
+
+  import { UfService } from '@/services'
+  import { useAuthStore } from '@/stores/auth'
 
   const router = useRouter()
   const drawer = ref(false)
@@ -268,9 +269,14 @@
       to: '/produtos',
     },
     {
-      title: 'Estoque',
-      icon: 'mdi-warehouse',
-      to: '/estoque',
+      title: 'Movimentação',
+      icon: 'mdi-swap-horizontal',
+      to: '/movimentacao',
+    },
+    {
+      title: 'Usuários',
+      icon: 'mdi-account-group',
+      to: '/usuarios',
     },
     {
       title: 'Relatórios',
