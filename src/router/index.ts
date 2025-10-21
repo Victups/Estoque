@@ -39,6 +39,14 @@ const route = [
     },
   },
   {
+    path: '/produtos/cadastrar',
+    name: 'CadastroProdutos',
+    component: () => import('@/pages/CadastroProdutos.vue'),
+    meta: {
+      layout: 'default',
+    },
+  },
+  {
     path: '/estoque',
     name: 'Estoque',
     component: () => import('@/pages/Produtos.vue'),
@@ -57,7 +65,7 @@ const route = [
   {
     path: '/relatorios',
     name: 'Relatorios',
-    component: () => import('@/pages/Home.vue'),
+    component: () => import('@/pages/Relatorios.vue'),
     meta: {
       layout: 'default',
     },
