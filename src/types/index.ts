@@ -13,26 +13,6 @@ export interface BackendUser {
 // UI Helper Types (não existem no banco)
 export type UserRole = 'Admin' | 'Gerente' | 'Operador' | 'Visualizador'
 
-export interface User {
-  id: number
-  nome: string
-  name?: string // alias para compatibilidade
-  email: string
-  role: UserRole
-  department: string
-  avatar?: string
-  status?: 'active' | 'inactive'
-  avatarColor?: string
-  initials?: string
-  lastAccess?: string
-}
-
-export interface Department {
-  id: number
-  nome: string
-  descricao?: string
-}
-
 // Product Types (db.json: produtos)
 export interface Product {
   id: number

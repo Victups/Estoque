@@ -48,18 +48,6 @@
               <v-list class="bg-transparent">
                 <v-list-item class="px-0">
                   <template #prepend>
-                    <v-icon color="primary" icon="mdi-office-building" />
-                  </template>
-                  <v-list-item-title class="font-weight-bold">
-                    Departamento
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    {{ userProfile.department }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-
-                <v-list-item class="px-0">
-                  <template #prepend>
                     <v-icon color="success" icon="mdi-calendar-check" />
                   </template>
                   <v-list-item-title class="font-weight-bold">
@@ -243,18 +231,6 @@
                         />
                       </v-col>
 
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="editData.department"
-                          density="comfortable"
-                          hide-details="auto"
-                          :items="['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']"
-                          label="Departamento"
-                          prepend-inner-icon="mdi-office-building"
-                          :rules="[rules.required]"
-                          variant="outlined"
-                        />
-                      </v-col>
 
                       <v-col cols="12">
                         <div class="d-flex justify-end gap-3">
@@ -450,7 +426,7 @@
 </template>
 
 <script setup lang="ts">
-  import type { BackendUser, Department, UserRole, ValidationRule } from '@/types'
+  import type { BackendUser, UserRole, ValidationRule } from '@/types'
   import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -461,7 +437,6 @@
     name: string
     email: string
     role: UserRole
-    department: string
     memberSince: string
     lastAccess: string
     initials: string
@@ -471,7 +446,6 @@
   interface EditData {
     name: string
     email: string
-    department: string
   }
 
   interface PasswordData {
@@ -499,7 +473,6 @@
     name: 'Administrador',
     email: 'admin@sistema.com',
     role: 'Admin',
-    department: 'TI',
     memberSince: '01/01/2024',
     lastAccess: new Date().toLocaleString('pt-BR'),
     initials: 'AD',
@@ -509,7 +482,6 @@
   const editData = ref<EditData>({
     name: '',
     email: '',
-    department: 'TI',
   })
 
   const passwordData = ref<PasswordData>({
@@ -588,7 +560,6 @@
         name: userData.nome,
         email: userData.email,
         role: 'Admin',
-        department: 'TI',
         memberSince: '01/01/2024',
         lastAccess: new Date().toLocaleString('pt-BR'),
         initials: getInitials(userData.nome),
@@ -599,7 +570,6 @@
       editData.value = {
         name: userProfile.value.name,
         email: userProfile.value.email,
-        department: userProfile.value.department,
       }
     } catch (error: unknown) {
       console.error('Erro ao carregar perfil:', error)
@@ -613,7 +583,6 @@
     editData.value = {
       name: userProfile.value.name,
       email: userProfile.value.email,
-      department: userProfile.value.department,
     }
     tab.value = 'info'
   }
@@ -656,7 +625,6 @@
 
       userProfile.value.name = editData.value.name
       userProfile.value.email = editData.value.email
-      userProfile.value.department = editData.value.department
       userProfile.value.initials = getInitials(editData.value.name)
 
       snackbarText.value = 'Perfil atualizado com sucesso!'
