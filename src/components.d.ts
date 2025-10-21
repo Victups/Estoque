@@ -12,7 +12,6 @@ declare module 'vue' {
     FiltrosRelatorios: typeof import('./components/FiltrosRelatorios.vue')['default']
     Footer: typeof import('./components/Footer.vue')['default']
     GraficoBarrasCompleto: typeof import('./components/GraficoBarrasCompleto.vue')['default']
-    HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     LocationHierarchy: typeof import('./components/LocationHierarchy.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
