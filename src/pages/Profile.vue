@@ -165,15 +165,6 @@
                     </v-col>
 
                     <v-col cols="12" md="6">
-                      <v-card class="info-card" elevation="2" variant="outlined">
-                        <v-card-text>
-                          <div class="d-flex align-center mb-2">
-                            <v-icon class="mr-3" color="primary" icon="mdi-office-building" />
-                            <span class="text-caption text-grey">Departamento</span>
-                          </div>
-                          <h3 class="text-h6 ml-9">{{ userProfile.department }}</h3>
-                        </v-card-text>
-                      </v-card>
                     </v-col>
 
                     <v-col cols="12">
