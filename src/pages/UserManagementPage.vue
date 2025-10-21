@@ -1,13 +1,13 @@
 <template>
   <div class="user-management-page">
-    <v-container fluid class="pa-6">
+    <v-container class="pa-6" fluid>
       <!-- Header Section -->
       <v-row class="mb-6">
         <v-col cols="12">
           <div class="d-flex justify-space-between align-center mb-4">
             <div>
               <h1 class="text-h3 font-weight-bold mb-2">
-                <v-icon icon="mdi-account-group" size="40" class="mr-3" />
+                <v-icon class="mr-3" icon="mdi-account-group" size="40" />
                 Gerenciamento de Usuários
               </h1>
               <p class="text-h6 text-grey-darken-1">
@@ -16,9 +16,9 @@
             </div>
             <v-btn
               color="primary"
+              elevation="2"
               prepend-icon="mdi-plus"
               size="large"
-              elevation="2"
               @click="goToRegistration"
             >
               Novo Usuário
@@ -29,11 +29,11 @@
 
       <!-- Stats Cards -->
       <v-row class="mb-6">
-        <v-col cols="12" sm="6" md="3">
+        <v-col cols="12" md="3" sm="6">
           <v-card class="stat-card" elevation="3">
             <v-card-text>
               <div class="d-flex align-center">
-                <v-avatar color="primary" size="56" class="mr-4">
+                <v-avatar class="mr-4" color="primary" size="56">
                   <v-icon icon="mdi-account-multiple" size="30" />
                 </v-avatar>
                 <div>
@@ -44,11 +44,11 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" sm="6" md="3">
+        <v-col cols="12" md="3" sm="6">
           <v-card class="stat-card" elevation="3">
             <v-card-text>
               <div class="d-flex align-center">
-                <v-avatar color="success" size="56" class="mr-4">
+                <v-avatar class="mr-4" color="success" size="56">
                   <v-icon icon="mdi-account-check" size="30" />
                 </v-avatar>
                 <div>
@@ -59,11 +59,11 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" sm="6" md="3">
+        <v-col cols="12" md="3" sm="6">
           <v-card class="stat-card" elevation="3">
             <v-card-text>
               <div class="d-flex align-center">
-                <v-avatar color="warning" size="56" class="mr-4">
+                <v-avatar class="mr-4" color="warning" size="56">
                   <v-icon icon="mdi-shield-account" size="30" />
                 </v-avatar>
                 <div>
@@ -74,11 +74,11 @@
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" sm="6" md="3">
+        <v-col cols="12" md="3" sm="6">
           <v-card class="stat-card" elevation="3">
             <v-card-text>
               <div class="d-flex align-center">
-                <v-avatar color="info" size="56" class="mr-4">
+                <v-avatar class="mr-4" color="info" size="56">
                   <v-icon icon="mdi-account-clock" size="30" />
                 </v-avatar>
                 <div>
@@ -94,9 +94,9 @@
       <!-- Filters and Table Card -->
       <v-row>
         <v-col cols="12">
-          <v-card elevation="3" class="main-card">
+          <v-card class="main-card" elevation="3">
             <v-card-title class="bg-primary pa-4">
-              <v-icon icon="mdi-format-list-bulleted" class="mr-2" />
+              <v-icon class="mr-2" icon="mdi-format-list-bulleted" />
               <span class="text-h5">Lista de Usuários</span>
             </v-card-title>
 
@@ -106,13 +106,13 @@
                 <v-col cols="12" md="5">
                   <v-text-field
                     v-model="search"
+                    clearable
                     density="comfortable"
                     hide-details
                     label="Buscar usuários"
                     placeholder="Digite nome ou email..."
                     prepend-inner-icon="mdi-magnify"
                     variant="outlined"
-                    clearable
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -137,7 +137,7 @@
                     variant="outlined"
                   />
                 </v-col>
-                <v-col cols="12" md="1" class="d-flex align-center">
+                <v-col class="d-flex align-center" cols="12" md="1">
                   <v-btn
                     color="grey-darken-1"
                     icon="mdi-refresh"
@@ -149,85 +149,85 @@
 
               <!-- Data Table -->
               <v-data-table
+                class="elevation-1"
                 :headers="headers"
                 :items="filteredUsers"
                 :items-per-page="10"
                 :loading="loading"
                 loading-text="Carregando usuários..."
                 :search="search"
-                class="elevation-1"
               >
-                <template v-slot:item.avatar="{ item }">
+                <template #item.avatar="{ item }">
                   <v-avatar :color="item.avatarColor" size="45">
                     <span class="text-h6 text-white font-weight-bold">{{ item.initials }}</span>
                   </v-avatar>
                 </template>
 
-                <template v-slot:item.name="{ item }">
+                <template #item.name="{ item }">
                   <div>
                     <div class="font-weight-bold">{{ item.name }}</div>
                     <div class="text-caption text-grey">{{ item.email }}</div>
                   </div>
                 </template>
 
-                <template v-slot:item.role="{ item }">
+                <template #item.role="{ item }">
                   <v-chip
-                    :color="getRoleColor(item.role)"
-                    variant="flat"
-                    size="small"
                     class="font-weight-bold"
+                    :color="getRoleColor(item.role)"
+                    size="small"
+                    variant="flat"
                   >
-                    <v-icon :icon="getRoleIcon(item.role)" size="small" class="mr-1" />
+                    <v-icon class="mr-1" :icon="getRoleIcon(item.role)" size="small" />
                     {{ item.role }}
                   </v-chip>
                 </template>
 
-                <template v-slot:item.status="{ item }">
+                <template #item.status="{ item }">
                   <v-chip
-                    :color="item.status === 'Ativo' ? 'success' : 'error'"
-                    variant="flat"
+                    :color="item.status === 'active' ? 'success' : 'error'"
                     size="small"
+                    variant="flat"
                   >
                     <v-icon
-                      :icon="item.status === 'Ativo' ? 'mdi-check-circle' : 'mdi-close-circle'"
-                      size="small"
                       class="mr-1"
+                      :icon="item.status === 'active' ? 'mdi-check-circle' : 'mdi-close-circle'"
+                      size="small"
                     />
                     {{ item.status }}
                   </v-chip>
                 </template>
 
-                <template v-slot:item.actions="{ item }">
-                  <v-tooltip text="Ver detalhes" location="top">
-                    <template v-slot:activator="{ props }">
+                <template #item.actions="{ item }">
+                  <v-tooltip location="top" text="Ver detalhes">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
+                        class="mr-1"
                         color="info"
                         icon="mdi-eye"
                         size="small"
                         variant="tonal"
-                        class="mr-1"
                         @click="viewUser(item)"
                       />
                     </template>
                   </v-tooltip>
-                  
-                  <v-tooltip text="Editar usuário" location="top">
-                    <template v-slot:activator="{ props }">
+
+                  <v-tooltip location="top" text="Editar usuário">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
+                        class="mr-1"
                         color="primary"
                         icon="mdi-pencil"
                         size="small"
                         variant="tonal"
-                        class="mr-1"
                         @click="editUser(item)"
                       />
                     </template>
                   </v-tooltip>
-                  
-                  <v-tooltip text="Excluir usuário" location="top">
-                    <template v-slot:activator="{ props }">
+
+                  <v-tooltip location="top" text="Excluir usuário">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
                         color="error"
@@ -252,7 +252,7 @@
         <v-card-title class="bg-primary pa-4">
           <div class="d-flex justify-space-between align-center">
             <div class="d-flex align-center">
-              <v-icon icon="mdi-account-circle" class="mr-2" size="30" />
+              <v-icon class="mr-2" icon="mdi-account-circle" size="30" />
               <span class="text-h5">Detalhes do Usuário</span>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="viewDialog = false" />
@@ -260,7 +260,7 @@
         </v-card-title>
         <v-card-text class="pa-6">
           <div class="text-center mb-6">
-            <v-avatar :color="selectedUser.avatarColor" size="100" class="mb-3">
+            <v-avatar class="mb-3" :color="selectedUser.avatarColor" size="100">
               <span class="text-h3 text-white font-weight-bold">{{ selectedUser.initials }}</span>
             </v-avatar>
             <h2 class="text-h4 mb-1">{{ selectedUser.name }}</h2>
@@ -272,8 +272,8 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
-                  <v-icon icon="mdi-shield-account" color="primary" />
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-shield-account" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Função</v-list-item-title>
                 <v-list-item-subtitle>{{ selectedUser.role }}</v-list-item-subtitle>
@@ -281,8 +281,8 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
-                  <v-icon icon="mdi-office-building" color="primary" />
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-office-building" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Departamento</v-list-item-title>
                 <v-list-item-subtitle>{{ selectedUser.department }}</v-list-item-subtitle>
@@ -290,13 +290,13 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
-                  <v-icon icon="mdi-information" color="primary" />
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-information" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Status</v-list-item-title>
                 <v-list-item-subtitle>
                   <v-chip
-                    :color="selectedUser.status === 'Ativo' ? 'success' : 'error'"
+                    :color="selectedUser.status === 'active' ? 'success' : 'error'"
                     size="small"
                     variant="flat"
                   >
@@ -307,8 +307,8 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
-                  <v-icon icon="mdi-clock-outline" color="primary" />
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-clock-outline" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Último acesso</v-list-item-title>
                 <v-list-item-subtitle>{{ selectedUser.lastAccess }}</v-list-item-subtitle>
@@ -324,15 +324,15 @@
       <v-card v-if="editingUser" elevation="8">
         <v-card-title class="bg-primary pa-4">
           <div class="d-flex align-center">
-            <v-icon icon="mdi-account-edit" class="mr-2" size="30" />
+            <v-icon class="mr-2" icon="mdi-account-edit" size="30" />
             <span class="text-h5">Editar Usuário</span>
           </div>
         </v-card-title>
-        
+
         <v-card-text class="pa-6">
           <v-form ref="editForm" v-model="validForm">
             <v-row>
-              <v-col cols="12" class="text-center mb-4">
+              <v-col class="text-center mb-4" cols="12">
                 <v-avatar :color="editingUser.avatarColor" size="80">
                   <span class="text-h4 text-white">{{ editingUser.initials }}</span>
                 </v-avatar>
@@ -344,8 +344,8 @@
                   density="comfortable"
                   label="Nome Completo"
                   prepend-inner-icon="mdi-account"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -355,9 +355,9 @@
                   density="comfortable"
                   label="Email"
                   prepend-inner-icon="mdi-email"
+                  :rules="[rules.required, rules.email]"
                   type="email"
                   variant="outlined"
-                  :rules="[rules.required, rules.email]"
                 />
               </v-col>
 
@@ -368,8 +368,8 @@
                   :items="['Admin', 'Gerente', 'Operador', 'Visualizador']"
                   label="Função"
                   prepend-inner-icon="mdi-shield-account"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -380,8 +380,8 @@
                   :items="['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']"
                   label="Departamento"
                   prepend-inner-icon="mdi-office-building"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -392,8 +392,8 @@
                   :items="['Ativo', 'Inativo']"
                   label="Status"
                   prepend-inner-icon="mdi-information"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -401,7 +401,7 @@
                 <v-divider class="my-4" />
                 <div class="d-flex align-center justify-space-between mb-2">
                   <h3 class="text-h6">
-                    <v-icon icon="mdi-lock" class="mr-2" />
+                    <v-icon class="mr-2" icon="mdi-lock" />
                     Alterar Senha
                   </h3>
                   <v-switch
@@ -417,13 +417,13 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="newPassword"
+                    :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                     density="comfortable"
                     label="Nova Senha"
                     prepend-inner-icon="mdi-lock"
-                    :type="showPassword ? 'text' : 'password'"
-                    :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                    variant="outlined"
                     :rules="changePassword ? [rules.required, rules.minLength] : []"
+                    :type="showPassword ? 'text' : 'password'"
+                    variant="outlined"
                     @click:append-inner="showPassword = !showPassword"
                   />
                 </v-col>
@@ -431,13 +431,13 @@
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="confirmPassword"
+                    :append-inner-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
                     density="comfortable"
                     label="Confirmar Nova Senha"
                     prepend-inner-icon="mdi-lock-check"
-                    :type="showConfirmPassword ? 'text' : 'password'"
-                    :append-inner-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                    variant="outlined"
                     :rules="changePassword ? [rules.required, rules.passwordMatch] : []"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    variant="outlined"
                     @click:append-inner="showConfirmPassword = !showConfirmPassword"
                   />
                 </v-col>
@@ -453,17 +453,17 @@
             variant="text"
             @click="cancelEdit"
           >
-            <v-icon icon="mdi-close" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-close" />
             Cancelar
           </v-btn>
           <v-btn
             color="primary"
-            variant="elevated"
             :disabled="!validForm"
             :loading="saving"
+            variant="elevated"
             @click="saveUser"
           >
-            <v-icon icon="mdi-content-save" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-content-save" />
             Salvar Alterações
           </v-btn>
         </v-card-actions>
@@ -498,8 +498,8 @@
                   hide-details="auto"
                   label="Nome Completo"
                   prepend-inner-icon="mdi-account"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -510,9 +510,9 @@
                   hide-details="auto"
                   label="Email"
                   prepend-inner-icon="mdi-email"
+                  :rules="[rules.required, rules.email]"
                   type="email"
                   variant="outlined"
-                  :rules="[rules.required, rules.email]"
                 />
               </v-col>
 
@@ -533,8 +533,8 @@
                   :items="['Admin', 'Gerente', 'Operador', 'Visualizador']"
                   label="Função"
                   prepend-inner-icon="mdi-shield-account"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -546,8 +546,8 @@
                   :items="['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']"
                   label="Departamento"
                   prepend-inner-icon="mdi-office-building"
-                  variant="outlined"
                   :rules="[rules.required]"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -576,9 +576,9 @@
                   hide-details="auto"
                   label="Senha"
                   prepend-inner-icon="mdi-lock"
+                  :rules="[rules.required, rules.minLength]"
                   :type="showNewPassword ? 'text' : 'password'"
                   variant="outlined"
-                  :rules="[rules.required, rules.minLength]"
                   @click:append-inner="showNewPassword = !showNewPassword"
                 />
               </v-col>
@@ -591,9 +591,9 @@
                   hide-details="auto"
                   label="Confirmar Senha"
                   prepend-inner-icon="mdi-lock-check"
+                  :rules="[rules.required, rules.newPasswordMatch]"
                   :type="showNewConfirmPassword ? 'text' : 'password'"
                   variant="outlined"
-                  :rules="[rules.required, rules.newPasswordMatch]"
                   @click:append-inner="showNewConfirmPassword = !showNewConfirmPassword"
                 />
               </v-col>
@@ -629,12 +629,12 @@
     <v-dialog v-model="deleteDialog" max-width="500">
       <v-card elevation="8">
         <v-card-title class="bg-error pa-4">
-          <v-icon icon="mdi-alert-circle" class="mr-2" size="30" />
+          <v-icon class="mr-2" icon="mdi-alert-circle" size="30" />
           <span class="text-h5">Confirmar Exclusão</span>
         </v-card-title>
         <v-card-text class="pa-6">
           <div class="text-center mb-4">
-            <v-icon icon="mdi-delete-alert" size="80" color="error" />
+            <v-icon color="error" icon="mdi-delete-alert" size="80" />
           </div>
           <p class="text-h6 text-center">
             Tem certeza que deseja excluir o usuário
@@ -647,11 +647,11 @@
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn color="grey" variant="text" @click="deleteDialog = false">
-            <v-icon icon="mdi-close" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-close" />
             Cancelar
           </v-btn>
           <v-btn color="error" variant="elevated" @click="confirmDelete">
-            <v-icon icon="mdi-delete" class="mr-1" />
+            <v-icon class="mr-1" icon="mdi-delete" />
             Excluir
           </v-btn>
         </v-card-actions>
@@ -662,14 +662,14 @@
     <v-snackbar
       v-model="snackbar"
       :color="snackbarColor"
-      :timeout="4000"
-      location="top right"
       elevation="8"
+      location="top right"
+      :timeout="4000"
     >
       <div class="d-flex align-center">
         <v-icon
-          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : snackbarColor === 'error' ? 'mdi-alert-circle' : 'mdi-information'"
           class="mr-2"
+          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : snackbarColor === 'error' ? 'mdi-alert-circle' : 'mdi-information'"
         />
         {{ snackbarText }}
       </div>
@@ -678,8 +678,8 @@
 </template>
 
 <script setup lang="ts">
+  import type { BackendUser, Department, User, UserRole, ValidationRule } from '@/types'
   import { computed, onMounted, ref } from 'vue'
-  import type { User, BackendUser, UserRole, Department, ValidationRule } from '@/types'
 
   const search = ref<string>('')
   const filterRole = ref<string>('Todos')
@@ -708,7 +708,7 @@
     password: string
     confirmPassword: string
     role: UserRole | ''
-    department: Department | ''
+    department: string
   }
 
   const newUser = ref<NewUserForm>({
@@ -756,7 +756,7 @@
   }
 
   const activeUsersCount = computed(() => {
-    return users.value.filter(u => u.status === 'Ativo').length
+    return users.value.filter(u => u.status === 'active').length
   })
 
   const adminCount = computed(() => {
@@ -789,7 +789,7 @@
     return 'Visualizador'
   }
 
-  function determineDepartment (name: string): Department {
+  function determineDepartment (name: string): string {
     const nameLower = name.toLowerCase()
     if (nameLower.includes('admin')) return 'TI'
     if (nameLower.includes('gerente')) return 'Gestão'
@@ -830,19 +830,20 @@
         throw new Error('Erro ao buscar usuários')
       }
       const data: unknown = await response.json()
-      
+
       // O db.json retorna array aninhado [[...]], então pegamos o primeiro elemento
-      const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0]) 
-        ? data[0] 
-        : Array.isArray(data) ? data : []
+      const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
 
       users.value = usuariosArray.map((user: BackendUser, index: number): User => ({
         id: user.id,
+        nome: user.nome,
         name: user.nome,
         email: user.email,
         role: determineRole(user.nome, user.email),
         department: determineDepartment(user.nome),
-        status: 'Ativo',
+        status: 'active',
         lastAccess: new Date().toLocaleString('pt-BR'),
         initials: getInitials(user.nome),
         avatarColor: getAvatarColor(index),
@@ -892,20 +893,23 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
-      
+        : (Array.isArray(allData) ? allData : [])
+
       // Atualizar o usuário específico no array
       const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === editingUser.value!.id)
       if (userIndex !== -1) {
-        usuariosArray[userIndex] = {
-          ...usuariosArray[userIndex],
-          nome: editingUser.value.name,
-          email: editingUser.value.email,
-        }
+        const currentUser = usuariosArray[userIndex]
+        if (currentUser) {
+          usuariosArray[userIndex] = {
+            ...currentUser,
+            nome: editingUser.value.name || editingUser.value.nome || '',
+            email: editingUser.value.email,
+          }
 
-        // Adicionar senha se estiver alterando
-        if (changePassword.value && newPassword.value) {
-          usuariosArray[userIndex].senha = newPassword.value
+          // Adicionar senha se estiver alterando
+          if (changePassword.value && newPassword.value) {
+            usuariosArray[userIndex]!.senha = newPassword.value
+          }
         }
       }
 
@@ -924,10 +928,10 @@
 
       // Atualizar usuário na lista local
       const index = users.value.findIndex((u: User) => u.id === editingUser.value!.id)
-      if (index !== -1) {
+      if (index !== -1 && editingUser.value) {
         users.value[index] = {
           ...editingUser.value,
-          initials: getInitials(editingUser.value.name),
+          initials: getInitials(editingUser.value.name || editingUser.value.nome || ''),
         }
       }
 
@@ -963,8 +967,8 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
-      
+        : (Array.isArray(allData) ? allData : [])
+
       // Remover o usuário do array
       const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== selectedUser.value!.id)
 
@@ -1028,7 +1032,7 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
+        : (Array.isArray(allData) ? allData : [])
 
       // Verificar se o email já existe
       const emailExists = usuariosArray.some((u: BackendUser) => u.email === newUser.value.email)
@@ -1052,6 +1056,7 @@
         email: newUser.value.email,
         senha: newUser.value.password,
         id_contato: newId,
+        role: 'estoquista',
       }
 
       // Adicionar ao array
@@ -1073,11 +1078,12 @@
       // Adicionar à lista local
       const newUserLocal: User = {
         id: newId,
+        nome: newUser.value.name,
         name: newUser.value.name,
         email: newUser.value.email,
         role: newUser.value.role as UserRole,
-        department: newUser.value.department as Department,
-        status: 'Ativo',
+        department: newUser.value.department,
+        status: 'active',
         lastAccess: new Date().toLocaleString('pt-BR'),
         initials: getInitials(newUser.value.name),
         avatarColor: getAvatarColor(users.value.length),

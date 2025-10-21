@@ -9,7 +9,7 @@
 
             <!-- Texto com ano dinâmico -->
             <span class="text-body-2" style="color: #3a3a3a;">
-              {{ currentYear }} - Sistema de Estoque by 
+              {{ currentYear }} - Sistema de Estoque by
               <span class="font-weight-bold" style="color: #3a3a3a;">Norven</span>
             </span>
           </div>
@@ -20,16 +20,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+  import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'Footer',
-  data() {
-    return {
-      currentYear: new Date().getFullYear()
-    }
-  }
-})
+  export default defineComponent({
+    name: 'Footer',
+    data () {
+      return {
+        currentYear: new Date().getFullYear(),
+      }
+    },
+  })
 </script>
 
 <style scoped>

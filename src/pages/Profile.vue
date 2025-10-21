@@ -1,6 +1,6 @@
 <template>
   <div class="profile-page">
-    <v-container fluid class="pa-6">
+    <v-container class="pa-6" fluid>
       <!-- Header -->
       <v-row class="mb-6">
         <v-col cols="12">
@@ -20,7 +20,7 @@
         <v-col cols="12" md="4">
           <v-card class="profile-card" elevation="8">
             <v-card-text class="text-center pa-8">
-              <v-avatar :color="userProfile.avatarColor" size="150" class="mb-4">
+              <v-avatar class="mb-4" :color="userProfile.avatarColor" size="150">
                 <span class="text-h2 text-white font-weight-bold">
                   {{ userProfile.initials }}
                 </span>
@@ -34,12 +34,12 @@
               </p>
 
               <v-chip
-                :color="getRoleColor(userProfile.role)"
                 class="mb-4"
+                :color="getRoleColor(userProfile.role)"
                 size="large"
                 variant="flat"
               >
-                <v-icon :icon="getRoleIcon(userProfile.role)" class="mr-2" />
+                <v-icon class="mr-2" :icon="getRoleIcon(userProfile.role)" />
                 {{ userProfile.role }}
               </v-chip>
 
@@ -47,7 +47,7 @@
 
               <v-list class="bg-transparent">
                 <v-list-item class="px-0">
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <v-icon color="primary" icon="mdi-office-building" />
                   </template>
                   <v-list-item-title class="font-weight-bold">
@@ -59,7 +59,7 @@
                 </v-list-item>
 
                 <v-list-item class="px-0">
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <v-icon color="success" icon="mdi-calendar-check" />
                   </template>
                   <v-list-item-title class="font-weight-bold">
@@ -71,7 +71,7 @@
                 </v-list-item>
 
                 <v-list-item class="px-0">
-                  <template v-slot:prepend>
+                  <template #prepend>
                     <v-icon color="info" icon="mdi-clock-outline" />
                   </template>
                   <v-list-item-title class="font-weight-bold">
@@ -225,8 +225,8 @@
                           hide-details="auto"
                           label="Nome Completo"
                           prepend-inner-icon="mdi-account"
-                          variant="outlined"
                           :rules="[rules.required]"
+                          variant="outlined"
                         />
                       </v-col>
 
@@ -237,9 +237,9 @@
                           hide-details="auto"
                           label="Email"
                           prepend-inner-icon="mdi-email"
+                          :rules="[rules.required, rules.email]"
                           type="email"
                           variant="outlined"
-                          :rules="[rules.required, rules.email]"
                         />
                       </v-col>
 
@@ -251,8 +251,8 @@
                           :items="['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']"
                           label="Departamento"
                           prepend-inner-icon="mdi-office-building"
-                          variant="outlined"
                           :rules="[rules.required]"
+                          variant="outlined"
                         />
                       </v-col>
 
@@ -304,14 +304,14 @@
                       <v-col cols="12">
                         <v-text-field
                           v-model="passwordData.currentPassword"
+                          :append-inner-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
                           density="comfortable"
                           hide-details="auto"
                           label="Senha Atual"
                           prepend-inner-icon="mdi-lock"
-                          :append-inner-icon="showCurrentPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                          :rules="[rules.required]"
                           :type="showCurrentPassword ? 'text' : 'password'"
                           variant="outlined"
-                          :rules="[rules.required]"
                           @click:append-inner="showCurrentPassword = !showCurrentPassword"
                         />
                       </v-col>
@@ -319,14 +319,14 @@
                       <v-col cols="12" md="6">
                         <v-text-field
                           v-model="passwordData.newPassword"
+                          :append-inner-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
                           density="comfortable"
                           hide-details="auto"
                           label="Nova Senha"
                           prepend-inner-icon="mdi-lock-plus"
-                          :append-inner-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                          :rules="[rules.required, rules.minLength]"
                           :type="showNewPassword ? 'text' : 'password'"
                           variant="outlined"
-                          :rules="[rules.required, rules.minLength]"
                           @click:append-inner="showNewPassword = !showNewPassword"
                         />
                       </v-col>
@@ -334,14 +334,14 @@
                       <v-col cols="12" md="6">
                         <v-text-field
                           v-model="passwordData.confirmPassword"
+                          :append-inner-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
                           density="comfortable"
                           hide-details="auto"
                           label="Confirmar Nova Senha"
                           prepend-inner-icon="mdi-lock-check"
-                          :append-inner-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                          :rules="[rules.required, rules.passwordMatch]"
                           :type="showConfirmPassword ? 'text' : 'password'"
                           variant="outlined"
-                          :rules="[rules.required, rules.passwordMatch]"
                           @click:append-inner="showConfirmPassword = !showConfirmPassword"
                         />
                       </v-col>
@@ -434,14 +434,14 @@
     <v-snackbar
       v-model="snackbar"
       :color="snackbarColor"
-      :timeout="4000"
       elevation="8"
       location="top right"
+      :timeout="4000"
     >
       <div class="d-flex align-center">
         <v-icon
-          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
           class="mr-2"
+          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
         />
         {{ snackbarText }}
       </div>
@@ -450,9 +450,9 @@
 </template>
 
 <script setup lang="ts">
+  import type { BackendUser, Department, UserRole, ValidationRule } from '@/types'
   import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import type { BackendUser, UserRole, Department, ValidationRule } from '@/types'
 
   const router = useRouter()
 
@@ -461,7 +461,7 @@
     name: string
     email: string
     role: UserRole
-    department: Department
+    department: string
     memberSince: string
     lastAccess: string
     initials: string
@@ -471,7 +471,7 @@
   interface EditData {
     name: string
     email: string
-    department: Department
+    department: string
   }
 
   interface PasswordData {
@@ -570,12 +570,12 @@
       }
 
       const data: unknown = await response.json()
-      
+
       // O db.json retorna array aninhado [[...]], então pegamos o primeiro elemento
       const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0])
         ? data[0]
-        : Array.isArray(data) ? data : []
-      
+        : (Array.isArray(data) ? data : [])
+
       // Pegar o primeiro usuário (Admin)
       const userData: BackendUser | undefined = usuariosArray[0]
 
@@ -626,15 +626,18 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
-      
+        : (Array.isArray(allData) ? allData : [])
+
       // Atualizar o usuário específico no array
       const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === userProfile.value.id)
       if (userIndex !== -1) {
-        usuariosArray[userIndex] = {
-          ...usuariosArray[userIndex],
-          nome: editData.value.name,
-          email: editData.value.email,
+        const currentUser = usuariosArray[userIndex]
+        if (currentUser) {
+          usuariosArray[userIndex] = {
+            ...currentUser,
+            nome: editData.value.name,
+            email: editData.value.email,
+          }
         }
       }
 
@@ -678,14 +681,17 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
-      
+        : (Array.isArray(allData) ? allData : [])
+
       // Atualizar a senha do usuário específico no array
       const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === userProfile.value.id)
       if (userIndex !== -1) {
-        usuariosArray[userIndex] = {
-          ...usuariosArray[userIndex],
-          senha: passwordData.value.newPassword,
+        const currentUser = usuariosArray[userIndex]
+        if (currentUser) {
+          usuariosArray[userIndex] = {
+            ...currentUser,
+            senha: passwordData.value.newPassword,
+          }
         }
       }
 
@@ -729,8 +735,8 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
-      
+        : (Array.isArray(allData) ? allData : [])
+
       // Remover o usuário do array
       const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== userProfile.value.id)
 
@@ -816,4 +822,3 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 </style>
-

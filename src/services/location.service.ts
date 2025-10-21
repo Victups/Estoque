@@ -52,13 +52,13 @@ class LocationServiceClass {
   async getAllComplete (ufId?: number | null): Promise<LocationComplete[]> {
     try {
       console.log('🔍 LocationService.getAllComplete - UF ID:', ufId)
-      
+
       const [locations, deposits, addresses] = await Promise.all([
         this.getAll(),
         DepositService.getAllEnriched(ufId),
         AddressService.getAllEnriched(ufId),
       ])
-      
+
       console.log('✅ Dados carregados:', {
         locations: locations.length,
         deposits: deposits.length,
@@ -70,7 +70,9 @@ class LocationServiceClass {
 
       const locationsFiltradas = locations.filter(loc => {
         const deposito = depositMap.get(loc.id_deposito)
-        if (!deposito) return false
+        if (!deposito) {
+          return false
+        }
 
         // Se foi passado ufId, filtrar apenas dessa UF
         if (ufId !== undefined && ufId !== null) {

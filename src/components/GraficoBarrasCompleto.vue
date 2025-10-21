@@ -24,14 +24,14 @@
 
   interface StackedData {
     categories: string[]
-    series: Array<{ name: string; data: number[] }>
+    series: Array<{ name: string, data: number[] }>
     totalProcedimentosRegistrados?: number
   }
 
   interface ChartData {
     categorias?: DataItem[] | Record<string, DataItem[]>
     categories?: string[]
-    series?: Array<{ name: string; data: number[] }>
+    series?: Array<{ name: string, data: number[] }>
     totalProcedimentosRegistrados?: number
   }
 
@@ -45,7 +45,7 @@
     onChartClick?: (event: any, chartContext: any, config: any) => void
     annotation?: Annotation
     showLegend?: boolean
-    legendMap?: Record<string, { name: string; color: string }>
+    legendMap?: Record<string, { name: string, color: string }>
     showFilter?: boolean
     xAxisTitle?: string
     yAxisTitle?: string
@@ -87,17 +87,16 @@
     let allItems: DataItem[] = []
     if (Array.isArray(props.data.categorias)) {
       allItems = props.data.categorias
-    }
-    else if (typeof props.data.categorias === 'object' && props.data.categorias !== null) {
+    } else if (typeof props.data.categorias === 'object' && props.data.categorias !== null) {
       allItems = Object.values(props.data.categorias).flat()
     }
 
     if (!Array.isArray(allItems)) return []
     if (!props.filtersConfig || props.filtersConfig.length === 0) return allItems
 
-    const itemsFiltrados = allItems.filter((item) => {
+    const itemsFiltrados = allItems.filter(item => {
       if (!item) return false
-      return props.filtersConfig!.every((filtro) => {
+      return props.filtersConfig!.every(filtro => {
         const valor = props.filtrosSelecionados[filtro.name]
         if (!valor || valor === 'todos') return true
 
@@ -124,11 +123,20 @@
 
   const labels = computed(() => {
     if (props.stacked && props.data?.categories) return props.data.categories
-    return dadosFiltrados.value.map((item) => item?.nome || '')
+    return dadosFiltrados.value.map(item => {
+      if (typeof item === 'string') return item
+      return item?.nome || ''
+    })
   })
 
-  const valores = computed(() => dadosFiltrados.value.map((item) => item?.valor || 0))
-  const cores = computed(() => dadosFiltrados.value.map((item) => item?.cor || '#000'))
+  const valores = computed(() => dadosFiltrados.value.map(item => {
+    if (typeof item === 'string') return 0
+    return item?.valor || 0
+  }))
+  const cores = computed(() => dadosFiltrados.value.map(item => {
+    if (typeof item === 'string') return '#000'
+    return item?.cor || '#000'
+  }))
 
   const chartHeight = computed(() => {
     if (props.alturaFixa && props.alturaFixa > 0) return props.alturaFixa
@@ -146,12 +154,12 @@
       stacked: props.stacked,
       events: props.onChartClick
         ? {
-            dataPointSelection: (event: any, chartContext: any, config: any) => {
-              if (props.onChartClick) {
-                props.onChartClick(event, chartContext, config)
-              }
-            },
-          }
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            if (props.onChartClick) {
+              props.onChartClick(event, chartContext, config)
+            }
+          },
+        }
         : undefined,
     },
     plotOptions: {
@@ -182,8 +190,7 @@
     if (!props.escalaLog) {
       if (totalAtendimentos && totalAtendimentos > 0) {
         maxVal = totalAtendimentos + (totalAtendimentos * 0.1)
-      }
-      else {
+      } else {
         const valorMaximo = Math.max(0, ...valores.value)
         maxVal = valorMaximo > 0 ? valorMaximo * 1.2 : 10
       }
@@ -216,20 +223,20 @@
   const memoizedAnnotations = computed(() => ({
     xaxis: props.annotation
       ? [{
-          x: props.annotation.value,
-          borderColor: '#DC2626',
-          borderWidth: 2,
-          strokeDashArray: 6,
-          label: {
-            text: props.annotation.text,
-            position: 'top',
-            style: {
-              color: '#DC2626',
-              fontWeight: 'bold',
-              background: 'transparent',
-            },
+        x: props.annotation.value,
+        borderColor: '#DC2626',
+        borderWidth: 2,
+        strokeDashArray: 6,
+        label: {
+          text: props.annotation.text,
+          position: 'top',
+          style: {
+            color: '#DC2626',
+            fontWeight: 'bold',
+            background: 'transparent',
           },
-        }]
+        },
+      }]
       : [],
   }))
 
@@ -291,8 +298,8 @@
         <!-- Label (exceto para checkbox) -->
         <label
           v-if="filtro.type !== 'checkbox'"
-          :for="`filtro-${filtro.name}`"
           class="block text-sm font-medium text-gray-700 mb-1"
+          :for="`filtro-${filtro.name}`"
         >
           {{ filtro.label }}
         </label>
@@ -303,9 +310,9 @@
           :id="`filtro-${filtro.name}`"
           density="compact"
           hide-details
-          :items="filtro.options"
           item-title="label"
           item-value="value"
+          :items="filtro.options"
           :model-value="filtrosSelecionados[filtro.name]"
           variant="outlined"
           @update:model-value="(val) => handleFilterChange(filtro.name, val)"
@@ -489,4 +496,3 @@
   }
 }
 </style>
-

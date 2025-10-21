@@ -4,7 +4,7 @@ import { UserService } from './user.service'
 
 /**
  * Serviço de Autenticação
- * 
+ *
  * ⚠️ ATENÇÃO: Este é um serviço MOCK para desenvolvimento/frontend
  * Em produção real, a autenticação seria feita no backend com:
  * - Hash de senhas (bcrypt, argon2, etc.)
@@ -15,7 +15,7 @@ import { UserService } from './user.service'
 class AuthServiceClass {
   /**
    * Realiza login verificando credenciais (MOCK)
-   * 
+   *
    * ⚠️ Em um sistema real, NUNCA comparar senhas no frontend!
    * Esta implementação é apenas para simular autenticação com db.json
    */
@@ -27,7 +27,7 @@ class AuthServiceClass {
         u.email === email && u.senha === senha,
       )
       return user ?? null
-    } catch (error) {
+    } catch {
       throw new Error('Erro ao realizar login')
     }
   }
@@ -52,7 +52,9 @@ class AuthServiceClass {
    */
   getUser (): BackendUser | null {
     const userStr = localStorage.getItem('user')
-    if (!userStr) return null
+    if (!userStr) {
+      return null
+    }
     try {
       return JSON.parse(userStr) as BackendUser
     } catch {
@@ -69,4 +71,3 @@ class AuthServiceClass {
 }
 
 export const AuthService = new AuthServiceClass()
-

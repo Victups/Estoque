@@ -167,4 +167,3 @@ class ContactServiceClass {
 
 export const SupplierService = new SupplierServiceClass()
 export const ContactService = new ContactServiceClass()
-

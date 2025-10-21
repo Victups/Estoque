@@ -107,15 +107,15 @@
 </template>
 
 <script setup lang="ts">
+  import type { Department, User, UserRole, ValidationRule } from '@/types'
   import { ref, watch } from 'vue'
-  import type { User, UserRole, Department, ValidationRule } from '@/types'
   import { useFormValidation } from '@/composables/useFormValidation'
 
   interface UserFormData {
     name: string
     email: string
-    role: UserRole | ''
-    department: Department | ''
+    role: UserRole | null
+    department: string
     password?: string
     confirmPassword?: string
   }
@@ -153,14 +153,14 @@
   const formData = ref<UserFormData>({
     name: '',
     email: '',
-    role: '',
+    role: null,
     department: '',
     password: '',
     confirmPassword: '',
   })
 
   const roleOptions: UserRole[] = ['Admin', 'Gerente', 'Operador', 'Visualizador']
-  const departmentOptions: Department[] = ['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']
+  const departmentOptions: string[] = ['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']
 
   const nameRules: ValidationRule[] = [
     validation.required,
@@ -195,24 +195,22 @@
   // Watch para preencher o formulário quando user prop mudar
   watch(
     () => props.user,
-    (newUser: User | null) => {
-      if (newUser) {
-        formData.value = {
-          name: newUser.name,
+    (newUser: User | null | undefined) => {
+      formData.value = newUser
+        ? {
+          name: newUser.name || newUser.nome,
           email: newUser.email,
           role: newUser.role,
           department: newUser.department,
         }
-      } else {
-        formData.value = {
+        : {
           name: '',
           email: '',
-          role: '',
+          role: null,
           department: '',
           password: '',
           confirmPassword: '',
         }
-      }
     },
     { immediate: true },
   )
@@ -223,4 +221,3 @@
   gap: 1rem;
 }
 </style>
-

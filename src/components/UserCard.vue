@@ -7,7 +7,7 @@
             {{ user.initials }}
           </span>
         </v-avatar>
-        
+
         <div class="ml-4 flex-grow-1">
           <h3 class="text-h6 font-weight-bold">
             {{ user.name }}
@@ -64,8 +64,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
   import type { User } from '@/types'
+  import { computed } from 'vue'
   import { useUser } from '@/composables/useUser'
 
   interface Props {
@@ -92,7 +92,7 @@
   })
 
   const statusColor = computed<string>(() => {
-    return props.user.status === 'Ativo' ? 'success' : 'error'
+    return props.user.status === 'active' ? 'success' : 'error'
   })
 </script>
 
@@ -111,4 +111,3 @@
   gap: 0.5rem;
 }
 </style>
-

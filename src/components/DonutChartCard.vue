@@ -41,7 +41,7 @@
         },
       },
       theme: {
-        mode: 'dark',
+        mode: 'dark' as const,
       },
       labels: props.dados.labels,
       colors: props.dados.colors,
@@ -141,8 +141,7 @@
       containerClasses += numItems > 2
         ? ' flex-wrap justify-content-center gap-x-4 gap-y-2'
         : ' flex-column align-items-center'
-    }
-    else {
+    } else {
       containerClasses += ' flex-column align-items-start'
     }
 
@@ -155,12 +154,7 @@
   const contentContainerClasses = computed(() => {
     let classes = 'd-flex align-items-center justify-content-center w-100'
 
-    if (props.legendPosition === 'top' || props.legendPosition === 'bottom') {
-      classes += ' flex-column'
-    }
-    else {
-      classes += ' flex-row'
-    }
+    classes += props.legendPosition === 'top' || props.legendPosition === 'bottom' ? ' flex-column' : ' flex-row'
 
     return classes
   })
@@ -381,4 +375,3 @@
   color: #6c757d;
 }
 </style>
-

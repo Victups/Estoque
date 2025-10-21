@@ -3,8 +3,8 @@
   import VueApexCharts from 'vue3-apexcharts'
 
   import DonutChartCard from '@/components/DonutChartCard.vue'
-  import GraficoBarrasCompleto from '@/components/GraficoBarrasCompleto.vue'
   import FiltrosRelatorios from '@/components/FiltrosRelatorios.vue'
+  import GraficoBarrasCompleto from '@/components/GraficoBarrasCompleto.vue'
   import { CategoryService, LoteService, MovementService, ProductService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
 
@@ -35,7 +35,7 @@
     const today = new Date()
     const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-    return lotes.value.filter((lote) => {
+    return lotes.value.filter(lote => {
       const expDate = new Date(lote.data_validade)
       return expDate >= today && expDate <= thirtyDaysFromNow
     }).length
@@ -43,8 +43,8 @@
 
   // Produtos com estoque baixo
   const lowStockProducts = computed(() => {
-    return products.value.filter((product) => {
-      const productLotes = lotes.value.filter((l) => l.id_produto === product.id)
+    return products.value.filter(product => {
+      const productLotes = lotes.value.filter(l => l.id_produto === product.id)
       const totalQty = productLotes.reduce((sum, l) => sum + (l.quantidade || 0), 0)
       return totalQty < (product.estoque_minimo || 0)
     }).length
@@ -59,7 +59,7 @@
     labels: categories.value.map(c => c.nome),
     colors: ['#7B2CBF', '#9C4ED6', '#B39DDB', '#26A69A', '#66BB6A', '#FFA726', '#EF5350'],
     legend: {
-      position: 'bottom',
+      position: 'bottom' as const,
       fontSize: '14px',
     },
     plotOptions: {
@@ -97,7 +97,7 @@
       productsByCategory[catId] = (productsByCategory[catId] || 0) + 1
     }
 
-    return categories.value.map((cat) => productsByCategory[cat.id] || 0)
+    return categories.value.map(cat => productsByCategory[cat.id] || 0)
   })
 
   // ==================== Dados para DonutChartCard ====================
@@ -112,9 +112,9 @@
       productsByCategory[catId] = (productsByCategory[catId] || 0) + 1
     }
 
-    const labels = categories.value.map((cat) => cat.nome)
-    const values = categories.value.map((cat) => productsByCategory[cat.id] || 0)
-    const series = values.map((val) => Number(((val / total) * 100).toFixed(1)))
+    const labels = categories.value.map(cat => cat.nome)
+    const values = categories.value.map(cat => productsByCategory[cat.id] || 0)
+    const series = values.map(val => Number(((val / total) * 100).toFixed(1)))
     const colors = ['#7B2CBF', '#9C4ED6', '#B39DDB', '#26A69A', '#66BB6A', '#FFA726', '#EF5350']
 
     return {
@@ -135,7 +135,7 @@
     colors: ['#66BB6A', '#EF5350'],
     stroke: {
       width: 3,
-      curve: 'smooth',
+      curve: 'smooth' as const,
     },
     xaxis: {
       categories: getLast7Days(),
@@ -151,7 +151,7 @@
       },
     },
     legend: {
-      position: 'top',
+      position: 'top' as const,
       fontSize: '14px',
     },
     dataLabels: {
@@ -165,8 +165,8 @@
 
   const movementChartSeries = computed(() => {
     const last7Days = getLast7Days()
-    const entradas: number[] = new Array(7).fill(0)
-    const saidas: number[] = new Array(7).fill(0)
+    const entradas: number[] = Array.from({ length: 7 }, () => 0)
+    const saidas: number[] = Array.from({ length: 7 }, () => 0)
 
     for (const mov of movements.value) {
       const movDate = new Date(mov.data_mov).toLocaleDateString('pt-BR', {
@@ -178,8 +178,7 @@
       if (dayIndex !== -1) {
         if (mov.tipo_movimento === 'entrada') {
           entradas[dayIndex] += mov.quantidade || 0
-        }
-        else if (mov.tipo_movimento === 'saida') {
+        } else if (mov.tipo_movimento === 'saida') {
           saidas[dayIndex] += mov.quantidade || 0
         }
       }
@@ -194,8 +193,8 @@
   // ==================== Dados para GraficoBarrasCompleto (Movimentações) ====================
   const movimentacoesBarrasData = computed(() => {
     const last7Days = getLast7Days()
-    const entradas: number[] = new Array(7).fill(0)
-    const saidas: number[] = new Array(7).fill(0)
+    const entradas: number[] = Array.from({ length: 7 }, () => 0)
+    const saidas: number[] = Array.from({ length: 7 }, () => 0)
 
     for (const mov of movements.value) {
       const movDate = new Date(mov.data_mov).toLocaleDateString('pt-BR', {
@@ -207,8 +206,7 @@
       if (dayIndex !== -1) {
         if (mov.tipo_movimento === 'entrada') {
           entradas[dayIndex] += mov.quantidade || 0
-        }
-        else if (mov.tipo_movimento === 'saida') {
+        } else if (mov.tipo_movimento === 'saida') {
           saidas[dayIndex] += mov.quantidade || 0
         }
       }
@@ -246,7 +244,7 @@
       background: 'transparent',
     },
     theme: {
-      mode: 'dark',
+      mode: 'dark' as const,
     },
     colors: ['#FF6B6B'],
     plotOptions: {
@@ -270,7 +268,7 @@
       formatter: (val: number) => `${val} un`,
     },
     xaxis: {
-      categories: getTopLowStockProducts().map((p) => p.nome),
+      categories: getTopLowStockProducts().map(p => p.nome),
       title: {
         text: 'Quantidade em Estoque',
         style: {
@@ -308,13 +306,13 @@
 
   const lowStockChartSeries = computed(() => [{
     name: 'Estoque Atual',
-    data: getTopLowStockProducts().map((p) => p.currentStock),
+    data: getTopLowStockProducts().map(p => p.currentStock),
   }])
 
   function getTopLowStockProducts () {
     const productsWithStock = products.value
-      .map((product) => {
-        const productLotes = lotes.value.filter((l) => l.id_produto === product.id)
+      .map(product => {
+        const productLotes = lotes.value.filter(l => l.id_produto === product.id)
         const currentStock = productLotes.reduce((sum, l) => sum + (l.quantidade || 0), 0)
         const stockMin = product.estoque_minimo || 0
 
@@ -325,7 +323,7 @@
           difference: stockMin - currentStock,
         }
       })
-      .filter((p) => p.currentStock < p.stockMin)
+      .filter(p => p.currentStock < p.stockMin)
       .toSorted((a, b) => b.difference - a.difference)
       .slice(0, 5)
 
@@ -340,7 +338,7 @@
       background: 'transparent',
     },
     theme: {
-      mode: 'dark',
+      mode: 'dark' as const,
     },
     colors: ['#9C4ED6'],
     plotOptions: {
@@ -368,7 +366,7 @@
       },
     },
     xaxis: {
-      categories: categories.value.map((c) => c.nome),
+      categories: categories.value.map(c => c.nome),
       labels: {
         style: {
           fontSize: '13px',
@@ -421,7 +419,7 @@
     const valueByCategory: Record<number, number> = {}
 
     for (const product of products.value) {
-      const productLotes = lotes.value.filter((l) => l.id_produto === product.id)
+      const productLotes = lotes.value.filter(l => l.id_produto === product.id)
       const totalValue = productLotes.reduce((sum, l) =>
         sum + ((l.quantidade || 0) * (l.custo_unitario || 0)), 0,
       )
@@ -432,12 +430,12 @@
 
     return [{
       name: 'Valor em Estoque',
-      data: categories.value.map((cat) => valueByCategory[cat.id] || 0),
+      data: categories.value.map(cat => valueByCategory[cat.id] || 0),
     }]
   })
 
   // ==================== Carregar Dados ====================
-  async function loadData() {
+  async function loadData () {
     loading.value = true
     try {
       const [productsData, categoriesData, movementsData, lotesData] = await Promise.all([
@@ -511,19 +509,18 @@
       </v-col>
     </v-row>
 
-     <!-- Conteúdo -->
-     <template v-else>
-       <!-- Filtros Avançados -->
-       <v-row class="mb-6">
-         <v-col cols="12">
-           <FiltrosRelatorios
-             v-model="filtros"
-             @filtros-change="onFiltrosChange"
-           />
-         </v-col>
-       </v-row>
+    <!-- Conteúdo -->
+    <template v-else>
+      <!-- Filtros Avançados -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <FiltrosRelatorios
+            v-model="filtros"
+          />
+        </v-col>
+      </v-row>
 
-       <!-- Cards de Estatísticas -->
+      <!-- Cards de Estatísticas -->
       <v-row>
         <v-col cols="12" md="3" sm="6">
           <v-card class="stat-card" elevation="2">
@@ -715,12 +712,6 @@
             <v-divider />
             <v-card-text class="pa-4">
               <GraficoBarrasCompleto
-                :data="movimentacoesBarrasData"
-                direction="vertical"
-                stacked
-                :show-legend="false"
-                x-axis-title=""
-                y-axis-title="Quantidade"
                 :altura-fixa="340"
                 :chart-options-override="{
                   colors: ['#4CAF50', '#F44336'],
@@ -762,6 +753,12 @@
                     },
                   },
                 }"
+                :data="movimentacoesBarrasData"
+                direction="vertical"
+                :show-legend="false"
+                stacked
+                x-axis-title=""
+                y-axis-title="Quantidade"
               />
             </v-card-text>
           </v-card>
@@ -954,4 +951,3 @@ meta:
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 </style>
-

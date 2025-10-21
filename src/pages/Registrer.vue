@@ -269,9 +269,9 @@
 </template>
 
 <script setup lang="ts">
+  import type { BackendUser, Department, UserRole, ValidationRule } from '@/types'
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import type { BackendUser, ValidationRule, UserRole, Department } from '@/types'
 
   const router = useRouter()
 
@@ -287,7 +287,7 @@
   const password = ref<string>('')
   const passwordConfirm = ref<string>('')
   const role = ref<UserRole | ''>('')
-  const department = ref<Department>('Geral')
+  const department = ref<string>('Geral')
   const acceptTerms = ref<boolean>(false)
   const showPassword = ref<boolean>(false)
   const showPasswordConfirm = ref<boolean>(false)
@@ -327,7 +327,7 @@
 
   async function handleRegister (): Promise<void> {
     if (!formRef.value) return
-    
+
     const { valid: isValid } = await formRef.value.validate()
     if (!isValid) return
 
@@ -340,7 +340,7 @@
       const allData: unknown = await getResponse.json()
       const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
         ? allData[0]
-        : Array.isArray(allData) ? allData : []
+        : (Array.isArray(allData) ? allData : [])
 
       // Verificar se o email já existe
       const emailExists = usuariosArray.some((u: BackendUser) => u.email === email.value)
@@ -362,11 +362,10 @@
         email: email.value,
         senha: password.value,
         id_contato: newId,
+        role: 'estoquista',
       }
 
-
       usuariosArray.push(newUserData)
-
 
       const response = await fetch('http://localhost:3001/usuarios', {
         method: 'PUT',

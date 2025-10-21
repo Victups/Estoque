@@ -9,9 +9,13 @@ interface AuthState {
 }
 
 function deriveNameFromEmail (email: string | null): string | null {
-  if (!email) return null
+  if (!email) {
+    return null
+  }
   const local = email.split('@')[0] ?? ''
-  if (!local) return null
+  if (!local) {
+    return null
+  }
   return local
     .split(/[._-]/)
     .filter(Boolean)
@@ -38,7 +42,9 @@ export const useAuthStore = defineStore('auth', {
     loadFromStorage () {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
-        if (!raw) return
+        if (!raw) {
+          return
+        }
         const data = JSON.parse(raw) as Partial<AuthState>
         this.userName = data.userName ?? null
         this.userEmail = data.userEmail ?? null
@@ -77,5 +83,3 @@ export const useAuthStore = defineStore('auth', {
     },
   },
 })
-
-
