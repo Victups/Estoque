@@ -13,7 +13,7 @@
     name: 'App',
     setup () {
       const auth = useAuthStore()
-      
+
       onMounted(() => {
         auth.loadFromStorage()
       })
@@ -22,4 +22,3 @@
     },
   })
 </script>
-

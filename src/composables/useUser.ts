@@ -1,5 +1,5 @@
+import type { BackendUser, Department, User, UserRole } from '@/types'
 import { computed, type ComputedRef } from 'vue'
-import type { User, BackendUser, UserRole, Department } from '@/types'
 
 /**
  * Composable para manipulação de dados de usuários
@@ -23,20 +23,32 @@ export function useUser () {
     const nameLower = name.toLowerCase()
     const emailLower = email.toLowerCase()
 
-    if (nameLower.includes('admin') || emailLower.includes('admin')) return 'Admin'
-    if (nameLower.includes('gerente')) return 'Gerente'
-    if (nameLower.includes('almoxarife')) return 'Operador'
+    if (nameLower.includes('admin') || emailLower.includes('admin')) {
+      return 'Admin'
+    }
+    if (nameLower.includes('gerente')) {
+      return 'Gerente'
+    }
+    if (nameLower.includes('almoxarife')) {
+      return 'Operador'
+    }
     return 'Visualizador'
   }
 
   /**
    * Determina o departamento baseado no nome
    */
-  function determineDepartment (name: string): Department {
+  function determineDepartment (name: string): string {
     const nameLower = name.toLowerCase()
-    if (nameLower.includes('admin')) return 'TI'
-    if (nameLower.includes('gerente')) return 'Gestão'
-    if (nameLower.includes('almoxarife')) return 'Estoque'
+    if (nameLower.includes('admin')) {
+      return 'TI'
+    }
+    if (nameLower.includes('gerente')) {
+      return 'Gestão'
+    }
+    if (nameLower.includes('almoxarife')) {
+      return 'Estoque'
+    }
     return 'Geral'
   }
 
@@ -80,14 +92,15 @@ export function useUser () {
   function mapBackendToUser (backendUser: BackendUser, index: number): User {
     return {
       id: backendUser.id,
+      nome: backendUser.nome,
       name: backendUser.nome,
       email: backendUser.email,
       role: determineRole(backendUser.nome, backendUser.email),
       department: determineDepartment(backendUser.nome),
-      status: 'Ativo',
-      lastAccess: new Date().toLocaleString('pt-BR'),
-      initials: getInitials(backendUser.nome),
+      status: 'active',
       avatarColor: getAvatarColor(index),
+      initials: getInitials(backendUser.nome),
+      lastAccess: new Date().toLocaleString('pt-BR'),
     }
   }
 
@@ -107,11 +120,11 @@ export function useUser () {
  */
 export function useUserStats (users: ComputedRef<User[]> | { value: User[] }) {
   const activeUsers = computed(() => {
-    return users.value.filter((u: User) => u.status === 'Ativo')
+    return users.value.filter((u: User) => u.status === 'active')
   })
 
   const inactiveUsers = computed(() => {
-    return users.value.filter((u: User) => u.status === 'Inativo')
+    return users.value.filter((u: User) => u.status === 'inactive')
   })
 
   const adminUsers = computed(() => {
@@ -133,4 +146,3 @@ export function useUserStats (users: ComputedRef<User[]> | { value: User[] }) {
     adminCount,
   }
 }
-

@@ -157,20 +157,20 @@
                 loading-text="Carregando usuários..."
                 :search="search"
               >
-                <template v-slot:item.avatar="{ item }">
+                <template #item.avatar="{ item }">
                   <v-avatar :color="item.avatarColor" size="45">
                     <span class="text-h6 text-white font-weight-bold">{{ item.initials }}</span>
                   </v-avatar>
                 </template>
 
-                <template v-slot:item.name="{ item }">
+                <template #item.name="{ item }">
                   <div>
                     <div class="font-weight-bold">{{ item.name }}</div>
                     <div class="text-caption text-grey">{{ item.email }}</div>
                   </div>
                 </template>
 
-                <template v-slot:item.role="{ item }">
+                <template #item.role="{ item }">
                   <v-chip
                     class="font-weight-bold"
                     :color="userHelpers.getRoleColor(item.role)"
@@ -182,24 +182,24 @@
                   </v-chip>
                 </template>
 
-                <template v-slot:item.status="{ item }">
+                <template #item.status="{ item }">
                   <v-chip
-                    :color="item.status === 'Ativo' ? 'success' : 'error'"
+                    :color="item.status === 'active' ? 'success' : 'error'"
                     size="small"
                     variant="flat"
                   >
                     <v-icon
                       class="mr-1"
-                      :icon="item.status === 'Ativo' ? 'mdi-check-circle' : 'mdi-close-circle'"
+                      :icon="item.status === 'active' ? 'mdi-check-circle' : 'mdi-close-circle'"
                       size="small"
                     />
                     {{ item.status }}
                   </v-chip>
                 </template>
 
-                <template v-slot:item.actions="{ item }">
+                <template #item.actions="{ item }">
                   <v-tooltip location="top" text="Ver detalhes">
-                    <template v-slot:activator="{ props }">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
                         class="mr-1"
@@ -213,7 +213,7 @@
                   </v-tooltip>
 
                   <v-tooltip location="top" text="Editar usuário">
-                    <template v-slot:activator="{ props }">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
                         class="mr-1"
@@ -227,7 +227,7 @@
                   </v-tooltip>
 
                   <v-tooltip location="top" text="Excluir usuário">
-                    <template v-slot:activator="{ props }">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
                         color="error"
@@ -272,7 +272,7 @@
           <v-row>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-shield-account" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Função</v-list-item-title>
@@ -281,7 +281,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-office-building" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Departamento</v-list-item-title>
@@ -290,13 +290,13 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-information" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Status</v-list-item-title>
                 <v-list-item-subtitle>
                   <v-chip
-                    :color="selectedUser.status === 'Ativo' ? 'success' : 'error'"
+                    :color="selectedUser.status === 'active' ? 'success' : 'error'"
                     size="small"
                     variant="flat"
                   >
@@ -307,7 +307,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-clock-outline" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Último acesso</v-list-item-title>
@@ -321,29 +321,29 @@
 
     <!-- Snackbar -->
     <v-snackbar
-      v-model="snackbarState.snackbar"
-      :color="snackbarState.snackbarColor"
+      v-model="snackbarState.snackbar.value"
+      :color="snackbarState.snackbarColor.value"
       elevation="8"
       location="top right"
-      :timeout="snackbarState.snackbarTimeout"
+      :timeout="snackbarState.snackbarTimeout.value"
     >
       <div class="d-flex align-center">
         <v-icon
           class="mr-2"
-          :icon="snackbarState.snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
+          :icon="snackbarState.snackbarColor.value === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
         />
-        {{ snackbarState.snackbarText }}
+        {{ snackbarState.snackbarText.value }}
       </div>
     </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
   import type { User } from '@/types'
-  import { UserService } from '@/services/api'
-  import { useUser, useUserStats } from '@/composables/useUser'
+  import { computed, onMounted, ref } from 'vue'
   import { useSnackbar } from '@/composables/useSnackbar'
+  import { useUser, useUserStats } from '@/composables/useUser'
+  import { UserService } from '@/services'
 
   // Composables
   const userHelpers = useUser()
@@ -360,7 +360,7 @@
 
   // Computed
   const stats = useUserStats(users)
-  
+
   const filteredUsers = computed<User[]>(() => {
     return users.value.filter((user: User) => {
       const roleMatch = filterRole.value === 'Todos' || user.role === filterRole.value
@@ -468,4 +468,3 @@
   color: white;
 }
 </style>
-

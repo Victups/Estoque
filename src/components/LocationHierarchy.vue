@@ -94,4 +94,3 @@
   border-left: 3px solid rgb(var(--v-theme-primary));
 }
 </style>
-

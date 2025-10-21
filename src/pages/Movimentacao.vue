@@ -173,7 +173,7 @@
                 loading-text="Carregando movimentações..."
                 :search="search"
               >
-                <template v-slot:item.tipo_movimento="{ item }">
+                <template #item.tipo_movimento="{ item }">
                   <v-chip
                     :color="item.tipo_movimento === 'entrada' ? 'success' : 'error'"
                     size="small"
@@ -188,29 +188,45 @@
                   </v-chip>
                 </template>
 
-                <template v-slot:item.quantidade="{ item }">
+                <template #item.quantidade="{ item }">
                   <span class="font-weight-bold">
                     {{ formatNumber(item.quantidade) }}
                   </span>
                 </template>
 
-                <template v-slot:item.preco_unitario="{ item }">
+                <template #item.preco_unitario="{ item }">
                   {{ formatCurrency(item.preco_unitario) }}
                 </template>
 
-                <template v-slot:item.valor_total="{ item }">
+                <template #item.valor_total="{ item }">
                   <span class="font-weight-bold text-primary">
                     {{ formatCurrency(item.quantidade * item.preco_unitario) }}
                   </span>
                 </template>
 
-                <template v-slot:item.data_mov="{ item }">
+                <template #item.localizacao="{ item }">
+                  <div v-if="item.tipo_movimento === 'entrada' && item.localizacao_destino_nome">
+                    <v-chip color="success" size="small" variant="tonal">
+                      <v-icon class="mr-1" icon="mdi-arrow-right" size="small" />
+                      {{ item.localizacao_destino_nome }}
+                    </v-chip>
+                  </div>
+                  <div v-else-if="item.tipo_movimento === 'saida' && item.localizacao_origem_nome">
+                    <v-chip color="error" size="small" variant="tonal">
+                      <v-icon class="mr-1" icon="mdi-arrow-left" size="small" />
+                      {{ item.localizacao_origem_nome }}
+                    </v-chip>
+                  </div>
+                  <span v-else class="text-grey">-</span>
+                </template>
+
+                <template #item.data_mov="{ item }">
                   {{ formatDate(item.data_mov) }}
                 </template>
 
-                <template v-slot:item.actions="{ item }">
+                <template #item.actions="{ item }">
                   <v-tooltip location="top" text="Ver detalhes">
-                    <template v-slot:activator="{ props }">
+                    <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
                         color="info"
@@ -232,7 +248,7 @@
     <!-- Create Movement Dialog -->
     <v-dialog v-model="createDialog" max-width="900" persistent>
       <v-card elevation="8">
-        <v-card-title :class="dialogType === 'entrada' ? 'bg-success' : 'bg-error'" class="pa-4">
+        <v-card-title class="pa-4" :class="dialogType === 'entrada' ? 'bg-success' : 'bg-error'">
           <div class="d-flex align-center">
             <v-icon
               class="mr-2"
@@ -262,9 +278,9 @@
                   clearable
                   density="comfortable"
                   hide-details="auto"
-                  :items="productOptions"
                   item-title="label"
                   item-value="value"
+                  :items="productOptions"
                   label="Selecione o Produto"
                   prepend-inner-icon="mdi-package"
                   :rules="[validation.required]"
@@ -280,13 +296,14 @@
                   density="comfortable"
                   :disabled="!formData.id_produto"
                   hide-details="auto"
-                  :items="loteOptions"
                   item-title="label"
                   item-value="value"
+                  :items="loteOptions"
                   label="Lote"
                   prepend-inner-icon="mdi-barcode"
                   :rules="[validation.required]"
                   variant="outlined"
+                  @update:model-value="onLoteChange"
                 />
               </v-col>
 
@@ -356,9 +373,9 @@
                   clearable
                   density="comfortable"
                   hide-details="auto"
-                  :items="locationOptions"
                   item-title="label"
                   item-value="value"
+                  :items="locationOptions"
                   label="Origem"
                   prepend-inner-icon="mdi-source-fork"
                   :rules="dialogType === 'saida' ? [validation.required] : []"
@@ -372,9 +389,9 @@
                   clearable
                   density="comfortable"
                   hide-details="auto"
-                  :items="locationOptions"
                   item-title="label"
                   item-value="value"
+                  :items="locationOptions"
                   label="Destino"
                   prepend-inner-icon="mdi-target"
                   :rules="dialogType === 'entrada' ? [validation.required] : []"
@@ -395,8 +412,77 @@
                 />
               </v-col>
 
+              <!-- Informações do Produto Selecionado -->
+              <v-col v-if="selectedProduct" cols="12">
+                <v-divider class="my-4" />
+                <v-card class="info-card" color="info" variant="tonal">
+                  <v-card-text>
+                    <h4 class="font-weight-bold mb-3 d-flex align-center">
+                      <v-icon class="mr-2" icon="mdi-information" />
+                      Informações do Produto
+                    </h4>
+                    <v-row dense>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Código</div>
+                        <div class="font-weight-bold">{{ selectedProduct.codigo }}</div>
+                      </v-col>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Nome</div>
+                        <div class="font-weight-bold">{{ selectedProduct.nome }}</div>
+                      </v-col>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Estoque Mínimo</div>
+                        <div class="font-weight-bold">{{ selectedProduct.estoque_minimo }}</div>
+                      </v-col>
+                      <v-col v-if="(selectedProduct as any).estoque_maximo" cols="6" md="3">
+                        <div class="text-caption">Estoque Máximo</div>
+                        <div class="font-weight-bold">{{ (selectedProduct as any).estoque_maximo }}</div>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Informações do Lote Selecionado -->
+              <v-col v-if="selectedLote" cols="12">
+                <v-card class="info-card" color="success" variant="tonal">
+                  <v-card-text>
+                    <h4 class="font-weight-bold mb-3 d-flex align-center">
+                      <v-icon class="mr-2" icon="mdi-package-variant" />
+                      Informações do Lote
+                    </h4>
+                    <v-row dense>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Código Lote</div>
+                        <div class="font-weight-bold">{{ selectedLote.codigo_lote }}</div>
+                      </v-col>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Quantidade Disponível</div>
+                        <div class="font-weight-bold text-success">{{ selectedLote.quantidade }}</div>
+                      </v-col>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Validade</div>
+                        <div class="font-weight-bold">{{ formatDate(selectedLote.data_validade) }}</div>
+                      </v-col>
+                      <v-col cols="6" md="3">
+                        <div class="text-caption">Custo Unitário</div>
+                        <div class="font-weight-bold">{{ formatCurrency(selectedLote.custo_unitario) }}</div>
+                      </v-col>
+                      <v-col v-if="selectedLote.id_localizacao" cols="12">
+                        <div class="text-caption">Localização Atual</div>
+                        <div class="font-weight-bold d-flex align-center">
+                          <v-icon class="mr-2" color="success" icon="mdi-map-marker" size="small" />
+                          {{ getLocalizacaoNome(selectedLote.id_localizacao) }}
+                        </div>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
               <!-- Summary Card -->
               <v-col cols="12">
+                <v-divider class="my-4" />
                 <v-card color="grey-lighten-4" variant="outlined">
                   <v-card-text>
                     <h4 class="font-weight-bold mb-3">Resumo da Movimentação</h4>
@@ -486,27 +572,55 @@
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-package" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Produto</v-list-item-title>
-                <v-list-item-subtitle>ID: {{ selectedMovement.id_produto }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  {{ selectedMovement.produto_nome || `ID: ${selectedMovement.id_produto}` }}
+                </v-list-item-subtitle>
               </v-list-item>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-barcode" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Lote</v-list-item-title>
-                <v-list-item-subtitle>ID: {{ selectedMovement.id_lote }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  {{ selectedMovement.lote_codigo || `ID: ${selectedMovement.id_lote}` }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+
+            <v-col v-if="selectedMovement.tipo_movimento === 'entrada' && selectedMovement.localizacao_destino_nome" cols="12">
+              <v-list-item class="px-0">
+                <template #prepend>
+                  <v-icon color="success" icon="mdi-map-marker" />
+                </template>
+                <v-list-item-title class="font-weight-bold">Localização Destino</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ selectedMovement.localizacao_destino_nome }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+
+            <v-col v-if="selectedMovement.tipo_movimento === 'saida' && selectedMovement.localizacao_origem_nome" cols="12">
+              <v-list-item class="px-0">
+                <template #prepend>
+                  <v-icon color="error" icon="mdi-map-marker" />
+                </template>
+                <v-list-item-title class="font-weight-bold">Localização Origem</v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ selectedMovement.localizacao_origem_nome }}
+                </v-list-item-subtitle>
               </v-list-item>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-numeric" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Quantidade</v-list-item-title>
@@ -516,7 +630,7 @@
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-currency-usd" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Preço Unitário</v-list-item-title>
@@ -526,7 +640,7 @@
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-calendar" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Data</v-list-item-title>
@@ -536,7 +650,7 @@
 
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="success" icon="mdi-calculator" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Valor Total</v-list-item-title>
@@ -549,7 +663,7 @@
             <v-col v-if="selectedMovement.observacao" cols="12">
               <v-divider class="mb-4" />
               <v-list-item class="px-0">
-                <template v-slot:prepend>
+                <template #prepend>
                   <v-icon color="primary" icon="mdi-note-text" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Observações</v-list-item-title>
@@ -563,33 +677,44 @@
 
     <!-- Snackbar -->
     <v-snackbar
-      v-model="snackbarState.snackbar"
-      :color="snackbarState.snackbarColor"
+      v-model="snackbarState.snackbar.value"
+      :color="snackbarState.snackbarColor.value"
       elevation="8"
       location="top right"
-      :timeout="snackbarState.snackbarTimeout"
+      :timeout="snackbarState.snackbarTimeout.value"
     >
       <div class="d-flex align-center">
         <v-icon
           class="mr-2"
-          :icon="snackbarState.snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
+          :icon="snackbarState.snackbarColor.value === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
         />
-        {{ snackbarState.snackbarText }}
+        {{ snackbarState.snackbarText.value }}
       </div>
     </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
+  import type { LocationComplete } from '@/services/location.service'
+  import type { MovementType, Product, ProductLote, StockMovement } from '@/types'
   import { computed, onMounted, ref } from 'vue'
-  import type { StockMovement, Product, ProductLote, Location, MovementType } from '@/types'
-  import { MovementService, ProductService, LoteService, LocationService } from '@/services/api'
-  import { useSnackbar } from '@/composables/useSnackbar'
   import { useFormValidation } from '@/composables/useFormValidation'
+  import { useSnackbar } from '@/composables/useSnackbar'
+  import { LocationService, LoteService, MovementService, ProductService } from '@/services'
+  import { useAuthStore } from '@/stores/auth'
+
+  // Interface para movimentações enriquecidas
+  interface StockMovementEnriched extends StockMovement {
+    produto_nome?: string
+    lote_codigo?: string
+    localizacao_origem_nome?: string
+    localizacao_destino_nome?: string
+  }
 
   // Composables
   const snackbarState = useSnackbar()
   const validation = useFormValidation()
+  const authStore = useAuthStore()
 
   // State
   const loading = ref<boolean>(false)
@@ -602,11 +727,13 @@
   const filterType = ref<string>('Todos')
   const filterDate = ref<string>('')
 
-  const movements = ref<StockMovement[]>([])
+  const movements = ref<StockMovementEnriched[]>([])
   const products = ref<Product[]>([])
   const lotes = ref<ProductLote[]>([])
-  const locations = ref<Location[]>([])
-  const selectedMovement = ref<StockMovement | null>(null)
+  const locations = ref<LocationComplete[]>([])
+  const selectedMovement = ref<StockMovementEnriched | null>(null)
+  const selectedProduct = ref<Product | null>(null)
+  const selectedLote = ref<ProductLote | null>(null)
 
   interface MovementFormData {
     id_produto: number | null
@@ -637,28 +764,29 @@
 
   // Computed
   const entradasCount = computed<number>(() => {
-    return movements.value.filter((m: StockMovement) => m.tipo_movimento === 'entrada').length
+    return movements.value.filter((m: StockMovementEnriched) => m.tipo_movimento === 'entrada').length
   })
 
   const saidasCount = computed<number>(() => {
-    return movements.value.filter((m: StockMovement) => m.tipo_movimento === 'saida').length
+    return movements.value.filter((m: StockMovementEnriched) => m.tipo_movimento === 'saida').length
   })
 
   const hojeMov = computed<number>(() => {
     const hoje = new Date().toISOString().split('T')[0]
-    return movements.value.filter((m: StockMovement) => 
-      m.data_mov.startsWith(hoje)
+    if (!hoje) return 0
+    return movements.value.filter((m: StockMovementEnriched) =>
+      m.data_mov.startsWith(hoje),
     ).length
   })
 
-  const filteredMovements = computed<StockMovement[]>(() => {
-    return movements.value.filter((mov: StockMovement) => {
-      const typeMatch = filterType.value === 'Todos' || 
-        (filterType.value === 'Entrada' && mov.tipo_movimento === 'entrada') ||
-        (filterType.value === 'Saída' && mov.tipo_movimento === 'saida')
-      
+  const filteredMovements = computed<StockMovementEnriched[]>(() => {
+    return movements.value.filter((mov: StockMovementEnriched) => {
+      const typeMatch = filterType.value === 'Todos'
+        || (filterType.value === 'Entrada' && mov.tipo_movimento === 'entrada')
+        || (filterType.value === 'Saída' && mov.tipo_movimento === 'saida')
+
       const dateMatch = !filterDate.value || mov.data_mov.startsWith(filterDate.value)
-      
+
       return typeMatch && dateMatch
     })
   })
@@ -674,22 +802,35 @@
     }))
   })
 
+  /**
+   * Opções de lotes ordenadas por FIFO (First-In, First-Out)
+   * Lotes com vencimento mais próximo aparecem primeiro
+   */
   const loteOptions = computed(() => {
     if (!formData.value.id_produto) return []
-    
+
     const productLotes = lotes.value.filter(
-      (l: ProductLote) => l.id_produto === formData.value.id_produto,
+      (l: ProductLote) => l.id_produto === formData.value.id_produto && l.quantidade > 0,
     )
-    
-    return productLotes.map((l: ProductLote) => ({
+
+    // Ordenar por data de validade (FIFO - First In, First Out)
+    // Lotes que vencem primeiro devem ser usados primeiro
+    const lotesOrdenados = [...productLotes].sort((a, b) =>
+      new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime(),
+    )
+
+    return lotesOrdenados.map((l: ProductLote) => ({
       label: `${l.codigo_lote} - Val: ${formatDate(l.data_validade)} - Qtd: ${l.quantidade}`,
       value: l.id,
     }))
   })
 
+  /**
+   * Opções de localização com hierarquia completa (filtradas por UF se disponível)
+   */
   const locationOptions = computed(() => {
-    return locations.value.map((l: Location) => ({
-      label: `${l.corredor} - ${l.prateleira} - ${l.secao}`,
+    return locations.value.map((l: LocationComplete) => ({
+      label: l.localizacao_completa || `${l.corredor} - ${l.prateleira} - ${l.secao}`,
       value: l.id,
     }))
   })
@@ -704,11 +845,12 @@
   const headers: TableHeader[] = [
     { title: 'ID', key: 'id', width: '80px' },
     { title: 'Tipo', key: 'tipo_movimento', width: '120px' },
-    { title: 'Produto', key: 'id_produto' },
-    { title: 'Lote', key: 'id_lote' },
+    { title: 'Produto', key: 'produto_nome' },
+    { title: 'Lote', key: 'lote_codigo' },
     { title: 'Quantidade', key: 'quantidade' },
     { title: 'Preço Unit.', key: 'preco_unitario' },
     { title: 'Valor Total', key: 'valor_total' },
+    { title: 'Localização', key: 'localizacao' },
     { title: 'Data', key: 'data_mov' },
     { title: 'Ações', key: 'actions', sortable: false, width: '100px' },
   ]
@@ -717,8 +859,8 @@
   async function loadMovements (): Promise<void> {
     loading.value = true
     try {
-      movements.value = await MovementService.getAll()
-      snackbarState.showSuccess('Movimentações carregadas com sucesso!')
+      movements.value = await MovementService.getAllEnriched()
+      console.log('✅ Movimentações enriquecidas carregadas:', movements.value.length)
     } catch (error: unknown) {
       console.error('Erro ao buscar movimentações:', error)
       snackbarState.showError('Erro ao carregar movimentações')
@@ -743,9 +885,14 @@
     }
   }
 
+  /**
+   * Carrega localizações com hierarquia completa e filtra por UF se disponível
+   */
   async function loadLocations (): Promise<void> {
     try {
-      locations.value = await LocationService.getAll()
+      const ufId = authStore.ufId || null
+      locations.value = await LocationService.getAllComplete(ufId)
+      console.log(`✅ Localizações carregadas: ${locations.value.length}${ufId ? ` (filtradas por UF ${ufId})` : ''}`)
     } catch (error: unknown) {
       console.error('Erro ao buscar localizações:', error)
     }
@@ -776,11 +923,62 @@
       id_localizacao_origem: null,
       id_localizacao_destino: null,
     }
+    selectedProduct.value = null
+    selectedLote.value = null
   }
 
   function onProductChange (): void {
     // Reset lote when product changes
     formData.value.id_lote = null
+    selectedLote.value = null
+
+    // Buscar informações do produto selecionado
+    if (formData.value.id_produto) {
+      const product = products.value.find(p => p.id === formData.value.id_produto)
+      if (product) {
+        selectedProduct.value = product
+        console.log('✅ Produto selecionado:', {
+          id: product.id,
+          nome: product.nome,
+          codigo: product.codigo,
+          categoria: product.id_categoria,
+          marca: product.id_marca,
+        })
+      }
+    } else {
+      selectedProduct.value = null
+    }
+  }
+
+  function onLoteChange (): void {
+    // Buscar informações do lote selecionado
+    if (formData.value.id_lote) {
+      const lote = lotes.value.find(l => l.id === formData.value.id_lote)
+      if (lote) {
+        selectedLote.value = lote
+
+        // Preencher preço unitário automaticamente
+        if (lote.custo_unitario) {
+          formData.value.preco_unitario = lote.custo_unitario
+        }
+
+        // Para saída, preencher a localização de origem automaticamente
+        if (dialogType.value === 'saida' && lote.id_localizacao) {
+          formData.value.id_localizacao_origem = lote.id_localizacao
+        }
+
+        console.log('✅ Lote selecionado:', {
+          id: lote.id,
+          codigo: lote.codigo_lote,
+          quantidade: lote.quantidade,
+          custo_unitario: lote.custo_unitario,
+          localizacao_id: lote.id_localizacao,
+          data_validade: lote.data_validade,
+        })
+      }
+    } else {
+      selectedLote.value = null
+    }
   }
 
   async function saveMovement (): Promise<void> {
@@ -818,6 +1016,8 @@
         id_localizacao_origem: null,
         id_localizacao_destino: null,
       }
+      selectedProduct.value = null
+      selectedLote.value = null
     } catch (error: unknown) {
       console.error('Erro ao salvar movimentação:', error)
       snackbarState.showError('Erro ao registrar movimentação')
@@ -826,7 +1026,7 @@
     }
   }
 
-  function viewMovement (movement: StockMovement): void {
+  function viewMovement (movement: StockMovementEnriched): void {
     selectedMovement.value = movement
     viewDialog.value = true
   }
@@ -854,6 +1054,11 @@
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value)
+  }
+
+  function getLocalizacaoNome (id: number): string {
+    const location = locations.value.find(l => l.id === id)
+    return location?.localizacao_completa || `ID: ${id}`
   }
 
   onMounted(async () => {
@@ -918,5 +1123,18 @@
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
 }
-</style>
 
+.info-card {
+  margin-top: 1rem;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-card .text-caption {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+</style>

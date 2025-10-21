@@ -371,10 +371,10 @@
     <!-- Snackbar -->
     <v-snackbar
       :color="snackbarState.snackbarColor.value"
-      :model-value="snackbarState.snackbar.value"
-      :timeout="snackbarState.snackbarTimeout.value"
       elevation="8"
       location="top right"
+      :model-value="snackbarState.snackbar.value"
+      :timeout="snackbarState.snackbarTimeout.value"
       @update:model-value="snackbarState.snackbar.value = $event"
     >
       <div class="d-flex align-center">
@@ -389,10 +389,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import type { LocationComplete } from '@/services'
 
   import type { Brand, Category, Product, ProductLote, Supplier, UnitMeasure } from '@/types'
-  import type { LocationComplete } from '@/services'
+  import { computed, onMounted, ref } from 'vue'
 
   import { useFormValidation } from '@/composables/useFormValidation'
   import { useSnackbar } from '@/composables/useSnackbar'
@@ -511,7 +511,7 @@
       }
 
       console.log('📤 BODY DO PRODUTO (será enviado):', JSON.stringify(productData, null, 2))
-      
+
       const novoProduto = await ProductService.create(productData)
       console.log('✅ Produto criado:', novoProduto)
 
@@ -529,7 +529,7 @@
       }
 
       console.log('📤 BODY DO LOTE (será enviado):', JSON.stringify(loteData, null, 2))
-      
+
       const novoLote = await LoteService.create(loteData)
       console.log('✅ Lote inicial criado:', novoLote)
 
@@ -597,4 +597,3 @@
   padding: 2rem 0;
 }
 </style>
-

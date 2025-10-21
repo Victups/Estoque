@@ -1,7 +1,7 @@
 import type { Product } from '@/types'
-import { ProductService } from '@/services'
-
 import { defineStore } from 'pinia'
+
+import { ProductService } from '@/services'
 
 interface CachedProductsPage {
   items: Product[]
@@ -23,7 +23,9 @@ const CACHE_KEY = 'productsCache'
 const MAX_PAGES = 5
 
 function normalizeFilters (filters?: ProductsFilters): Record<string, string> {
-  if (!filters) return {}
+  if (!filters) {
+    return {}
+  }
   return (Object.keys(filters) as (keyof ProductsFilters)[])
     .sort()
     .filter(k => filters[k] !== undefined && filters[k] !== '')
@@ -72,7 +74,9 @@ function saveToCache (page: number, filters: ProductsFilters | undefined, items:
   data.order.push(key)
   if (data.order.length > MAX_PAGES) {
     const oldestKey = data.order.shift()
-    if (oldestKey) delete data.cache[oldestKey]
+    if (oldestKey) {
+      delete data.cache[oldestKey]
+    }
   }
   saveCache(data)
 }
@@ -82,7 +86,9 @@ function getProductFromCacheById (id: number): Product | null {
   for (const pageKey of Object.keys(cacheData.cache)) {
     const page = cacheData.cache[pageKey]
     const found = page?.items.find(product => product.id === id)
-    if (found) return found
+    if (found) {
+      return found
+    }
   }
   return null
 }
@@ -95,7 +101,9 @@ export const useProductsCacheStore = defineStore('productsCache', {
   actions: {
     async getProductsPage (page: number, filters?: ProductsFilters): Promise<CachedProductsPage> {
       const cached = getFromCache(page, filters)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
 
       this.isLoading = true
       this.error = null
@@ -112,9 +120,9 @@ export const useProductsCacheStore = defineStore('productsCache', {
         const items = filtered.slice(start, start + pageSize)
         saveToCache(page, filters, items, totalPages)
         return { items, totalPages }
-      } catch (e: any) {
-        this.error = e?.message ?? 'Erro ao carregar produtos'
-        throw e
+      } catch (error: any) {
+        this.error = error?.message ?? 'Erro ao carregar produtos'
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -122,11 +130,13 @@ export const useProductsCacheStore = defineStore('productsCache', {
 
     async getProductById (id: number): Promise<Product | undefined> {
       const cached = getProductFromCacheById(id)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
       try {
         const products = await ProductService.getAll()
         return products.find(p => p.id === id)
-      } catch (e) {
+      } catch {
         return undefined
       }
     },
@@ -136,5 +146,3 @@ export const useProductsCacheStore = defineStore('productsCache', {
     },
   },
 })
-
-

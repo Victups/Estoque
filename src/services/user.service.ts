@@ -51,6 +51,7 @@ class UserServiceClass {
       email: userData.email,
       senha: userData.senha,
       id_contato: userData.id_contato,
+      role: userData.role || 'estoquista',
     }
 
     users.push(newUser)
@@ -85,6 +86,7 @@ class UserServiceClass {
       email: updates.email ?? existingUser.email,
       senha: updates.senha ?? existingUser.senha,
       id_contato: updates.id_contato ?? existingUser.id_contato,
+      role: updates.role ?? existingUser.role,
     }
 
     users[userIndex] = updatedUser

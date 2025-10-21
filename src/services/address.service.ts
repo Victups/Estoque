@@ -37,13 +37,13 @@ class AddressServiceClass {
   async getAllEnriched (ufId?: number | null): Promise<AddressEnriched[]> {
     try {
       console.log('🔍 AddressService.getAllEnriched - UF ID:', ufId)
-      
+
       const [addresses, municipalities, ufs] = await Promise.all([
         this.getAll(),
         MunicipalityService.getAll(),
         UfService.getAll(),
       ])
-      
+
       console.log('✅ AddressService dados:', {
         addresses: addresses.length,
         municipalities: municipalities.length,

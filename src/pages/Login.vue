@@ -125,11 +125,11 @@
 </template>
 
 <script setup lang="ts">
+  import type { State } from '../types'
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { AuthService, UfService } from '@/services'
   import { useAuthStore } from '../stores/auth'
-  import { AuthService, UfService } from '../services/api'
-  import type { State } from '../types'
 
   const router = useRouter()
 
@@ -157,8 +157,8 @@
   onMounted(async () => {
     try {
       ufs.value = await UfService.getAll()
-    } catch (err) {
-      console.error('Erro ao carregar UFs:', err)
+    } catch (error_) {
+      console.error('Erro ao carregar UFs:', error_)
       error.value = 'Erro ao carregar estados. Tente novamente.'
     }
   })

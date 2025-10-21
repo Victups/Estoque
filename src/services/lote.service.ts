@@ -187,7 +187,7 @@ class LoteServiceClass {
     return lotes.filter((l: ProductLote) => l.id_localizacao === locationId)
   }
 
-  async getExpiringSoon (days: number = 30): Promise<ProductLote[]> {
+  async getExpiringSoon (days = 30): Promise<ProductLote[]> {
     const lotes = await this.getAll()
     const today = new Date()
     const limitDate = new Date()
