@@ -412,115 +412,109 @@
   </div>
 </template>
 
-<script setup lang="ts">
-  import type { BackendUser, UserRole, ValidationRule } from '@/types'
-  import { onMounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
+<script lang="ts">
+import type { BackendUser, UserRole, ValidationRule } from '@/types'
 
-  const router = useRouter()
+interface UserProfile {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  memberSince: string
+  lastAccess: string
+  initials: string
+  avatarColor: string
+}
 
-  interface UserProfile {
-    id: number
-    name: string
-    email: string
-    role: UserRole
-    memberSince: string
-    lastAccess: string
-    initials: string
-    avatarColor: string
-  }
+interface EditData {
+  name: string
+  email: string
+}
 
-  interface EditData {
-    name: string
-    email: string
-  }
+interface PasswordData {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
 
-  interface PasswordData {
-    currentPassword: string
-    newPassword: string
-    confirmPassword: string
-  }
+interface FormRules {
+  required: ValidationRule
+  email: ValidationRule
+  minLength: ValidationRule
+  passwordMatch: ValidationRule
+}
 
-  const tab = ref('info')
-  const validEdit = ref(false)
-  const validPassword = ref(false)
-  const saving = ref(false)
-  const savingPassword = ref(false)
-  const deleteDialog = ref(false)
-  const snackbar = ref(false)
-  const snackbarText = ref('')
-  const snackbarColor = ref('success')
-
-  const showCurrentPassword = ref(false)
-  const showNewPassword = ref(false)
-  const showConfirmPassword = ref(false)
-
-  const userProfile = ref<UserProfile>({
-    id: 1,
-    name: 'Administrador',
-    email: 'admin@sistema.com',
-    role: 'Admin',
-    memberSince: '01/01/2024',
-    lastAccess: new Date().toLocaleString('pt-BR'),
-    initials: 'AD',
-    avatarColor: 'primary',
-  })
-
-  const editData = ref<EditData>({
-    name: '',
-    email: '',
-  })
-
-  const passwordData = ref<PasswordData>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  })
-
-  interface FormRules {
-    required: ValidationRule
-    email: ValidationRule
-    minLength: ValidationRule
-    passwordMatch: ValidationRule
-  }
-
-  const rules: FormRules = {
-    required: (v: string): boolean | string => !!v || 'Campo obrigatório',
-    email: (v: string): boolean | string => /.+@.+\..+/.test(v) || 'Email inválido',
-    minLength: (v: string): boolean | string => (v && v.length >= 6) || 'Mínimo de 6 caracteres',
-    passwordMatch: (v: string): boolean | string =>
-      v === passwordData.value.newPassword || 'As senhas não coincidem',
-  }
-
-  function getInitials (name: string): string {
-    const names = name.split(' ')
-    if (names.length >= 2 && names[0]?.[0] && names[1]?.[0]) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase()
+export default {
+  name: 'ProfilePage',
+  data() {
+    return {
+      tab: 'info',
+      validEdit: false,
+      validPassword: false,
+      saving: false,
+      savingPassword: false,
+      deleteDialog: false,
+      snackbar: false,
+      snackbarText: '',
+      snackbarColor: 'success',
+      showCurrentPassword: false,
+      showNewPassword: false,
+      showConfirmPassword: false,
+      userProfile: {
+        id: 1,
+        name: 'Administrador',
+        email: 'admin@sistema.com',
+        role: 'Admin' as UserRole,
+        memberSince: '01/01/2024',
+        lastAccess: new Date().toLocaleString('pt-BR'),
+        initials: 'AD',
+        avatarColor: 'primary',
+      } as UserProfile,
+      editData: {
+        name: '',
+        email: '',
+      } as EditData,
+      passwordData: {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      } as PasswordData,
+      rules: {
+        required: (v: string): boolean | string => !!v || 'Campo obrigatório',
+        email: (v: string): boolean | string => /.+@.+\..+/.test(v) || 'Email inválido',
+        minLength: (v: string): boolean | string => (v && v.length >= 6) || 'Mínimo de 6 caracteres',
+        passwordMatch: (v: string): boolean | string =>
+          v === (this.passwordData as any)?.newPassword || 'As senhas não coincidem',
+      } as FormRules
     }
-    return name.slice(0, 2).toUpperCase()
-  }
-
-  function getRoleColor (role: UserRole): string {
-    const colors: Record<UserRole, string> = {
-      Admin: 'error',
-      Gerente: 'warning',
-      Operador: 'info',
-      Visualizador: 'grey',
-    }
-    return colors[role]
-  }
-
-  function getRoleIcon (role: UserRole): string {
-    const icons: Record<UserRole, string> = {
-      Admin: 'mdi-shield-crown',
-      Gerente: 'mdi-account-tie',
-      Operador: 'mdi-account-wrench',
-      Visualizador: 'mdi-account-eye',
-    }
-    return icons[role]
-  }
-
-  async function loadUserProfile (): Promise<void> {
+  },
+  methods: {
+    getInitials(name: string): string {
+      const names = name.split(' ')
+      if (names.length >= 2 && names[0]?.[0] && names[1]?.[0]) {
+        return `${names[0][0]}${names[1][0]}`.toUpperCase()
+      }
+      return name.slice(0, 2).toUpperCase()
+    },
+    getRoleColor(role: UserRole): string {
+      const colors: Record<UserRole, string> = {
+        Admin: 'error',
+        Gerente: 'warning',
+        Operador: 'info',
+        Visualizador: 'grey',
+      }
+      return colors[role]
+    },
+    getRoleIcon(role: UserRole): string {
+      const icons: Record<UserRole, string> = {
+        Admin: 'mdi-shield-crown',
+        Gerente: 'mdi-account-tie',
+        Operador: 'mdi-account-wrench',
+        Visualizador: 'mdi-account-eye',
+      }
+      return icons[role]
+    },
+    async loadUserProfile(): Promise<void> {
     try {
       // Buscar todos os usuários
       const response = await fetch('http://localhost:3001/usuarios')
@@ -542,41 +536,40 @@
         throw new Error('Usuário não encontrado')
       }
 
-      userProfile.value = {
+      this.userProfile = {
         id: userData.id,
         name: userData.nome,
         email: userData.email,
         role: 'Admin',
         memberSince: '01/01/2024',
         lastAccess: new Date().toLocaleString('pt-BR'),
-        initials: getInitials(userData.nome),
+        initials: this.getInitials(userData.nome),
         avatarColor: 'primary',
       }
 
       // Preencher dados de edição
-      editData.value = {
-        name: userProfile.value.name,
-        email: userProfile.value.email,
+      this.editData = {
+        name: this.userProfile.name,
+        email: this.userProfile.email,
       }
     } catch (error: unknown) {
       console.error('Erro ao carregar perfil:', error)
-      snackbarText.value = 'Erro ao carregar perfil. Verifique se o backend está rodando.'
-      snackbarColor.value = 'error'
-      snackbar.value = true
+      this.snackbarText = 'Erro ao carregar perfil. Verifique se o backend está rodando.'
+      this.snackbarColor = 'error'
+      this.snackbar = true
     }
-  }
+    },
+    cancelEdit(): void {
+      this.editData = {
+        name: this.userProfile.name,
+        email: this.userProfile.email,
+      }
+      this.tab = 'info'
+    },
 
-  function cancelEdit (): void {
-    editData.value = {
-      name: userProfile.value.name,
-      email: userProfile.value.email,
-    }
-    tab.value = 'info'
-  }
-
-  async function saveProfile (): Promise<void> {
-    saving.value = true
-    try {
+    async saveProfile (): Promise<void> {
+      this.saving = true
+      try {
       // Buscar todos os usuários
       const getResponse = await fetch('http://localhost:3001/usuarios')
       const allData: unknown = await getResponse.json()
@@ -585,14 +578,14 @@
         : (Array.isArray(allData) ? allData : [])
 
       // Atualizar o usuário específico no array
-      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === userProfile.value.id)
+      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.userProfile.id)
       if (userIndex !== -1) {
         const currentUser = usuariosArray[userIndex]
         if (currentUser) {
           usuariosArray[userIndex] = {
             ...currentUser,
-            nome: editData.value.name,
-            email: editData.value.email,
+            nome: this.editData.name,
+            email: this.editData.email,
           }
         }
       }
@@ -610,27 +603,27 @@
         throw new Error('Erro ao atualizar perfil')
       }
 
-      userProfile.value.name = editData.value.name
-      userProfile.value.email = editData.value.email
-      userProfile.value.initials = getInitials(editData.value.name)
+      this.userProfile.name = this.editData.name
+      this.userProfile.email = this.editData.email
+      this.userProfile.initials = this.getInitials(this.editData.name)
 
-      snackbarText.value = 'Perfil atualizado com sucesso!'
-      snackbarColor.value = 'success'
-      snackbar.value = true
-      tab.value = 'info'
+      this.snackbarText = 'Perfil atualizado com sucesso!'
+      this.snackbarColor = 'success'
+      this.snackbar = true
+      this.tab = 'info'
     } catch (error: unknown) {
       console.error('Erro ao salvar perfil:', error)
-      snackbarText.value = 'Erro ao atualizar perfil'
-      snackbarColor.value = 'error'
-      snackbar.value = true
+      this.snackbarText = 'Erro ao atualizar perfil'
+      this.snackbarColor = 'error'
+      this.snackbar = true
     } finally {
-      saving.value = false
+      this.saving = false
     }
-  }
+    },
 
-  async function changePassword (): Promise<void> {
-    savingPassword.value = true
-    try {
+    async changePassword (): Promise<void> {
+      this.savingPassword = true
+      try {
       // Buscar todos os usuários
       const getResponse = await fetch('http://localhost:3001/usuarios')
       const allData: unknown = await getResponse.json()
@@ -639,13 +632,13 @@
         : (Array.isArray(allData) ? allData : [])
 
       // Atualizar a senha do usuário específico no array
-      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === userProfile.value.id)
+      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.userProfile.id)
       if (userIndex !== -1) {
         const currentUser = usuariosArray[userIndex]
         if (currentUser) {
           usuariosArray[userIndex] = {
             ...currentUser,
-            senha: passwordData.value.newPassword,
+            senha: this.passwordData.newPassword,
           }
         }
       }
@@ -663,76 +656,77 @@
         throw new Error('Erro ao alterar senha')
       }
 
-      snackbarText.value = 'Senha alterada com sucesso!'
-      snackbarColor.value = 'success'
-      snackbar.value = true
+      this.snackbarText = 'Senha alterada com sucesso!'
+      this.snackbarColor = 'success'
+      this.snackbar = true
 
       // Limpar formulário
-      passwordData.value = {
+      this.passwordData = {
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
       }
     } catch (error: unknown) {
       console.error('Erro ao alterar senha:', error)
-      snackbarText.value = 'Erro ao alterar senha'
-      snackbarColor.value = 'error'
-      snackbar.value = true
+      this.snackbarText = 'Erro ao alterar senha'
+      this.snackbarColor = 'error'
+      this.snackbar = true
     } finally {
-      savingPassword.value = false
+      this.savingPassword = false
     }
-  }
+    },
 
-  async function confirmDeleteAccount (): Promise<void> {
-    try {
-      // Buscar todos os usuários
-      const getResponse = await fetch('http://localhost:3001/usuarios')
-      const allData: unknown = await getResponse.json()
-      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-        ? allData[0]
-        : (Array.isArray(allData) ? allData : [])
+    async confirmDeleteAccount (): Promise<void> {
+      try {
+        // Buscar todos os usuários
+        const getResponse = await fetch('http://localhost:3001/usuarios')
+        const allData: unknown = await getResponse.json()
+        const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
+          ? allData[0]
+          : (Array.isArray(allData) ? allData : [])
 
-      // Remover o usuário do array
-      const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== userProfile.value.id)
+        // Remover o usuário do array
+        const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== this.userProfile.id)
 
-      // Salvar o array atualizado
-      const response = await fetch('http://localhost:3001/usuarios', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([updatedArray]),
-      })
+        // Salvar o array atualizado
+        const response = await fetch('http://localhost:3001/usuarios', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([updatedArray]),
+        })
 
-      if (!response.ok) {
-        throw new Error('Erro ao excluir conta')
+        if (!response.ok) {
+          throw new Error('Erro ao excluir conta')
+        }
+
+        this.snackbarText = 'Conta excluída com sucesso'
+        this.snackbarColor = 'success'
+        this.snackbar = true
+
+        // Redirecionar para login após 2 segundos
+        setTimeout(() => {
+          this.$router.push('/login')
+        }, 2000)
+      } catch (error: unknown) {
+        console.error('Erro ao excluir conta:', error)
+        this.snackbarText = 'Erro ao excluir conta'
+        this.snackbarColor = 'error'
+        this.snackbar = true
+      } finally {
+        this.deleteDialog = false
       }
-
-      snackbarText.value = 'Conta excluída com sucesso'
-      snackbarColor.value = 'success'
-      snackbar.value = true
-
-      // Redirecionar para login após 2 segundos
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    } catch (error: unknown) {
-      console.error('Erro ao excluir conta:', error)
-      snackbarText.value = 'Erro ao excluir conta'
-      snackbarColor.value = 'error'
-      snackbar.value = true
-    } finally {
-      deleteDialog.value = false
+    },
+    goBack(): void {
+      this.$router.back()
     }
-  }
 
-  function goBack (): void {
-    router.back()
+  },
+  async mounted() {
+    await this.loadUserProfile()
   }
-
-  onMounted(() => {
-    loadUserProfile()
-  })
+}
 </script>
 
 <style scoped>

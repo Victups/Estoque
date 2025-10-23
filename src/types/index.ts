@@ -52,7 +52,7 @@ export interface ProductLote {
   data_entrada: string
   responsavel_cadastro: number
   custo_unitario: number
-  preco_venda?: number
+  preco_venda: number
   usuario_log_id: number | null
   id_localizacao: number
 }

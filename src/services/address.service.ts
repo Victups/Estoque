@@ -108,6 +108,49 @@ class AddressServiceClass {
       throw new Error('Erro ao criar endereço')
     }
   }
+
+  async update (id: number, updates: Partial<Omit<Address, 'id'>>): Promise<Address> {
+    const addresses = await this.getAll()
+    const addressIndex = addresses.findIndex((a: Address) => a.id === id)
+
+    if (addressIndex === -1) {
+      throw new Error('Endereço não encontrado')
+    }
+
+    const existingAddress = addresses[addressIndex]
+    if (!existingAddress) {
+      throw new Error('Endereço não encontrado')
+    }
+
+    const updatedAddress: Address = {
+      id: existingAddress.id,
+      logradouro: updates.logradouro ?? existingAddress.logradouro,
+      numero: updates.numero ?? existingAddress.numero,
+      complemento: updates.complemento ?? existingAddress.complemento,
+      cep: updates.cep ?? existingAddress.cep,
+      id_municipio: updates.id_municipio ?? existingAddress.id_municipio,
+    }
+
+    addresses[addressIndex] = updatedAddress
+
+    try {
+      await api.put(this.endpoint, new ArrayResponse(addresses).toNestedArray())
+      return updatedAddress
+    } catch {
+      throw new Error('Erro ao atualizar endereço')
+    }
+  }
+
+  async delete (id: number): Promise<void> {
+    const addresses = await this.getAll()
+    const updatedAddresses = addresses.filter((a: Address) => a.id !== id)
+
+    try {
+      await api.put(this.endpoint, new ArrayResponse(updatedAddresses).toNestedArray())
+    } catch {
+      throw new Error('Erro ao excluir endereço')
+    }
+  }
 }
 
 export const AddressService = new AddressServiceClass()

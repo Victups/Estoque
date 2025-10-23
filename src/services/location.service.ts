@@ -274,6 +274,61 @@ class DepositServiceClass {
     const deposits = await this.getAll()
     return deposits.find((d: Deposit) => d.id === id)
   }
+
+  async create (depositData: Omit<Deposit, 'id'>): Promise<Deposit> {
+    try {
+      const response = await api.get(this.endpoint)
+      const deposits = new ArrayResponse<Deposit>(response.data).get()
+      
+      const newDeposit: Deposit = {
+        id: Math.max(...deposits.map(d => d.id), 0) + 1,
+        ...depositData,
+      }
+      
+      deposits.push(newDeposit)
+      await api.put(this.endpoint, new ArrayResponse(deposits).toNestedArray())
+      return newDeposit
+    } catch {
+      throw new Error('Erro ao criar depósito')
+    }
+  }
+
+  async update (id: number, updates: Partial<Omit<Deposit, 'id'>>): Promise<Deposit> {
+    try {
+      const response = await api.get(this.endpoint)
+      const deposits = new ArrayResponse<Deposit>(response.data).get()
+      const depositIndex = deposits.findIndex(d => d.id === id)
+      
+      if (depositIndex === -1) {
+        throw new Error('Depósito não encontrado')
+      }
+      
+      const existingDeposit = deposits[depositIndex]!
+      const updatedDeposit: Deposit = {
+        id: existingDeposit.id,
+        nome: updates.nome ?? existingDeposit.nome,
+        id_endereco: updates.id_endereco ?? existingDeposit.id_endereco,
+      }
+      
+      deposits[depositIndex] = updatedDeposit
+      await api.put(this.endpoint, new ArrayResponse(deposits).toNestedArray())
+      return updatedDeposit
+    } catch {
+      throw new Error('Erro ao atualizar depósito')
+    }
+  }
+
+  async delete (id: number): Promise<void> {
+    try {
+      const response = await api.get(this.endpoint)
+      const deposits = new ArrayResponse<Deposit>(response.data).get()
+      const updatedDeposits = deposits.filter((d: Deposit) => d.id !== id)
+      
+      await api.put(this.endpoint, new ArrayResponse(updatedDeposits).toNestedArray())
+    } catch {
+      throw new Error('Erro ao excluir depósito')
+    }
+  }
 }
 
 export const LocationService = new LocationServiceClass()

@@ -124,108 +124,109 @@
   </div>
 </template>
 
-<script setup lang="ts">
-  import type { State } from '../types'
-  import { computed, onMounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { AuthService, UfService } from '@/services'
-  import { useAuthStore } from '../stores/auth'
+<script lang="ts">
+import type { State } from '../types'
+import { AuthService, UfService } from '@/services'
+import { useAuthStore } from '../stores/auth'
 
-  const router = useRouter()
-
-  // Form state
-  const formRef = ref()
-  const valid = ref(false)
-  const email = ref('')
-  const password = ref('')
-  const selectedUfId = ref<number | null>(null)
-  const rememberMe = ref(false)
-  const showPassword = ref(false)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-
-  // UF Options (carregadas do backend)
-  const ufs = ref<State[]>([])
-  const ufOptions = computed(() =>
-    ufs.value.map(uf => ({
-      id: uf.id,
-      label: `${uf.sigla} - ${uf.nome}`,
-    })),
-  )
-
-  // Carregar UFs ao montar o componente
-  onMounted(async () => {
-    try {
-      ufs.value = await UfService.getAll()
-    } catch (error_) {
-      console.error('Erro ao carregar UFs:', error_)
-      error.value = 'Erro ao carregar estados. Tente novamente.'
+export default {
+  name: 'LoginPage',
+  data() {
+    return {
+      // Form state
+      valid: false,
+      email: '',
+      password: '',
+      selectedUfId: null as number | null,
+      rememberMe: false,
+      showPassword: false,
+      loading: false,
+      error: null as string | null,
+      
+      // UF Options (carregadas do backend)
+      ufs: [] as State[],
+      
+      // Validation rules
+      emailRules: [
+        (v: string) => !!v || 'E-mail é obrigatório',
+        (v: string) => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
+      ],
+      passwordRules: [
+        (v: string) => !!v || 'Senha é obrigatória',
+        (v: string) => v.length >= 6 || 'Senha deve ter no mínimo 6 caracteres',
+      ]
     }
-  })
-
-  // Validation rules
-  const emailRules = [
-    (v: string) => !!v || 'E-mail é obrigatório',
-    (v: string) => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
-  ]
-
-  const passwordRules = [
-    (v: string) => !!v || 'Senha é obrigatória',
-    (v: string) => v.length >= 6 || 'Senha deve ter no mínimo 6 caracteres',
-  ]
-
-  // Functions
-  async function handleLogin () {
-    if (!valid.value || !selectedUfId.value) {
-      return
+  },
+  computed: {
+    ufOptions() {
+      return this.ufs.map((uf: State) => ({
+        id: uf.id,
+        label: `${uf.sigla} - ${uf.nome}`,
+      }))
     }
-
-    loading.value = true
-    error.value = null
-
+  },
+  async mounted() {
     try {
-      // Validar credenciais contra o backend
-      const user = await AuthService.login(email.value, password.value)
-
-      if (!user) {
-        error.value = 'E-mail ou senha inválidos'
+      this.ufs = await UfService.getAll()
+    } catch (error) {
+      console.error('Erro ao carregar UFs:', error)
+      this.error = 'Erro ao carregar estados. Tente novamente.'
+    }
+  },
+  methods: {
+    async handleLogin() {
+      if (!this.valid || !this.selectedUfId) {
         return
       }
 
-      // Buscar informações da UF selecionada
-      const ufData = ufs.value.find(u => u.id === selectedUfId.value)
-      const ufLabel = ufData ? `${ufData.sigla} - ${ufData.nome}` : ''
+      this.loading = true
+      this.error = null
 
-      // Salvar credenciais se "Lembrar-me" estiver marcado
-      if (rememberMe.value) {
-        localStorage.setItem('rememberMe', 'true')
-        localStorage.setItem('userEmail', email.value)
+      try {
+        // Validar credenciais contra o backend
+        const user = await AuthService.login(this.email, this.password)
+
+        if (!user) {
+          this.error = 'E-mail ou senha inválidos'
+          return
+        }
+
+        // Buscar informações da UF selecionada
+        const ufData = this.ufs.find((u: State) => u.id === this.selectedUfId)
+        const ufLabel = ufData ? `${ufData.sigla} - ${ufData.nome}` : ''
+
+        // Salvar credenciais se "Lembrar-me" estiver marcado
+        if (this.rememberMe) {
+          localStorage.setItem('rememberMe', 'true')
+          localStorage.setItem('userEmail', this.email)
+        }
+
+        // Salvar sessão no store de autenticação
+        const auth = useAuthStore()
+        auth.setAuth({
+          name: user.nome,
+          email: user.email,
+          ufId: this.selectedUfId,
+          ufLabel,
+          role: user.role,
+        })
+
+        // Redirecionar para dashboard
+        this.$router.push('/')
+      } catch (error) {
+        this.error = 'Erro ao fazer login. Verifique suas credenciais e tente novamente.'
+        console.error('Erro no login:', error)
+      } finally {
+        this.loading = false
       }
-
-      // Salvar sessão no store de autenticação
-      const auth = useAuthStore()
-      auth.setAuth({
-        name: user.nome,
-        email: user.email,
-        ufId: selectedUfId.value,
-        ufLabel,
-      })
-
-      // Redirecionar para dashboard
-      router.push('/')
-    } catch (error_) {
-      error.value = 'Erro ao fazer login. Verifique suas credenciais e tente novamente.'
-      console.error('Erro no login:', error_)
-    } finally {
-      loading.value = false
+    },
+    handleForgotPassword() {
+      // Implementar recuperação de senha
+      console.log('Recuperação de senha')
+      // this.$router.push('/recuperar-senha')
     }
   }
-
-  function handleForgotPassword () {
-    // Implementar recuperação de senha
-    console.log('Recuperação de senha')
-    // router.push('/recuperar-senha')
-  }
+}
 </script>
 
 <route lang="yaml">

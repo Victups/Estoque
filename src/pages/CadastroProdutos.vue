@@ -1,407 +1,216 @@
 <template>
   <div class="cadastro-produtos-page">
-    <v-container class="pa-6" fluid>
-      <!-- Header -->
-      <v-row class="mb-6">
-        <v-col cols="12">
-          <div class="d-flex justify-space-between align-center mb-4">
-            <div>
-              <h1 class="text-h3 font-weight-bold mb-2">
-                <v-icon class="mr-3" icon="mdi-package-variant-plus" size="40" />
-                Cadastro de Produtos
-              </h1>
-              <p class="text-h6 text-grey-darken-1">
-                Cadastre novos produtos no estoque
-              </p>
-            </div>
-          </div>
-        </v-col>
-      </v-row>
-
-      <!-- Form Card -->
+    <v-container fluid>
       <v-row>
         <v-col cols="12">
-          <v-card elevation="3">
-            <v-card-title class="bg-primary pa-4">
-              <v-icon class="mr-2" icon="mdi-form-textbox" />
-              <span class="text-h5">Informações do Produto</span>
+          <v-card class="elevation-8">
+            <v-card-title class="text-h4 text-center py-6">
+              <v-icon class="mr-3" color="primary" size="large">mdi-package-variant-plus</v-icon>
+              Cadastro de Produtos
             </v-card-title>
 
-            <v-card-text class="pa-6">
-              <v-form ref="formRef" v-model="validForm">
+            <v-card-text>
+              <v-form ref="formRef" v-model="validForm" @submit.prevent="salvarProduto">
                 <v-row>
-                  <!-- SEÇÃO 1: Dados Básicos do Produto -->
-                  <v-col cols="12">
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="primary">mdi-information</v-icon>
-                      Dados Básicos
-                    </h3>
-                  </v-col>
-
+                  <!-- Informações Básicas -->
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="productForm.nome"
-                      density="comfortable"
-                      hide-details="auto"
-                      label="Nome do Produto *"
+                      v-model="formData.nome"
+                      :rules="rules.nome"
+                      label="Nome do Produto"
+                      placeholder="Digite o nome do produto"
                       prepend-inner-icon="mdi-package-variant"
-                      :rules="[validation.required]"
                       variant="outlined"
+                      required
                     />
                   </v-col>
 
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model="productForm.codigo"
-                      density="comfortable"
-                      hide-details="auto"
-                      hint="Deixe em branco para gerar automaticamente"
-                      label="Código do Produto"
-                      persistent-hint
-                      prepend-inner-icon="mdi-barcode"
-                      variant="outlined"
-                    />
-                  </v-col>
-
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="productForm.descricao"
-                      density="comfortable"
-                      hide-details="auto"
+                      v-model="formData.descricao"
+                      :rules="rules.descricao"
                       label="Descrição"
+                      placeholder="Descreva o produto"
                       prepend-inner-icon="mdi-text"
-                      rows="3"
                       variant="outlined"
+                      required
                     />
                   </v-col>
 
+                  <!-- Categoria e Marca -->
                   <v-col cols="12" md="6">
-                    <v-checkbox
-                      v-model="productForm.is_perecivel"
-                      color="warning"
-                      density="comfortable"
-                      hide-details="auto"
-                      hint="Marque se o produto possui data de validade obrigatória"
-                      label="Produto Perecível"
-                      persistent-hint
-                    >
-                      <template #prepend>
-                        <v-icon color="warning">mdi-calendar-alert</v-icon>
-                      </template>
-                    </v-checkbox>
-                  </v-col>
-
-                  <!-- SEÇÃO 2: Classificação -->
-                  <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="primary">mdi-tag-multiple</v-icon>
-                      Classificação
-                    </h3>
-                  </v-col>
-
-                  <v-col cols="12" md="4">
-                    <v-select
-                      v-model="productForm.id_categoria"
-                      density="comfortable"
-                      hide-details="auto"
-                      item-title="nome"
-                      item-value="id"
-                      :items="categorias"
-                      label="Categoria *"
-                      prepend-inner-icon="mdi-shape"
-                      :rules="[validation.required]"
-                      variant="outlined"
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="4">
-                    <v-select
-                      v-model="productForm.id_marca"
-                      density="comfortable"
-                      hide-details="auto"
-                      item-title="nome"
-                      item-value="id"
-                      :items="marcas"
-                      label="Marca *"
+                    <v-autocomplete
+                      v-model="formData.id_categoria"
+                      :items="categoriaOptions"
+                      :rules="rules.id_categoria"
+                      label="Categoria"
+                      placeholder="Selecione a categoria"
                       prepend-inner-icon="mdi-tag"
-                      :rules="[validation.required]"
                       variant="outlined"
+                      required
                     />
                   </v-col>
 
-                  <v-col cols="12" md="4">
-                    <v-select
-                      v-model="productForm.id_unidade_medida"
-                      density="comfortable"
-                      hide-details="auto"
-                      :items="unidadesMedida"
-                      label="Unidade de Medida *"
+                  <v-col cols="12" md="6">
+                    <v-autocomplete
+                      v-model="formData.id_marca"
+                      :items="marcaOptions"
+                      :rules="rules.id_marca"
+                      label="Marca"
+                      placeholder="Selecione a marca"
+                      prepend-inner-icon="mdi-tag-multiple"
+                      variant="outlined"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Unidade de Medida e Estoque Mínimo -->
+                  <v-col cols="12" md="6">
+                    <v-autocomplete
+                      v-model="formData.id_unidade_medida"
+                      :items="unidadeMedidaOptions"
+                      :rules="rules.id_unidade_medida"
+                      label="Unidade de Medida"
+                      placeholder="Selecione a unidade"
                       prepend-inner-icon="mdi-scale"
-                      :rules="[validation.required]"
                       variant="outlined"
-                    >
-                      <template #item="{ props, item }">
-                        <v-list-item v-bind="props">
-                          <template #title>
-                            {{ item.raw.descricao }} ({{ item.raw.abreviacao }})
-                          </template>
-                        </v-list-item>
-                      </template>
-                      <template #selection="{ item }">
-                        {{ item.raw.descricao }} ({{ item.raw.abreviacao }})
-                      </template>
-                    </v-select>
+                      required
+                    />
                   </v-col>
 
                   <v-col cols="12" md="6">
                     <v-text-field
-                      v-model.number="productForm.estoque_minimo"
-                      density="comfortable"
-                      hide-details="auto"
-                      label="Estoque Mínimo *"
-                      min="0"
-                      prepend-inner-icon="mdi-alert-circle"
-                      :rules="[validation.required]"
-                      step="0.01"
+                      v-model.number="formData.estoque_minimo"
+                      :rules="rules.estoque_minimo"
+                      label="Estoque Mínimo"
+                      placeholder="0"
+                      prepend-inner-icon="mdi-warehouse"
                       type="number"
                       variant="outlined"
+                      required
                     />
                   </v-col>
 
-                  <!-- SEÇÃO 3: Fornecedor (Opcional) -->
+                  <!-- Produto Perecível -->
                   <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="primary">mdi-truck</v-icon>
-                      Fornecedor (Opcional)
-                    </h3>
-                  </v-col>
-
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="productForm.id_fornecedor"
-                      clearable
-                      density="comfortable"
-                      hide-details="auto"
-                      item-title="nome"
-                      item-value="id"
-                      :items="fornecedores"
-                      label="Fornecedor"
-                      prepend-inner-icon="mdi-domain"
-                      variant="outlined"
+                    <v-checkbox
+                      v-model="formData.is_perecivel"
+                      label="Produto Perecível"
+                      color="primary"
                     />
                   </v-col>
 
-                  <!-- SEÇÃO 4: Lote Inicial -->
-                  <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="success">mdi-package-down</v-icon>
-                      Lote Inicial (Entrada no Estoque)
-                    </h3>
-                  </v-col>
-
-                  <v-col cols="12" md="3">
+                  <v-col v-if="formData.is_perecivel" cols="12" md="6">
                     <v-text-field
-                      v-model.number="loteForm.quantidade"
-                      density="comfortable"
-                      hide-details="auto"
-                      label="Quantidade Inicial *"
-                      min="0"
-                      prepend-inner-icon="mdi-numeric"
-                      :rules="[validation.required, validation.positive]"
-                      step="0.01"
-                      type="number"
-                      variant="outlined"
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                      v-model="custoUnitarioInput"
-                      density="comfortable"
-                      hide-details="auto"
-                      label="Custo Unitário (R$) *"
-                      min="0"
-                      prefix="R$"
-                      prepend-inner-icon="mdi-currency-usd"
-                      :rules="[validation.required]"
-                      step="0.01"
-                      type="text"
-                      variant="outlined"
-                      @update:model-value="onCustoUnitarioInput"
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                      v-model="precoVendaInput"
-                      density="comfortable"
-                      hide-details="auto"
-                      label="Preço de Venda (R$) *"
-                      min="0"
-                      prefix="R$"
-                      prepend-inner-icon="mdi-cash"
-                      :rules="[validation.required]"
-                      step="0.01"
-                      type="text"
-                      variant="outlined"
-                      @update:model-value="onPrecoVendaInput"
-                    />
-                  </v-col>
-
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                      v-model="loteForm.data_validade"
-                      density="comfortable"
-                      hide-details="auto"
-                      :label="productForm.is_perecivel ? 'Data de Validade *' : 'Data de Validade'"
+                      v-model="formData.data_validade"
+                      :rules="rules.data_validade"
+                      label="Data de Validade"
+                      placeholder="YYYY-MM-DD"
                       prepend-inner-icon="mdi-calendar"
-                      :rules="dataValidadeRules"
                       type="date"
                       variant="outlined"
+                      required
                     />
                   </v-col>
 
-                  <!-- SEÇÃO 5: Localização no Estoque -->
-                  <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="warning">mdi-map-marker</v-icon>
-                      Localização no Estoque
-                    </h3>
-                    <v-alert color="info" density="compact" variant="tonal">
-                      <v-icon class="mr-2" size="small">mdi-information</v-icon>
-                      Defina onde o produto será armazenado fisicamente
-                    </v-alert>
+                  <!-- Preços -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="custoUnitarioInput"
+                      :rules="rules.custo_unitario"
+                      label="Custo Unitário"
+                      placeholder="R$ 0,00"
+                      prepend-inner-icon="mdi-currency-usd"
+                      variant="outlined"
+                      @update:model-value="onCustoUnitarioInput"
+                      required
+                    />
                   </v-col>
 
                   <v-col cols="12" md="6">
-                    <v-select
-                      v-model="loteForm.id_localizacao"
-                      density="comfortable"
-                      hide-details="auto"
-                      :items="localizacoesOptions"
-                      label="Localização no Depósito *"
-                      prepend-inner-icon="mdi-warehouse"
-                      :rules="[validation.required]"
+                    <v-text-field
+                      v-model="precoVendaInput"
+                      :rules="rules.preco_venda"
+                      label="Preço de Venda"
+                      placeholder="R$ 0,00"
+                      prepend-inner-icon="mdi-currency-usd"
                       variant="outlined"
-                    >
-                      <template #item="{ props, item }">
-                        <v-list-item v-bind="props">
-                          <template #prepend>
-                            <v-icon color="primary">mdi-map-marker</v-icon>
-                          </template>
-                          <template #title>
-                            {{ item.raw.label }}
-                          </template>
-                          <template #subtitle>
-                            {{ item.raw.deposito }}
-                          </template>
-                        </v-list-item>
-                      </template>
-                    </v-select>
-                  </v-col>
-
-                  <!-- Info da localização selecionada -->
-                  <v-col v-if="localizacaoSelecionada" cols="12" md="6">
-                    <v-card color="grey-lighten-4" variant="outlined">
-                      <v-card-text>
-                        <div class="text-caption text-grey mb-1">Localização Completa:</div>
-                        <div class="font-weight-bold">{{ localizacaoSelecionada.localizacao_completa }}</div>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-
-                  <!-- SEÇÃO 6: Alérgenos (Opcional) -->
-                  <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <h3 class="text-h6 font-weight-bold mb-3">
-                      <v-icon class="mr-2" color="error">mdi-alert</v-icon>
-                      Informações de Alérgenos (Opcional)
-                    </h3>
-                  </v-col>
-
-                  <v-col cols="12">
-                    <v-combobox
-                      v-model="productForm.alergenos"
-                      chips
-                      clearable
-                      closable-chips
-                      density="comfortable"
-                      hide-details="auto"
-                      hint="Ex: Contém Lactose, Contém Glúten, etc."
-                      label="Alérgenos"
-                      multiple
-                      persistent-hint
-                      prepend-inner-icon="mdi-alert-circle"
-                      variant="outlined"
+                      @update:model-value="onPrecoVendaInput"
+                      required
                     />
                   </v-col>
 
-                  <!-- Resumo -->
+                  <!-- Quantidade e Localização -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model.number="formData.quantidade"
+                      :rules="rules.quantidade"
+                      label="Quantidade"
+                      placeholder="0"
+                      prepend-inner-icon="mdi-counter"
+                      type="number"
+                      variant="outlined"
+                      required
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="6">
+                    <v-autocomplete
+                      v-model="formData.id_localizacao"
+                      :items="localizacaoOptions"
+                      :rules="rules.id_localizacao"
+                      label="Localização"
+                      placeholder="Selecione a localização"
+                      prepend-inner-icon="mdi-map-marker"
+                      variant="outlined"
+                      required
+                    />
+                  </v-col>
+
+                  <!-- Fornecedor -->
                   <v-col cols="12">
-                    <v-divider class="my-4" />
-                    <v-card color="grey-lighten-4" variant="outlined">
-                      <v-card-text>
-                        <h4 class="font-weight-bold mb-3">
-                          <v-icon class="mr-2">mdi-summary</v-icon>
-                          Resumo do Cadastro
-                        </h4>
-                        <v-row dense>
-                          <v-col cols="6" md="3">
-                            <div class="text-caption text-grey">Produto</div>
-                            <div class="font-weight-bold">{{ productForm.nome || '-' }}</div>
-                          </v-col>
-                          <v-col cols="6" md="3">
-                            <div class="text-caption text-grey">Quantidade Inicial</div>
-                            <div class="font-weight-bold">{{ loteForm.quantidade || 0 }}</div>
-                          </v-col>
-                          <v-col cols="6" md="3">
-                            <div class="text-caption text-grey">Custo Unitário</div>
-                            <div class="font-weight-bold">{{ formatCurrency(loteForm.custo_unitario) }}</div>
-                          </v-col>
-                          <v-col cols="6" md="3">
-                            <div class="text-caption text-grey">Preço de Venda</div>
-                            <div class="font-weight-bold">{{ formatCurrency(loteForm.preco_venda) }}</div>
-                          </v-col>
-                          <v-col cols="6" md="3">
-                            <div class="text-caption text-grey">Valor Total</div>
-                            <div class="font-weight-bold text-primary">
-                              {{ formatCurrency(loteForm.quantidade * loteForm.custo_unitario) }}
-                            </div>
-                          </v-col>
-                        </v-row>
-                      </v-card-text>
-                    </v-card>
+                    <v-autocomplete
+                      v-model="formData.id_fornecedor"
+                      :items="fornecedorOptions"
+                      :rules="rules.id_fornecedor"
+                      label="Fornecedor"
+                      placeholder="Selecione o fornecedor"
+                      prepend-inner-icon="mdi-truck"
+                      variant="outlined"
+                      required
+                    />
+                  </v-col>
+                </v-row>
+
+                <!-- Botões -->
+                <v-row class="mt-6">
+                  <v-col cols="12" class="text-center">
+                    <v-btn
+                      color="primary"
+                      :disabled="!validForm || saving"
+                      :loading="saving"
+                      size="large"
+                      type="submit"
+                      variant="elevated"
+                    >
+                      <v-icon class="mr-2">mdi-content-save</v-icon>
+                      {{ saving ? 'Salvando...' : 'Salvar Produto' }}
+                    </v-btn>
+
+                    <v-btn
+                      class="ml-4"
+                      color="grey"
+                      size="large"
+                      variant="outlined"
+                      @click="limparFormulario"
+                    >
+                      <v-icon class="mr-2">mdi-refresh</v-icon>
+                      Limpar
+                    </v-btn>
                   </v-col>
                 </v-row>
               </v-form>
             </v-card-text>
-
-            <v-card-actions class="pa-4">
-              <v-spacer />
-              <v-btn
-                color="grey"
-                prepend-icon="mdi-close"
-                variant="text"
-                @click="limparFormulario"
-              >
-                Limpar
-              </v-btn>
-              <v-btn
-                color="success"
-                :disabled="!validForm"
-                :loading="saving"
-                prepend-icon="mdi-content-save"
-                size="large"
-                variant="elevated"
-                @click="cadastrarProduto"
-              >
-                Cadastrar Produto
-              </v-btn>
-            </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
@@ -409,32 +218,29 @@
 
     <!-- Snackbar -->
     <v-snackbar
-      :color="snackbarState.snackbarColor.value"
+      v-model="snackbar"
+      :color="snackbarColor"
       elevation="8"
       location="top right"
-      :model-value="snackbarState.snackbar.value"
-      :timeout="snackbarState.snackbarTimeout.value"
-      @update:model-value="snackbarState.snackbar.value = $event"
+      :timeout="snackbarTimeout"
     >
       <div class="d-flex align-center">
         <v-icon
           class="mr-2"
-          :icon="snackbarState.snackbarColor.value === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
+          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'"
         />
-        {{ snackbarState.snackbarText.value }}
+        {{ snackbarText }}
       </div>
     </v-snackbar>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
   import type { LocationComplete } from '@/services'
 
   import type { Brand, Category, Product, ProductLote, Supplier, UnitMeasure } from '@/types'
-  import { computed, onMounted, ref } from 'vue'
-
-  import { useFormValidation } from '@/composables/useFormValidation'
-  import { useSnackbar } from '@/composables/useSnackbar'
+  import { snackbarMixin } from '@/utils/snackbar'
+  import { validationMixin } from '@/utils/validation'
   import {
     BrandService,
     CategoryService,
@@ -446,241 +252,308 @@
   } from '@/services'
   import { useAuthStore } from '@/stores/auth'
 
-  // Composables
-  const snackbarState = useSnackbar()
-  const validation = useFormValidation()
-  const authStore = useAuthStore()
+  export default {
+    name: 'CadastroProdutosPage',
+    mixins: [validationMixin, snackbarMixin],
+    setup () {
+      const authStore = useAuthStore()
+      return { authStore }
+    },
+    data () {
+      return {
+        // State
+        validForm: false,
+        saving: false,
+        formRef: null as any,
 
-  // State
-  const validForm = ref(false)
-  const saving = ref(false)
-  const formRef = ref<any>(null)
+        // Data
+        categorias: [] as Category[],
+        marcas: [] as Brand[],
+        unidadesMedida: [] as UnitMeasure[],
+        fornecedores: [] as Supplier[],
+        localizacoes: [] as LocationComplete[],
 
-  // Data
-  const categorias = ref<Category[]>([])
-  const marcas = ref<Brand[]>([])
-  const unidadesMedida = ref<UnitMeasure[]>([])
-  const fornecedores = ref<Supplier[]>([])
-  const localizacoes = ref<LocationComplete[]>([])
+        // Form data
+        formData: {
+          nome: '',
+          descricao: '',
+          id_categoria: null as number | null,
+          id_marca: null as number | null,
+          id_unidade_medida: null as number | null,
+          estoque_minimo: 0,
+          is_perecivel: false,
+          data_validade: null as string | null,
+          custo_unitario: 0,
+          preco_venda: 0,
+          quantidade: 0,
+          id_localizacao: null as number | null,
+          id_fornecedor: null as number | null,
+        },
 
-  // Form Data - Produto
-  const productForm = ref({
-    nome: '',
-    codigo: '',
-    descricao: '',
-    is_perecivel: false,
-    id_unidade_medida: null as number | null,
-    id_marca: null as number | null,
-    id_categoria: null as number | null,
-    estoque_minimo: 10,
-    id_fornecedor: null as number | null,
-    alergenos: [] as string[],
-  })
-
-  // Form Data - Lote Inicial
-  const loteForm = ref({
-    quantidade: 0,
-    custo_unitario: 0,
-    preco_venda: 0,
-    data_validade: '',
-    id_localizacao: null as number | null,
-  })
-
-  // Máscara de moeda BRL para inputs (exibição) e sincronização numérica
-  const custoUnitarioInput = ref<string>('')
-  const precoVendaInput = ref<string>('')
-
-  function formatBRLFromCents (cents: number): string {
-    const value = (cents / 100).toFixed(2)
-    const [ints = '0', decs = '00'] = value.split('.')
-    const intsFormatted = ints.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-    return `${intsFormatted},${decs}`
-  }
-
-  function toCents (raw: string): number {
-    const digits = (raw || '').replace(/\D/g, '')
-    return digits ? Number.parseInt(digits, 10) : 0
-  }
-
-  function toNumber (raw: string): number {
-    return Number((toCents(raw) / 100).toFixed(2))
-  }
-
-  function onCustoUnitarioInput (val: string): void {
-    const formatted = formatBRLFromCents(toCents(val))
-    custoUnitarioInput.value = formatted
-    loteForm.value.custo_unitario = toNumber(formatted)
-  }
-
-  function onPrecoVendaInput (val: string): void {
-    const formatted = formatBRLFromCents(toCents(val))
-    precoVendaInput.value = formatted
-    loteForm.value.preco_venda = toNumber(formatted)
-  }
-
-  // Computed
-  const localizacoesOptions = computed(() => {
-    return localizacoes.value.map(loc => ({
-      title: `${loc.corredor} - ${loc.prateleira} - ${loc.secao}`,
-      value: loc.id,
-      label: `${loc.corredor} - ${loc.prateleira} - ${loc.secao}`,
-      deposito: loc.deposito_nome || '',
-      ...loc,
-    }))
-  })
-
-  const localizacaoSelecionada = computed(() => {
-    if (!loteForm.value.id_localizacao) return null
-    return localizacoes.value.find(loc => loc.id === loteForm.value.id_localizacao)
-  })
-
-  const dataValidadeRules = computed(() => {
-    if (productForm.value.is_perecivel) {
-      return [validation.required]
-    }
-    return [] // Opcional se não for perecível
-  })
-
-  // Methods
-  async function loadData () {
-    try {
-      const ufId = authStore.ufId
-
-      const [cats, brds, units, supps, locs] = await Promise.all([
-        CategoryService.getAll(),
-        BrandService.getAll(),
-        UnitMeasureService.getAll(),
-        SupplierService.getAll(),
-        LocationService.getAllComplete(ufId),
-      ])
-
-      categorias.value = cats
-      marcas.value = brds
-      unidadesMedida.value = units
-      fornecedores.value = supps
-      localizacoes.value = locs
-
-      console.log('✅ Dados carregados para cadastro')
-      console.log(`📍 ${locs.length} localizações disponíveis na UF: ${authStore.ufLabel}`)
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error)
-      snackbarState.showError('Erro ao carregar dados do formulário')
-    }
-  }
-
-  async function cadastrarProduto () {
-    if (!validForm.value) {
-      snackbarState.showError('Preencha todos os campos obrigatórios')
-      return
-    }
-
-    saving.value = true
-    try {
-      // 1. Criar o PRODUTO
-      const productData: Omit<Product, 'id'> = {
-        nome: productForm.value.nome,
-        codigo: productForm.value.codigo || '',
-        descricao: productForm.value.descricao,
-        is_perecivel: productForm.value.is_perecivel,
-        id_unidade_medida: productForm.value.id_unidade_medida!,
-        id_marca: productForm.value.id_marca!,
-        id_categoria: productForm.value.id_categoria!,
-        responsavel_cadastro: 1, // TODO: pegar do authStore
-        data_cadastro: new Date().toISOString(),
-        usuario_log_id: null,
-        estoque_minimo: productForm.value.estoque_minimo,
+        // Input masks
+        custoUnitarioInput: '',
+        precoVendaInput: '',
       }
+    },
+    computed: {
+      rules () {
+        return {
+          nome: [
+            (v: string) => !!v || 'Nome é obrigatório',
+            (v: string) => v.length >= 3 || 'Nome deve ter pelo menos 3 caracteres',
+          ],
+          descricao: [
+            (v: string) => !!v || 'Descrição é obrigatória',
+            (v: string) => v.length >= 10 || 'Descrição deve ter pelo menos 10 caracteres',
+          ],
+          id_categoria: [(v: number) => !!v || 'Categoria é obrigatória'],
+          id_marca: [(v: number) => !!v || 'Marca é obrigatória'],
+          id_unidade_medida: [(v: number) => !!v || 'Unidade de medida é obrigatória'],
+          estoque_minimo: [
+            (v: number) => v >= 0 || 'Estoque mínimo deve ser maior ou igual a 0',
+          ],
+          data_validade: [
+            (v: string) => {
+              if (!this.formData.is_perecivel) return true
+              return !!v || 'Data de validade é obrigatória para produtos perecíveis'
+            },
+          ],
+          custo_unitario: [
+            (v: number) => v > 0 || 'Custo unitário deve ser maior que 0',
+          ],
+          preco_venda: [
+            (v: number) => v > 0 || 'Preço de venda deve ser maior que 0',
+          ],
+          quantidade: [
+            (v: number) => v > 0 || 'Quantidade deve ser maior que 0',
+          ],
+          id_localizacao: [(v: number) => !!v || 'Localização é obrigatória'],
+          id_fornecedor: [(v: number) => !!v || 'Fornecedor é obrigatório'],
+        }
+      },
+      categoriaOptions () {
+        return this.categorias.map(cat => ({
+          title: cat.nome,
+          value: cat.id,
+        }))
+      },
+      marcaOptions () {
+        return this.marcas.map(marca => ({
+          title: marca.nome,
+          value: marca.id,
+        }))
+      },
+      unidadeMedidaOptions () {
+        return this.unidadesMedida.map(um => ({
+          title: `${um.descricao} (${um.abreviacao})`,
+          value: um.id,
+        }))
+      },
+      fornecedorOptions () {
+        return this.fornecedores.map(fornecedor => ({
+          title: fornecedor.nome,
+          value: fornecedor.id,
+        }))
+      },
+      localizacaoOptions () {
+        return this.localizacoes.map(loc => ({
+          title: `${loc.deposito_nome} - ${loc.corredor || ''} ${loc.prateleira || ''} ${loc.secao || ''}`.trim(),
+          value: loc.id,
+        }))
+      },
+    },
+    methods: {
+      formatBRLFromCents (cents: number): string {
+        return new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(cents / 100)
+      },
 
-      console.log('📤 BODY DO PRODUTO (será enviado):', JSON.stringify(productData, null, 2))
+      toCents (value: string): number {
+        const cleanValue = value.replace(/[^\d]/g, '')
+        return parseInt(cleanValue) || 0
+      },
 
-      const novoProduto = await ProductService.create(productData)
-      console.log('✅ Produto criado:', novoProduto)
+      toNumber (value: string): number {
+        const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.')
+        return parseFloat(cleanValue) || 0
+      },
 
-      // 2. Criar o LOTE INICIAL
-      const loteData: Omit<ProductLote, 'id'> = {
-        id_produto: novoProduto.id,
-        codigo_lote: '', // Será gerado automaticamente
-        data_validade: loteForm.value.data_validade,
-        quantidade: loteForm.value.quantidade,
-        data_entrada: new Date().toISOString().split('T')[0] || '',
-        responsavel_cadastro: 1, // TODO: pegar do authStore
-        custo_unitario: loteForm.value.custo_unitario,
-        preco_venda: loteForm.value.preco_venda,
-        usuario_log_id: null,
-        id_localizacao: loteForm.value.id_localizacao!,
-      }
+      formatNumber (value: number): string {
+        return new Intl.NumberFormat('pt-BR').format(value)
+      },
 
-      console.log('📤 BODY DO LOTE (será enviado):', JSON.stringify(loteData, null, 2))
+      onCustoUnitarioInput (value: string) {
+        const cents = this.toCents(value)
+        this.custoUnitarioInput = this.formatBRLFromCents(cents)
+        this.formData.custo_unitario = cents
+      },
 
-      const novoLote = await LoteService.create(loteData)
-      console.log('✅ Lote inicial criado:', novoLote)
+      onPrecoVendaInput (value: string) {
+        const cents = this.toCents(value)
+        this.precoVendaInput = this.formatBRLFromCents(cents)
+        this.formData.preco_venda = cents
+      },
 
-      // 3. Vincular FORNECEDOR (se selecionado)
-      if (productForm.value.id_fornecedor) {
-        // TODO: Implementar ProductSupplierService quando necessário
-        console.log('ℹ️ Fornecedor será vinculado:', productForm.value.id_fornecedor)
-      }
+      limparFormulario () {
+        this.formData = {
+          nome: '',
+          descricao: '',
+          id_categoria: null,
+          id_marca: null,
+          id_unidade_medida: null,
+          estoque_minimo: 0,
+          is_perecivel: false,
+          data_validade: null,
+          custo_unitario: 0,
+          preco_venda: 0,
+          quantidade: 0,
+          id_localizacao: null,
+          id_fornecedor: null,
+        }
+        this.custoUnitarioInput = ''
+        this.precoVendaInput = ''
+        if (this.formRef) {
+          this.formRef.reset()
+        }
+      },
 
-      // 4. Adicionar ALÉRGENOS (se houver)
-      if (productForm.value.alergenos.length > 0) {
-        // TODO: Implementar ProductAllergenService quando necessário
-        console.log('ℹ️ Alérgenos serão cadastrados:', productForm.value.alergenos)
-      }
+      async salvarProduto () {
+        if (!this.validForm) return
 
-      snackbarState.showSuccess(`Produto "${novoProduto.nome}" cadastrado com sucesso!`)
-      limparFormulario()
-    } catch (error) {
-      console.error('Erro ao cadastrar produto:', error)
-      snackbarState.showError('Erro ao cadastrar produto')
-    } finally {
-      saving.value = false
-    }
+        this.saving = true
+        try {
+          // Criar produto
+          const produtoData = {
+            nome: this.formData.nome,
+            descricao: this.formData.descricao,
+            codigo: '', // Será gerado automaticamente pelo banco
+            id_categoria: this.formData.id_categoria!,
+            id_marca: this.formData.id_marca!,
+            id_unidade_medida: this.formData.id_unidade_medida!,
+            estoque_minimo: this.formData.estoque_minimo,
+            is_perecivel: this.formData.is_perecivel,
+            responsavel_cadastro: this.authStore.userName ? 1 : 1,
+            usuario_log_id: this.authStore.userName ? 1 : 1,
+            data_cadastro: new Date().toISOString(),
+          }
+
+          const produto = await ProductService.create(produtoData)
+
+          // Criar lote
+          const dataValidade = (this.formData.data_validade || new Date().toISOString().split('T')[0]) as string
+          const dataEntrada = new Date().toISOString().split('T')[0] as string
+          const loteData = {
+            id_produto: produto.id,
+            codigo_lote: '', // Será gerado automaticamente pelo banco
+            data_validade: dataValidade,
+            quantidade: this.formData.quantidade,
+            data_entrada: dataEntrada,
+            custo_unitario: this.formData.custo_unitario,
+            preco_venda: this.formData.preco_venda,
+            responsavel_cadastro: this.authStore.userName ? 1 : 1,
+            usuario_log_id: this.authStore.userName ? 1 : 1,
+            id_localizacao: this.formData.id_localizacao!,
+          }
+
+          await LoteService.create(loteData)
+
+          this.showSuccess('Produto cadastrado com sucesso!')
+          this.limparFormulario()
+        } catch (error) {
+          console.error('Erro ao salvar produto:', error)
+          this.showError('Erro ao cadastrar produto')
+        } finally {
+          this.saving = false
+        }
+      },
+
+      async loadData () {
+        try {
+          const [categoriasData, marcasData, unidadesData, fornecedoresData, localizacoesData] = await Promise.all([
+            CategoryService.getAll(),
+            BrandService.getAll(),
+            UnitMeasureService.getAll(),
+            SupplierService.getAll(),
+            LocationService.getAllComplete(),
+          ])
+
+          this.categorias = categoriasData
+          this.marcas = marcasData
+          this.unidadesMedida = unidadesData
+          this.fornecedores = fornecedoresData
+          this.localizacoes = localizacoesData
+        } catch (error) {
+          console.error('Erro ao carregar dados:', error)
+          this.showError('Erro ao carregar dados')
+        }
+      },
+    },
+    mounted () {
+      this.loadData()
+    },
   }
-
-  function limparFormulario () {
-    productForm.value = {
-      nome: '',
-      codigo: '',
-      descricao: '',
-      is_perecivel: false,
-      id_unidade_medida: null,
-      id_marca: null,
-      id_categoria: null,
-      estoque_minimo: 10,
-      id_fornecedor: null,
-      alergenos: [],
-    }
-
-    loteForm.value = {
-      quantidade: 0,
-      custo_unitario: 0,
-      preco_venda: 0,
-      data_validade: '',
-      id_localizacao: null,
-    }
-
-    custoUnitarioInput.value = ''
-    precoVendaInput.value = ''
-
-    formRef.value?.reset()
-  }
-
-  function formatCurrency (value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value || 0)
-  }
-
-  onMounted(() => {
-    loadData()
-  })
 </script>
 
 <style scoped>
 .cadastro-produtos-page {
-  min-height: 100vh;
   background: #000000;
-  padding: 2rem 0;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+.v-card {
+  background: #1a1a1a !important;
+  border: 1px solid #333;
+}
+
+.v-card-title {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  border-radius: 8px 8px 0 0;
+}
+
+.v-text-field :deep(.v-field__input) {
+  color: #ffffff !important;
+}
+
+.v-text-field :deep(.v-field__outline) {
+  color: #666 !important;
+}
+
+.v-text-field :deep(.v-label) {
+  color: #999 !important;
+}
+
+.v-autocomplete :deep(.v-field__input) {
+  color: #ffffff !important;
+}
+
+.v-autocomplete :deep(.v-field__outline) {
+  color: #666 !important;
+}
+
+.v-autocomplete :deep(.v-label) {
+  color: #999 !important;
+}
+
+.v-checkbox :deep(.v-label) {
+  color: #ffffff !important;
+}
+
+.v-btn {
+  text-transform: none;
+  font-weight: 500;
+}
+
+.v-snackbar :deep(.v-snackbar__content) {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
 }
 </style>
+
+<route lang="yaml">
+meta:
+  layout: default
+</route>

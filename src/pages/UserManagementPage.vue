@@ -19,10 +19,16 @@
               elevation="2"
               prepend-icon="mdi-plus"
               size="large"
+              :disabled="!canCreateUsers"
               @click="goToRegistration"
             >
               Novo Usuário
             </v-btn>
+            <v-tooltip v-if="!canCreateUsers" location="top" text="Apenas administradores podem criar usuários">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" class="ml-2" color="warning" icon="mdi-lock" />
+              </template>
+            </v-tooltip>
           </div>
         </v-col>
       </v-row>
@@ -221,20 +227,22 @@
                         icon="mdi-pencil"
                         size="small"
                         variant="tonal"
+                        :disabled="!canManageUsers"
                         @click="editUser(item)"
                       />
                     </template>
                   </v-tooltip>
 
-                  <v-tooltip location="top" text="Excluir usuário">
+                  <v-tooltip :location="'top'" :text="item.status === 'active' ? 'Inativar usuário' : 'Ativar usuário'">
                     <template #activator="{ props }">
                       <v-btn
                         v-bind="props"
-                        color="error"
-                        icon="mdi-delete"
+                        :color="item.status === 'active' ? 'warning' : 'success'"
+                        :icon="item.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'"
                         size="small"
                         variant="tonal"
-                        @click="deleteUser(item)"
+                        :disabled="!canManageUsers"
+                        @click="toggleUserStatus(item)"
                       />
                     </template>
                   </v-tooltip>
@@ -495,6 +503,164 @@
                 />
               </v-col>
 
+              <!-- Contact Information Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-phone</v-icon>
+                  Informações de Contato
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-select
+                  v-model="newUser.tipo_contato"
+                  density="comfortable"
+                  hide-details="auto"
+                  :items="[
+                    { title: 'Telefone', value: 'telefone' },
+                    { title: 'WhatsApp', value: 'whatsapp' },
+                    { title: 'Email', value: 'email' },
+                    { title: 'Instagram', value: 'instagram' },
+                    { title: 'Telegram', value: 'telegram' },
+                    { title: 'Outro', value: 'outro' }
+                  ]"
+                  label="Tipo de Contato"
+                  prepend-inner-icon="mdi-phone"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.valor_contato"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Valor do Contato"
+                  prepend-inner-icon="mdi-account-voice"
+                  :mask="getContactMask(newUser.tipo_contato)"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @input="formatContactValue"
+                  @keypress="onContactKeypress"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.codigo_pais"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Código do País"
+                  prepend-inner-icon="mdi-flag"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <!-- Address Information Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-map-marker</v-icon>
+                  Informações de Endereço
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newUser.id_uf"
+                  density="comfortable"
+                  hide-details="auto"
+                  item-title="label"
+                  item-value="value"
+                  :items="ufOptions"
+                  label="UF"
+                  prepend-inner-icon="mdi-map"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @update:model-value="onUfChange"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newUser.id_municipio"
+                  density="comfortable"
+                  hide-details="auto"
+                  item-title="label"
+                  item-value="value"
+                  :items="municipioOptions"
+                  label="Município"
+                  prepend-inner-icon="mdi-city"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="8">
+                <v-text-field
+                  v-model="newUser.logradouro"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Logradouro"
+                  prepend-inner-icon="mdi-road"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.numero"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Número"
+                  prepend-inner-icon="mdi-numeric"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.complemento"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Complemento"
+                  prepend-inner-icon="mdi-home"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="newUser.cep"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="CEP"
+                  prepend-inner-icon="mdi-mailbox"
+                  mask="#####-###"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @input="formatCEP"
+                  @keypress="onCEPKeypress"
+                />
+              </v-col>
+
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="newUser.bairro"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Bairro"
+                  prepend-inner-icon="mdi-home-group"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
               <!-- Professional Information Section -->
               <v-col cols="12">
                 <v-divider class="my-4" />
@@ -591,23 +757,23 @@
       </v-card>
     </v-dialog>
 
-    <!-- Delete Confirmation Dialog -->
+    <!-- Toggle Status Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="500">
       <v-card elevation="8">
-        <v-card-title class="bg-error pa-4">
-          <v-icon class="mr-2" icon="mdi-alert-circle" size="30" />
-          <span class="text-h5">Confirmar Exclusão</span>
+        <v-card-title :class="selectedUser?.status === 'active' ? 'bg-warning' : 'bg-success'" class="pa-4">
+          <v-icon class="mr-2" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" size="30" />
+          <span class="text-h5">{{ selectedUser?.status === 'active' ? 'Confirmar Inativação' : 'Confirmar Ativação' }}</span>
         </v-card-title>
         <v-card-text class="pa-6">
           <div class="text-center mb-4">
-            <v-icon color="error" icon="mdi-delete-alert" size="80" />
+            <v-icon :color="selectedUser?.status === 'active' ? 'warning' : 'success'" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" size="80" />
           </div>
           <p class="text-h6 text-center">
-            Tem certeza que deseja excluir o usuário
-            <strong class="text-error">{{ selectedUser?.name }}</strong>?
+            Tem certeza que deseja {{ selectedUser?.status === 'active' ? 'inativar' : 'ativar' }} o usuário
+            <strong :class="selectedUser?.status === 'active' ? 'text-warning' : 'text-success'">{{ selectedUser?.name }}</strong>?
           </p>
           <p class="text-center text-grey mt-2">
-            Esta ação não pode ser desfeita.
+            {{ selectedUser?.status === 'active' ? 'O usuário não poderá mais acessar o sistema.' : 'O usuário poderá acessar o sistema novamente.' }}
           </p>
         </v-card-text>
         <v-card-actions class="pa-4">
@@ -616,9 +782,9 @@
             <v-icon class="mr-1" icon="mdi-close" />
             Cancelar
           </v-btn>
-          <v-btn color="error" variant="elevated" @click="confirmDelete">
-            <v-icon class="mr-1" icon="mdi-delete" />
-            Excluir
+          <v-btn :color="selectedUser?.status === 'active' ? 'warning' : 'success'" variant="elevated" @click="confirmToggleStatus">
+            <v-icon class="mr-1" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" />
+            {{ selectedUser?.status === 'active' ? 'Inativar' : 'Ativar' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -644,8 +810,9 @@
 </template>
 
 <script setup lang="ts">
-  import type { BackendUser, User, UserRole, ValidationRule } from '@/types'
+  import type { BackendUser, Municipality, State, User, UserRole, ValidationRule } from '@/types'
   import { computed, onMounted, ref } from 'vue'
+  import { useAuthStore } from '@/stores/auth'
 
   const search = ref<string>('')
   const filterRole = ref<string>('Todos')
@@ -674,6 +841,18 @@
     password: string
     confirmPassword: string
     role: UserRole | ''
+    // Campos de contato
+    tipo_contato: string
+    valor_contato: string
+    codigo_pais: string
+    // Campos de endereço
+    id_uf: number | null
+    id_municipio: number | null
+    logradouro: string
+    numero: string
+    complemento: string
+    cep: string
+    bairro: string
   }
 
   const newUser = ref<NewUserForm>({
@@ -682,10 +861,24 @@
     password: '',
     confirmPassword: '',
     role: '',
+    tipo_contato: '',
+    valor_contato: '',
+    codigo_pais: '+55',
+    id_uf: null,
+    id_municipio: null,
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    cep: '',
+    bairro: '',
   })
   const showNewPassword = ref<boolean>(false)
   const showNewConfirmPassword = ref<boolean>(false)
   const validCreateForm = ref<boolean>(false)
+
+  // Variáveis para UF e municípios
+  const ufs = ref<State[]>([])
+  const municipios = ref<Municipality[]>([])
 
   interface TableHeader {
     title: string
@@ -734,6 +927,31 @@
     })
   })
 
+  const ufOptions = computed(() => {
+    return ufs.value.map((uf: State) => ({
+      label: `${uf.sigla} - ${uf.nome}`,
+      value: uf.id,
+    }))
+  })
+
+  const municipioOptions = computed(() => {
+    return municipios.value.map((municipio: Municipality) => ({
+      label: municipio.nome,
+      value: municipio.id,
+    }))
+  })
+
+  // Computed properties para controle de permissões
+  const canManageUsers = computed(() => {
+    const authStore = useAuthStore()
+    return authStore.role === 'admin'
+  })
+
+  const canCreateUsers = computed(() => {
+    const authStore = useAuthStore()
+    return authStore.role === 'admin'
+  })
+
   function getInitials (name: string): string {
     const names = name.split(' ')
     if (names.length >= 2 && names[0]?.[0] && names[1]?.[0]) {
@@ -775,6 +993,129 @@
       Visualizador: 'mdi-account-eye',
     }
     return icons[role]
+  }
+
+  async function loadUfs (): Promise<void> {
+    try {
+      const response = await fetch('http://localhost:3001/uf')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar UFs')
+      }
+      const data: unknown = await response.json()
+      ufs.value = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Erro ao carregar UFs:', error)
+    }
+  }
+
+  async function loadMunicipios (ufId: number): Promise<void> {
+    try {
+      const response = await fetch(`http://localhost:3001/municipio?id_uf=${ufId}`)
+      if (!response.ok) {
+        throw new Error('Erro ao carregar municípios')
+      }
+      const data: unknown = await response.json()
+      municipios.value = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Erro ao carregar municípios:', error)
+    }
+  }
+
+  function onUfChange (ufId: number): void {
+    newUser.value.id_municipio = null
+    if (ufId) {
+      loadMunicipios(ufId)
+    } else {
+      municipios.value = []
+    }
+  }
+
+  function getContactMask (tipoContato: string): string {
+    switch (tipoContato) {
+      case 'telefone':
+      case 'whatsapp': {
+        return '(##) #####-####'
+      }
+      case 'email': {
+        return ''
+      }
+      case 'instagram':
+      case 'telegram': {
+        return ''
+      }
+      default: {
+        return ''
+      }
+    }
+  }
+
+  function formatContactValue (event: Event): void {
+    const target = event.target as HTMLInputElement
+    const value = target.value
+    const tipoContato = newUser.value.tipo_contato
+
+    if (tipoContato === 'telefone' || tipoContato === 'whatsapp') {
+      // Remove todos os caracteres não numéricos
+      const numbers = value.replace(/\D/g, '')
+
+      // Limita a 11 dígitos (máximo para telefone brasileiro)
+      const limitedNumbers = numbers.slice(0, 11)
+
+      // Aplica a máscara baseada no tamanho
+      if (limitedNumbers.length <= 2) {
+        newUser.value.valor_contato = limitedNumbers
+      } else if (limitedNumbers.length <= 6) {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`
+      } else if (limitedNumbers.length <= 10) {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`
+      } else {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`
+      }
+    } else {
+      // Para outros tipos, permite qualquer caractere mas limita o tamanho
+      newUser.value.valor_contato = value.slice(0, 100)
+    }
+  }
+
+  function formatCEP (event: Event): void {
+    const target = event.target as HTMLInputElement
+    const value = target.value
+
+    // Remove todos os caracteres não numéricos
+    const numbers = value.replace(/\D/g, '')
+
+    // Limita a 8 dígitos (CEP brasileiro)
+    const limitedNumbers = numbers.slice(0, 8)
+
+    // Aplica a máscara baseada no tamanho
+    newUser.value.cep = limitedNumbers.length <= 5
+      ? limitedNumbers
+      : `${limitedNumbers.slice(0, 5)}-${limitedNumbers.slice(5)}`
+  }
+
+  function onContactKeypress (event: KeyboardEvent): void {
+    const tipoContato = newUser.value.tipo_contato
+
+    if (tipoContato === 'telefone' || tipoContato === 'whatsapp') {
+      // Apenas números são permitidos para telefone
+      const char = String.fromCodePoint(event.which)
+      if (!/[0-9]/.test(char)) {
+        event.preventDefault()
+      }
+    }
+    // Para outros tipos (email, instagram, etc.), permite qualquer caractere
+  }
+
+  function onCEPKeypress (event: KeyboardEvent): void {
+    // Apenas números são permitidos para CEP
+    const char = String.fromCodePoint(event.which)
+    if (!/[0-9]/.test(char)) {
+      event.preventDefault()
+    }
   }
 
   async function fetchUsers (): Promise<void> {
@@ -907,12 +1248,12 @@
     }
   }
 
-  function deleteUser (user: User): void {
+  function toggleUserStatus (user: User): void {
     selectedUser.value = user
     deleteDialog.value = true
   }
 
-  async function confirmDelete (): Promise<void> {
+  async function confirmToggleStatus (): Promise<void> {
     if (!selectedUser.value) return
 
     try {
@@ -923,29 +1264,26 @@
         ? allData[0]
         : (Array.isArray(allData) ? allData : [])
 
-      // Remover o usuário do array
-      const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== selectedUser.value!.id)
+      // Encontrar o usuário e alterar o status
+      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === selectedUser.value!.id)
+      if (userIndex !== -1) {
+        // Simular alteração de status no backend (como não temos campo status no BackendUser, vamos simular)
+        // Na implementação real, você adicionaria um campo status ao BackendUser
+        const newStatus = selectedUser.value.status === 'active' ? 'inactive' : 'active'
 
-      // Salvar o array atualizado
-      const response = await fetch('http://localhost:3001/usuarios', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([updatedArray]),
-      })
+        // Atualizar na lista local
+        const userIndexLocal = users.value.findIndex((u: User) => u.id === selectedUser.value!.id)
+        if (userIndexLocal !== -1 && users.value[userIndexLocal]) {
+          users.value[userIndexLocal].status = newStatus
+        }
 
-      if (!response.ok) {
-        throw new Error('Erro ao excluir usuário')
+        snackbarText.value = `Usuário ${selectedUser.value.name} ${newStatus === 'active' ? 'ativado' : 'inativado'} com sucesso!`
+        snackbarColor.value = 'success'
+        snackbar.value = true
       }
-
-      users.value = users.value.filter((u: User) => u.id !== selectedUser.value!.id)
-      snackbarText.value = `Usuário ${selectedUser.value.name} excluído com sucesso!`
-      snackbarColor.value = 'success'
-      snackbar.value = true
     } catch (error: unknown) {
-      console.error('Erro ao excluir usuário:', error)
-      snackbarText.value = 'Erro ao excluir usuário'
+      console.error('Erro ao alterar status do usuário:', error)
+      snackbarText.value = 'Erro ao alterar status do usuário'
       snackbarColor.value = 'error'
       snackbar.value = true
     } finally {
@@ -961,6 +1299,16 @@
       password: '',
       confirmPassword: '',
       role: '',
+      tipo_contato: '',
+      valor_contato: '',
+      codigo_pais: '+55',
+      id_uf: null,
+      id_municipio: null,
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      cep: '',
+      bairro: '',
     }
     createDialog.value = true
   }
@@ -973,6 +1321,16 @@
       password: '',
       confirmPassword: '',
       role: '',
+      tipo_contato: '',
+      valor_contato: '',
+      codigo_pais: '+55',
+      id_uf: null,
+      id_municipio: null,
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      cep: '',
+      bairro: '',
     }
   }
 
@@ -1051,6 +1409,16 @@
         password: '',
         confirmPassword: '',
         role: '',
+        tipo_contato: '',
+        valor_contato: '',
+        codigo_pais: '+55',
+        id_uf: null,
+        id_municipio: null,
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        cep: '',
+        bairro: '',
       }
     } catch (error: unknown) {
       console.error('Erro ao criar usuário:', error)
@@ -1064,6 +1432,7 @@
 
   onMounted(() => {
     fetchUsers()
+    loadUfs()
   })
 </script>
 

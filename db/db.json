@@ -217,8 +217,7 @@
           "responsavel_cadastro": 1,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 50.00,
-          "is_perecivel": true
+          "estoque_minimo": 50.00
         },
         {
           "id": 2,
@@ -231,8 +230,7 @@
           "responsavel_cadastro": 1,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 30.00,
-          "is_perecivel": true
+          "estoque_minimo": 30.00
         },
         {
           "id": 3,
@@ -245,8 +243,7 @@
           "responsavel_cadastro": 2,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 100.00,
-          "is_perecivel": false
+          "estoque_minimo": 100.00
         },
         {
           "id": 4,
@@ -259,8 +256,7 @@
           "responsavel_cadastro": 2,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 80.00,
-          "is_perecivel": false
+          "estoque_minimo": 80.00
         },
         {
           "id": 5,
@@ -273,8 +269,7 @@
           "responsavel_cadastro": 3,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 40.00,
-          "is_perecivel": false
+          "estoque_minimo": 40.00
         },
         {
           "id": 6,
@@ -287,8 +282,7 @@
           "responsavel_cadastro": 3,
           "data_cadastro": "2025-10-10 16:35:16.413901",
           "usuario_log_id": null,
-          "estoque_minimo": 2000.00,
-          "is_perecivel": true
+          "estoque_minimo": 2000.00
         }
       ] ],
     "produto_lotes": [ [
@@ -327,7 +321,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 0.02,
-          "preco_venda": 0.10,
+          "preco_venda": 0.05,
           "usuario_log_id": null,
           "id_localizacao": 4
         },
@@ -340,7 +334,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 4.55,
-          "preco_venda": 6.20,
+          "preco_venda": 6.50,
           "usuario_log_id": null,
           "id_localizacao": 3
         },
@@ -353,7 +347,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 22.50,
-          "preco_venda": 30.00,
+          "preco_venda": 35.00,
           "usuario_log_id": null,
           "id_localizacao": 1
         },
@@ -366,7 +360,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 22.90,
-          "preco_venda": 31.00,
+          "preco_venda": 35.50,
           "usuario_log_id": null,
           "id_localizacao": 1
         },
@@ -392,7 +386,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 3,
           "custo_unitario": 7.80,
-          "preco_venda": 10.00,
+          "preco_venda": 11.50,
           "usuario_log_id": null,
           "id_localizacao": 2
         }

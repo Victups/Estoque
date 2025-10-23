@@ -7,6 +7,7 @@
 import { setupLayouts } from 'virtual:generated-layouts'
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const route = [
   {
@@ -84,6 +85,17 @@ const route = [
     component: () => import('@/pages/UserManagementPage.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/configuracoes',
+    name: 'Configuracoes',
+    component: () => import('@/pages/Configuracoes.vue'),
+    meta: {
+      layout: 'default',
+      requiresAuth: true,
+      requiredRole: ['admin', 'gestor'],
     },
   },
 ]
@@ -91,6 +103,36 @@ const route = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: setupLayouts(route),
+})
+
+// Navigation guard para verificar autenticação e roles
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+
+  // Verificar se a rota requer autenticação
+  if (to.meta.requiresAuth) {
+    if (!authStore.isLoggedIn) {
+      // Redirecionar para login se não estiver autenticado
+      next('/login')
+      return
+    }
+
+    // Verificar role se especificado
+    if (to.meta.requiredRole) {
+      const userRole = authStore.role
+      const requiredRoles = Array.isArray(to.meta.requiredRole)
+        ? to.meta.requiredRole
+        : [to.meta.requiredRole]
+
+      if (!userRole || !requiredRoles.includes(userRole)) {
+        // Redirecionar para home se não tiver permissão
+        next('/')
+        return
+      }
+    }
+  }
+
+  next()
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804
