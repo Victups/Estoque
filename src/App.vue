@@ -4,13 +4,21 @@
   </v-app>
 </template>
 
-<script lang="ts" setup>
-  import { onMounted } from 'vue'
+<script lang="ts">
+  import { defineComponent, onMounted } from 'vue'
+
   import { useAuthStore } from './stores/auth'
 
-  // Carregar dados de autenticação ao iniciar o app
-  const auth = useAuthStore()
-  onMounted(() => {
-    auth.loadFromStorage()
+  export default defineComponent({
+    name: 'App',
+    setup () {
+      const auth = useAuthStore()
+
+      onMounted(() => {
+        auth.loadFromStorage()
+      })
+
+      return {}
+    },
   })
 </script>

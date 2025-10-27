@@ -1,0 +1,1482 @@
+<template>
+  <div class="user-management-page">
+    <v-container class="pa-6" fluid>
+      <!-- Header Section -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div>
+              <h1 class="text-h3 font-weight-bold mb-2">
+                <v-icon class="mr-3" icon="mdi-account-group" size="40" />
+                Gerenciamento de Usuários
+              </h1>
+              <p class="text-h6 text-grey-darken-1">
+                Visualize e gerencie todos os usuários do sistema
+              </p>
+            </div>
+            <v-btn
+              color="primary"
+              elevation="2"
+              prepend-icon="mdi-plus"
+              size="large"
+              :disabled="!canCreateUsers"
+              @click="goToRegistration"
+            >
+              Novo Usuário
+            </v-btn>
+            <v-tooltip v-if="!canCreateUsers" location="top" text="Apenas administradores podem criar usuários">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" class="ml-2" color="warning" icon="mdi-lock" />
+              </template>
+            </v-tooltip>
+          </div>
+        </v-col>
+      </v-row>
+
+      <!-- Stats Cards -->
+      <v-row class="mb-6">
+        <v-col cols="12" md="3" sm="6">
+          <v-card class="stat-card" elevation="3">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-avatar class="mr-4" color="primary" size="56">
+                  <v-icon icon="mdi-account-multiple" size="30" />
+                </v-avatar>
+                <div>
+                  <p class="text-caption text-grey mb-1">Total de Usuários</p>
+                  <h2 class="text-h4 font-weight-bold">{{ users.length }}</h2>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3" sm="6">
+          <v-card class="stat-card" elevation="3">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-avatar class="mr-4" color="success" size="56">
+                  <v-icon icon="mdi-account-check" size="30" />
+                </v-avatar>
+                <div>
+                  <p class="text-caption text-grey mb-1">Ativos</p>
+                  <h2 class="text-h4 font-weight-bold">{{ activeUsersCount }}</h2>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3" sm="6">
+          <v-card class="stat-card" elevation="3">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-avatar class="mr-4" color="warning" size="56">
+                  <v-icon icon="mdi-shield-account" size="30" />
+                </v-avatar>
+                <div>
+                  <p class="text-caption text-grey mb-1">Administradores</p>
+                  <h2 class="text-h4 font-weight-bold">{{ adminCount }}</h2>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="3" sm="6">
+          <v-card class="stat-card" elevation="3">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-avatar class="mr-4" color="info" size="56">
+                  <v-icon icon="mdi-account-clock" size="30" />
+                </v-avatar>
+                <div>
+                  <p class="text-caption text-grey mb-1">Novos (Este mês)</p>
+                  <h2 class="text-h4 font-weight-bold">{{ users.length }}</h2>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Filters and Table Card -->
+      <v-row>
+        <v-col cols="12">
+          <v-card class="main-card" elevation="3">
+            <v-card-title class="bg-primary pa-4">
+              <v-icon class="mr-2" icon="mdi-format-list-bulleted" />
+              <span class="text-h5">Lista de Usuários</span>
+            </v-card-title>
+
+            <v-card-text class="pa-6">
+              <!-- Filters -->
+              <v-row class="mb-4">
+                <v-col cols="12" md="5">
+                  <v-text-field
+                    v-model="search"
+                    clearable
+                    density="comfortable"
+                    hide-details
+                    label="Buscar usuários"
+                    placeholder="Digite nome ou email..."
+                    prepend-inner-icon="mdi-magnify"
+                    variant="outlined"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-select
+                    v-model="filterRole"
+                    density="comfortable"
+                    hide-details
+                    :items="['Todos', 'Admin', 'Gerente', 'Operador', 'Visualizador']"
+                    label="Filtrar por Função"
+                    prepend-inner-icon="mdi-filter"
+                    variant="outlined"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-select
+                    v-model="filterStatus"
+                    density="comfortable"
+                    hide-details
+                    :items="['Todos', 'Ativo', 'Inativo']"
+                    label="Filtrar por Status"
+                    prepend-inner-icon="mdi-filter-variant"
+                    variant="outlined"
+                  />
+                </v-col>
+                <v-col class="d-flex align-center" cols="12" md="1">
+                  <v-btn
+                    color="grey-darken-1"
+                    icon="mdi-refresh"
+                    variant="outlined"
+                    @click="fetchUsers"
+                  />
+                </v-col>
+              </v-row>
+
+              <!-- Data Table -->
+              <v-data-table
+                class="elevation-1"
+                :headers="headers"
+                :items="filteredUsers"
+                :items-per-page="10"
+                :loading="loading"
+                loading-text="Carregando usuários..."
+                :search="search"
+              >
+                <template #item.avatar="{ item }">
+                  <v-avatar :color="item.avatarColor" size="45">
+                    <span class="text-h6 text-white font-weight-bold">{{ item.initials }}</span>
+                  </v-avatar>
+                </template>
+
+                <template #item.name="{ item }">
+                  <div>
+                    <div class="font-weight-bold">{{ item.name }}</div>
+                    <div class="text-caption text-grey">{{ item.email }}</div>
+                  </div>
+                </template>
+
+                <template #item.role="{ item }">
+                  <v-chip
+                    class="font-weight-bold"
+                    :color="getRoleColor(item.role)"
+                    size="small"
+                    variant="flat"
+                  >
+                    <v-icon class="mr-1" :icon="getRoleIcon(item.role)" size="small" />
+                    {{ item.role }}
+                  </v-chip>
+                </template>
+
+                <template #item.status="{ item }">
+                  <v-chip
+                    :color="item.status === 'active' ? 'success' : 'error'"
+                    size="small"
+                    variant="flat"
+                  >
+                    <v-icon
+                      class="mr-1"
+                      :icon="item.status === 'active' ? 'mdi-check-circle' : 'mdi-close-circle'"
+                      size="small"
+                    />
+                    {{ item.status }}
+                  </v-chip>
+                </template>
+
+                <template #item.actions="{ item }">
+                  <v-tooltip location="top" text="Ver detalhes">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        class="mr-1"
+                        color="info"
+                        icon="mdi-eye"
+                        size="small"
+                        variant="tonal"
+                        @click="viewUser(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-tooltip location="top" text="Editar usuário">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        class="mr-1"
+                        color="primary"
+                        icon="mdi-pencil"
+                        size="small"
+                        variant="tonal"
+                        :disabled="!canManageUsers"
+                        @click="editUser(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+
+                  <v-tooltip :location="'top'" :text="item.status === 'active' ? 'Inativar usuário' : 'Ativar usuário'">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        :color="item.status === 'active' ? 'warning' : 'success'"
+                        :icon="item.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'"
+                        size="small"
+                        variant="tonal"
+                        :disabled="!canManageUsers"
+                        @click="toggleUserStatus(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                </template>
+              </v-data-table>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <!-- View User Dialog -->
+    <v-dialog v-model="viewDialog" max-width="700">
+      <v-card v-if="selectedUser" elevation="8">
+        <v-card-title class="bg-primary pa-4">
+          <div class="d-flex justify-space-between align-center">
+            <div class="d-flex align-center">
+              <v-icon class="mr-2" icon="mdi-account-circle" size="30" />
+              <span class="text-h5">Detalhes do Usuário</span>
+            </div>
+            <v-btn icon="mdi-close" variant="text" @click="viewDialog = false" />
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-6">
+            <v-avatar class="mb-3" :color="selectedUser.avatarColor" size="100">
+              <span class="text-h3 text-white font-weight-bold">{{ selectedUser.initials }}</span>
+            </v-avatar>
+            <h2 class="text-h4 mb-1">{{ selectedUser.name }}</h2>
+            <p class="text-h6 text-grey">{{ selectedUser.email }}</p>
+          </div>
+
+          <v-divider class="mb-4" />
+
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-list-item class="px-0">
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-shield-account" />
+                </template>
+                <v-list-item-title class="font-weight-bold">Função</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser.role }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-list-item class="px-0">
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-information" />
+                </template>
+                <v-list-item-title class="font-weight-bold">Status</v-list-item-title>
+                <v-list-item-subtitle>
+                  <v-chip
+                    :color="selectedUser.status === 'active' ? 'success' : 'error'"
+                    size="small"
+                    variant="flat"
+                  >
+                    {{ selectedUser.status }}
+                  </v-chip>
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-list-item class="px-0">
+                <template #prepend>
+                  <v-icon color="primary" icon="mdi-clock-outline" />
+                </template>
+                <v-list-item-title class="font-weight-bold">Último acesso</v-list-item-title>
+                <v-list-item-subtitle>{{ selectedUser.lastAccess }}</v-list-item-subtitle>
+              </v-list-item>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit User Dialog -->
+    <v-dialog v-model="editDialog" max-width="800" persistent>
+      <v-card v-if="editingUser" elevation="8">
+        <v-card-title class="bg-primary pa-4">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2" icon="mdi-account-edit" size="30" />
+            <span class="text-h5">Editar Usuário</span>
+          </div>
+        </v-card-title>
+
+        <v-card-text class="pa-6">
+          <v-form ref="editForm" v-model="validForm">
+            <v-row>
+              <v-col class="text-center mb-4" cols="12">
+                <v-avatar :color="editingUser.avatarColor" size="80">
+                  <span class="text-h4 text-white">{{ editingUser.initials }}</span>
+                </v-avatar>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editingUser.name"
+                  density="comfortable"
+                  label="Nome Completo"
+                  prepend-inner-icon="mdi-account"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editingUser.email"
+                  density="comfortable"
+                  label="Email"
+                  prepend-inner-icon="mdi-email"
+                  :rules="[rules.required, rules.email]"
+                  type="email"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="editingUser.role"
+                  density="comfortable"
+                  :items="['Admin', 'Gerente', 'Operador', 'Visualizador']"
+                  label="Função"
+                  prepend-inner-icon="mdi-shield-account"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="editingUser.status"
+                  density="comfortable"
+                  :items="['Ativo', 'Inativo']"
+                  label="Status"
+                  prepend-inner-icon="mdi-information"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <h3 class="text-h6">
+                    <v-icon class="mr-2" icon="mdi-lock" />
+                    Alterar Senha
+                  </h3>
+                  <v-switch
+                    v-model="changePassword"
+                    color="primary"
+                    hide-details
+                    label="Alterar senha"
+                  />
+                </div>
+              </v-col>
+
+              <template v-if="changePassword">
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="newPassword"
+                    :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                    density="comfortable"
+                    label="Nova Senha"
+                    prepend-inner-icon="mdi-lock"
+                    :rules="changePassword ? [rules.required, rules.minLength] : []"
+                    :type="showPassword ? 'text' : 'password'"
+                    variant="outlined"
+                    @click:append-inner="showPassword = !showPassword"
+                  />
+                </v-col>
+
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="confirmPassword"
+                    :append-inner-icon="showConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                    density="comfortable"
+                    label="Confirmar Nova Senha"
+                    prepend-inner-icon="mdi-lock-check"
+                    :rules="changePassword ? [rules.required, rules.passwordMatch] : []"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    variant="outlined"
+                    @click:append-inner="showConfirmPassword = !showConfirmPassword"
+                  />
+                </v-col>
+              </template>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            @click="cancelEdit"
+          >
+            <v-icon class="mr-1" icon="mdi-close" />
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="primary"
+            :disabled="!validForm"
+            :loading="saving"
+            variant="elevated"
+            @click="saveUser"
+          >
+            <v-icon class="mr-1" icon="mdi-content-save" />
+            Salvar Alterações
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Create User Dialog -->
+    <v-dialog v-model="createDialog" max-width="800" persistent>
+      <v-card elevation="8">
+        <v-card-title class="bg-primary pa-4">
+          <div class="d-flex align-center">
+            <v-icon class="mr-2" icon="mdi-account-plus" size="30" />
+            <span class="text-h5">Criar Novo Usuário</span>
+          </div>
+        </v-card-title>
+
+        <v-card-text class="pa-6">
+          <v-form ref="createForm" v-model="validCreateForm">
+            <v-row>
+              <!-- Personal Information Section -->
+              <v-col cols="12">
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-account-circle</v-icon>
+                  Informações Pessoais
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.name"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Nome Completo"
+                  prepend-inner-icon="mdi-account"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.email"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Email"
+                  prepend-inner-icon="mdi-email"
+                  :rules="[rules.required, rules.email]"
+                  type="email"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <!-- Contact Information Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-phone</v-icon>
+                  Informações de Contato
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-select
+                  v-model="newUser.tipo_contato"
+                  density="comfortable"
+                  hide-details="auto"
+                  :items="[
+                    { title: 'Telefone', value: 'telefone' },
+                    { title: 'WhatsApp', value: 'whatsapp' },
+                    { title: 'Email', value: 'email' },
+                    { title: 'Instagram', value: 'instagram' },
+                    { title: 'Telegram', value: 'telegram' },
+                    { title: 'Outro', value: 'outro' }
+                  ]"
+                  label="Tipo de Contato"
+                  prepend-inner-icon="mdi-phone"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.valor_contato"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Valor do Contato"
+                  prepend-inner-icon="mdi-account-voice"
+                  :mask="getContactMask(newUser.tipo_contato)"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @input="formatContactValue"
+                  @keypress="onContactKeypress"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.codigo_pais"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Código do País"
+                  prepend-inner-icon="mdi-flag"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <!-- Address Information Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-map-marker</v-icon>
+                  Informações de Endereço
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newUser.id_uf"
+                  density="comfortable"
+                  hide-details="auto"
+                  item-title="label"
+                  item-value="value"
+                  :items="ufOptions"
+                  label="UF"
+                  prepend-inner-icon="mdi-map"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @update:model-value="onUfChange"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newUser.id_municipio"
+                  density="comfortable"
+                  hide-details="auto"
+                  item-title="label"
+                  item-value="value"
+                  :items="municipioOptions"
+                  label="Município"
+                  prepend-inner-icon="mdi-city"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="8">
+                <v-text-field
+                  v-model="newUser.logradouro"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Logradouro"
+                  prepend-inner-icon="mdi-road"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="newUser.numero"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Número"
+                  prepend-inner-icon="mdi-numeric"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.complemento"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Complemento"
+                  prepend-inner-icon="mdi-home"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="newUser.cep"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="CEP"
+                  prepend-inner-icon="mdi-mailbox"
+                  mask="#####-###"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                  @input="formatCEP"
+                  @keypress="onCEPKeypress"
+                />
+              </v-col>
+
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="newUser.bairro"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Bairro"
+                  prepend-inner-icon="mdi-home-group"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <!-- Professional Information Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-briefcase</v-icon>
+                  Informações Profissionais
+                </h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newUser.role"
+                  density="comfortable"
+                  hide-details="auto"
+                  :items="['Admin', 'Gerente', 'Operador', 'Visualizador']"
+                  label="Função"
+                  prepend-inner-icon="mdi-shield-account"
+                  :rules="[rules.required]"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <!-- Security Section -->
+              <v-col cols="12">
+                <v-divider class="my-4" />
+                <h3 class="text-h6 font-weight-bold mb-3">
+                  <v-icon class="mr-2">mdi-shield-lock</v-icon>
+                  Segurança
+                </h3>
+                <v-alert
+                  class="mb-4"
+                  color="info"
+                  icon="mdi-information"
+                  variant="tonal"
+                >
+                  A senha deve ter no mínimo 6 caracteres
+                </v-alert>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.password"
+                  :append-inner-icon="showNewPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Senha"
+                  prepend-inner-icon="mdi-lock"
+                  :rules="[rules.required, rules.minLength]"
+                  :type="showNewPassword ? 'text' : 'password'"
+                  variant="outlined"
+                  @click:append-inner="showNewPassword = !showNewPassword"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newUser.confirmPassword"
+                  :append-inner-icon="showNewConfirmPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                  density="comfortable"
+                  hide-details="auto"
+                  label="Confirmar Senha"
+                  prepend-inner-icon="mdi-lock-check"
+                  :rules="[rules.required, rules.newPasswordMatch]"
+                  :type="showNewConfirmPassword ? 'text' : 'password'"
+                  variant="outlined"
+                  @click:append-inner="showNewConfirmPassword = !showNewConfirmPassword"
+                />
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn
+            color="grey"
+            variant="text"
+            @click="cancelCreate"
+          >
+            <v-icon class="mr-1" icon="mdi-close" />
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="primary"
+            :disabled="!validCreateForm"
+            :loading="saving"
+            variant="elevated"
+            @click="createUser"
+          >
+            <v-icon class="mr-1" icon="mdi-account-plus" />
+            Criar Usuário
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Toggle Status Confirmation Dialog -->
+    <v-dialog v-model="deleteDialog" max-width="500">
+      <v-card elevation="8">
+        <v-card-title :class="selectedUser?.status === 'active' ? 'bg-warning' : 'bg-success'" class="pa-4">
+          <v-icon class="mr-2" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" size="30" />
+          <span class="text-h5">{{ selectedUser?.status === 'active' ? 'Confirmar Inativação' : 'Confirmar Ativação' }}</span>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-4">
+            <v-icon :color="selectedUser?.status === 'active' ? 'warning' : 'success'" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" size="80" />
+          </div>
+          <p class="text-h6 text-center">
+            Tem certeza que deseja {{ selectedUser?.status === 'active' ? 'inativar' : 'ativar' }} o usuário
+            <strong :class="selectedUser?.status === 'active' ? 'text-warning' : 'text-success'">{{ selectedUser?.name }}</strong>?
+          </p>
+          <p class="text-center text-grey mt-2">
+            {{ selectedUser?.status === 'active' ? 'O usuário não poderá mais acessar o sistema.' : 'O usuário poderá acessar o sistema novamente.' }}
+          </p>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn color="grey" variant="text" @click="deleteDialog = false">
+            <v-icon class="mr-1" icon="mdi-close" />
+            Cancelar
+          </v-btn>
+          <v-btn :color="selectedUser?.status === 'active' ? 'warning' : 'success'" variant="elevated" @click="confirmToggleStatus">
+            <v-icon class="mr-1" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" />
+            {{ selectedUser?.status === 'active' ? 'Inativar' : 'Ativar' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Snackbar -->
+    <v-snackbar
+      v-model="snackbar"
+      :color="snackbarColor"
+      elevation="8"
+      location="top right"
+      :timeout="4000"
+    >
+      <div class="d-flex align-center">
+        <v-icon
+          class="mr-2"
+          :icon="snackbarColor === 'success' ? 'mdi-check-circle' : snackbarColor === 'error' ? 'mdi-alert-circle' : 'mdi-information'"
+        />
+        {{ snackbarText }}
+      </div>
+    </v-snackbar>
+  </div>
+</template>
+
+<script setup lang="ts">
+  import type { BackendUser, Municipality, State, User, UserRole, ValidationRule } from '@/types'
+  import { computed, onMounted, ref } from 'vue'
+  import { useAuthStore } from '@/stores/auth'
+
+  const search = ref<string>('')
+  const filterRole = ref<string>('Todos')
+  const filterStatus = ref<string>('Todos')
+  const viewDialog = ref<boolean>(false)
+  const editDialog = ref<boolean>(false)
+  const deleteDialog = ref<boolean>(false)
+  const selectedUser = ref<User | null>(null)
+  const editingUser = ref<User | null>(null)
+  const snackbar = ref<boolean>(false)
+  const snackbarText = ref<string>('')
+  const snackbarColor = ref<string>('success')
+  const loading = ref<boolean>(false)
+  const saving = ref<boolean>(false)
+  const users = ref<User[]>([])
+  const validForm = ref<boolean>(false)
+  const changePassword = ref<boolean>(false)
+  const newPassword = ref<string>('')
+  const confirmPassword = ref<string>('')
+  const showPassword = ref<boolean>(false)
+  const showConfirmPassword = ref<boolean>(false)
+  const createDialog = ref<boolean>(false)
+  interface NewUserForm {
+    name: string
+    email: string
+    password: string
+    confirmPassword: string
+    role: UserRole | ''
+    // Campos de contato
+    tipo_contato: string
+    valor_contato: string
+    codigo_pais: string
+    // Campos de endereço
+    id_uf: number | null
+    id_municipio: number | null
+    logradouro: string
+    numero: string
+    complemento: string
+    cep: string
+    bairro: string
+  }
+
+  const newUser = ref<NewUserForm>({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: '',
+    tipo_contato: '',
+    valor_contato: '',
+    codigo_pais: '+55',
+    id_uf: null,
+    id_municipio: null,
+    logradouro: '',
+    numero: '',
+    complemento: '',
+    cep: '',
+    bairro: '',
+  })
+  const showNewPassword = ref<boolean>(false)
+  const showNewConfirmPassword = ref<boolean>(false)
+  const validCreateForm = ref<boolean>(false)
+
+  // Variáveis para UF e municípios
+  const ufs = ref<State[]>([])
+  const municipios = ref<Municipality[]>([])
+
+  interface TableHeader {
+    title: string
+    key: string
+    sortable?: boolean
+    width?: string
+  }
+
+  const headers: TableHeader[] = [
+    { title: '', key: 'avatar', sortable: false, width: '70px' },
+    { title: 'Nome', key: 'name' },
+    { title: 'Função', key: 'role' },
+    { title: 'Status', key: 'status' },
+    { title: 'Ações', key: 'actions', sortable: false, width: '180px' },
+  ]
+
+  interface FormRules {
+    required: ValidationRule
+    email: ValidationRule
+    minLength: ValidationRule
+    passwordMatch: ValidationRule
+    newPasswordMatch: ValidationRule
+  }
+
+  const rules: FormRules = {
+    required: (v: string): boolean | string => !!v || 'Campo obrigatório',
+    email: (v: string): boolean | string => /.+@.+\..+/.test(v) || 'Email inválido',
+    minLength: (v: string): boolean | string => (v && v.length >= 6) || 'Mínimo de 6 caracteres',
+    passwordMatch: (v: string): boolean | string => v === newPassword.value || 'As senhas não coincidem',
+    newPasswordMatch: (v: string): boolean | string => v === newUser.value.password || 'As senhas não coincidem',
+  }
+
+  const activeUsersCount = computed(() => {
+    return users.value.filter(u => u.status === 'active').length
+  })
+
+  const adminCount = computed(() => {
+    return users.value.filter(u => u.role === 'Admin').length
+  })
+
+  const filteredUsers = computed<User[]>(() => {
+    return users.value.filter(user => {
+      const roleMatch = filterRole.value === 'Todos' || user.role === filterRole.value
+      const statusMatch = filterStatus.value === 'Todos' || user.status === filterStatus.value
+      return roleMatch && statusMatch
+    })
+  })
+
+  const ufOptions = computed(() => {
+    return ufs.value.map((uf: State) => ({
+      label: `${uf.sigla} - ${uf.nome}`,
+      value: uf.id,
+    }))
+  })
+
+  const municipioOptions = computed(() => {
+    return municipios.value.map((municipio: Municipality) => ({
+      label: municipio.nome,
+      value: municipio.id,
+    }))
+  })
+
+  // Computed properties para controle de permissões
+  const canManageUsers = computed(() => {
+    const authStore = useAuthStore()
+    return authStore.role === 'admin'
+  })
+
+  const canCreateUsers = computed(() => {
+    const authStore = useAuthStore()
+    return authStore.role === 'admin'
+  })
+
+  function getInitials (name: string): string {
+    const names = name.split(' ')
+    if (names.length >= 2 && names[0]?.[0] && names[1]?.[0]) {
+      return `${names[0][0]}${names[1][0]}`.toUpperCase()
+    }
+    return name.slice(0, 2).toUpperCase()
+  }
+
+  function determineRole (name: string, email: string): UserRole {
+    const nameLower = name.toLowerCase()
+    const emailLower = email.toLowerCase()
+
+    if (nameLower.includes('admin') || emailLower.includes('admin')) return 'Admin'
+    if (nameLower.includes('gerente')) return 'Gerente'
+    if (nameLower.includes('almoxarife')) return 'Operador'
+    return 'Visualizador'
+  }
+
+  function getAvatarColor (index: number): string {
+    const colors = ['primary', 'success', 'warning', 'error', 'info', 'secondary']
+    return colors[index % colors.length] ?? 'primary'
+  }
+
+  function getRoleColor (role: UserRole): string {
+    const colors: Record<UserRole, string> = {
+      Admin: 'error',
+      Gerente: 'warning',
+      Operador: 'info',
+      Visualizador: 'grey',
+    }
+    return colors[role]
+  }
+
+  function getRoleIcon (role: UserRole): string {
+    const icons: Record<UserRole, string> = {
+      Admin: 'mdi-shield-crown',
+      Gerente: 'mdi-account-tie',
+      Operador: 'mdi-account-wrench',
+      Visualizador: 'mdi-account-eye',
+    }
+    return icons[role]
+  }
+
+  async function loadUfs (): Promise<void> {
+    try {
+      const response = await fetch('http://localhost:3001/uf')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar UFs')
+      }
+      const data: unknown = await response.json()
+      ufs.value = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Erro ao carregar UFs:', error)
+    }
+  }
+
+  async function loadMunicipios (ufId: number): Promise<void> {
+    try {
+      const response = await fetch(`http://localhost:3001/municipio?id_uf=${ufId}`)
+      if (!response.ok) {
+        throw new Error('Erro ao carregar municípios')
+      }
+      const data: unknown = await response.json()
+      municipios.value = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Erro ao carregar municípios:', error)
+    }
+  }
+
+  function onUfChange (ufId: number): void {
+    newUser.value.id_municipio = null
+    if (ufId) {
+      loadMunicipios(ufId)
+    } else {
+      municipios.value = []
+    }
+  }
+
+  function getContactMask (tipoContato: string): string {
+    switch (tipoContato) {
+      case 'telefone':
+      case 'whatsapp': {
+        return '(##) #####-####'
+      }
+      case 'email': {
+        return ''
+      }
+      case 'instagram':
+      case 'telegram': {
+        return ''
+      }
+      default: {
+        return ''
+      }
+    }
+  }
+
+  function formatContactValue (event: Event): void {
+    const target = event.target as HTMLInputElement
+    const value = target.value
+    const tipoContato = newUser.value.tipo_contato
+
+    if (tipoContato === 'telefone' || tipoContato === 'whatsapp') {
+      // Remove todos os caracteres não numéricos
+      const numbers = value.replace(/\D/g, '')
+
+      // Limita a 11 dígitos (máximo para telefone brasileiro)
+      const limitedNumbers = numbers.slice(0, 11)
+
+      // Aplica a máscara baseada no tamanho
+      if (limitedNumbers.length <= 2) {
+        newUser.value.valor_contato = limitedNumbers
+      } else if (limitedNumbers.length <= 6) {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2)}`
+      } else if (limitedNumbers.length <= 10) {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 6)}-${limitedNumbers.slice(6)}`
+      } else {
+        newUser.value.valor_contato = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7)}`
+      }
+    } else {
+      // Para outros tipos, permite qualquer caractere mas limita o tamanho
+      newUser.value.valor_contato = value.slice(0, 100)
+    }
+  }
+
+  function formatCEP (event: Event): void {
+    const target = event.target as HTMLInputElement
+    const value = target.value
+
+    // Remove todos os caracteres não numéricos
+    const numbers = value.replace(/\D/g, '')
+
+    // Limita a 8 dígitos (CEP brasileiro)
+    const limitedNumbers = numbers.slice(0, 8)
+
+    // Aplica a máscara baseada no tamanho
+    newUser.value.cep = limitedNumbers.length <= 5
+      ? limitedNumbers
+      : `${limitedNumbers.slice(0, 5)}-${limitedNumbers.slice(5)}`
+  }
+
+  function onContactKeypress (event: KeyboardEvent): void {
+    const tipoContato = newUser.value.tipo_contato
+
+    if (tipoContato === 'telefone' || tipoContato === 'whatsapp') {
+      // Apenas números são permitidos para telefone
+      const char = String.fromCodePoint(event.which)
+      if (!/[0-9]/.test(char)) {
+        event.preventDefault()
+      }
+    }
+    // Para outros tipos (email, instagram, etc.), permite qualquer caractere
+  }
+
+  function onCEPKeypress (event: KeyboardEvent): void {
+    // Apenas números são permitidos para CEP
+    const char = String.fromCodePoint(event.which)
+    if (!/[0-9]/.test(char)) {
+      event.preventDefault()
+    }
+  }
+
+  async function fetchUsers (): Promise<void> {
+    loading.value = true
+    try {
+      const response = await fetch('http://localhost:3001/usuarios')
+      if (!response.ok) {
+        throw new Error('Erro ao buscar usuários')
+      }
+      const data: unknown = await response.json()
+
+      // O db.json retorna array aninhado [[...]], então pegamos o primeiro elemento
+      const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0])
+        ? data[0]
+        : (Array.isArray(data) ? data : [])
+
+      users.value = usuariosArray.map((user: BackendUser, index: number): User => ({
+        id: user.id,
+        nome: user.nome,
+        name: user.nome,
+        email: user.email,
+        role: determineRole(user.nome, user.email),
+        status: 'active',
+        lastAccess: new Date().toLocaleString('pt-BR'),
+        initials: getInitials(user.nome),
+        avatarColor: getAvatarColor(index),
+      }))
+
+      snackbarText.value = 'Usuários carregados com sucesso!'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+    } catch (error: unknown) {
+      console.error('Erro ao buscar usuários:', error)
+      snackbarText.value = 'Erro ao carregar usuários. Verifique se o backend está rodando.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function viewUser (user: User): void {
+    selectedUser.value = user
+    viewDialog.value = true
+  }
+
+  function editUser (user: User): void {
+    editingUser.value = { ...user }
+    changePassword.value = false
+    newPassword.value = ''
+    confirmPassword.value = ''
+    editDialog.value = true
+  }
+
+  function cancelEdit (): void {
+    editDialog.value = false
+    editingUser.value = null
+    changePassword.value = false
+    newPassword.value = ''
+    confirmPassword.value = ''
+  }
+
+  async function saveUser (): Promise<void> {
+    if (!editingUser.value) return
+
+    saving.value = true
+    try {
+      // Buscar todos os usuários
+      const getResponse = await fetch('http://localhost:3001/usuarios')
+      const allData: unknown = await getResponse.json()
+      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
+        ? allData[0]
+        : (Array.isArray(allData) ? allData : [])
+
+      // Atualizar o usuário específico no array
+      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === editingUser.value!.id)
+      if (userIndex !== -1) {
+        const currentUser = usuariosArray[userIndex]
+        if (currentUser) {
+          usuariosArray[userIndex] = {
+            ...currentUser,
+            nome: editingUser.value.name || editingUser.value.nome || '',
+            email: editingUser.value.email,
+          }
+
+          // Adicionar senha se estiver alterando
+          if (changePassword.value && newPassword.value) {
+            usuariosArray[userIndex]!.senha = newPassword.value
+          }
+        }
+      }
+
+      // Salvar o array atualizado
+      const response = await fetch('http://localhost:3001/usuarios', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([usuariosArray]),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar usuário')
+      }
+
+      // Atualizar usuário na lista local
+      const index = users.value.findIndex((u: User) => u.id === editingUser.value!.id)
+      if (index !== -1 && editingUser.value) {
+        users.value[index] = {
+          ...editingUser.value,
+          initials: getInitials(editingUser.value.name || editingUser.value.nome || ''),
+        }
+      }
+
+      snackbarText.value = 'Usuário atualizado com sucesso!'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+      editDialog.value = false
+      editingUser.value = null
+      changePassword.value = false
+      newPassword.value = ''
+      confirmPassword.value = ''
+    } catch (error: unknown) {
+      console.error('Erro ao atualizar usuário:', error)
+      snackbarText.value = 'Erro ao atualizar usuário'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      saving.value = false
+    }
+  }
+
+  function toggleUserStatus (user: User): void {
+    selectedUser.value = user
+    deleteDialog.value = true
+  }
+
+  async function confirmToggleStatus (): Promise<void> {
+    if (!selectedUser.value) return
+
+    try {
+      // Buscar todos os usuários
+      const getResponse = await fetch('http://localhost:3001/usuarios')
+      const allData: unknown = await getResponse.json()
+      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
+        ? allData[0]
+        : (Array.isArray(allData) ? allData : [])
+
+      // Encontrar o usuário e alterar o status
+      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === selectedUser.value!.id)
+      if (userIndex !== -1) {
+        // Simular alteração de status no backend (como não temos campo status no BackendUser, vamos simular)
+        // Na implementação real, você adicionaria um campo status ao BackendUser
+        const newStatus = selectedUser.value.status === 'active' ? 'inactive' : 'active'
+
+        // Atualizar na lista local
+        const userIndexLocal = users.value.findIndex((u: User) => u.id === selectedUser.value!.id)
+        if (userIndexLocal !== -1 && users.value[userIndexLocal]) {
+          users.value[userIndexLocal].status = newStatus
+        }
+
+        snackbarText.value = `Usuário ${selectedUser.value.name} ${newStatus === 'active' ? 'ativado' : 'inativado'} com sucesso!`
+        snackbarColor.value = 'success'
+        snackbar.value = true
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao alterar status do usuário:', error)
+      snackbarText.value = 'Erro ao alterar status do usuário'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      deleteDialog.value = false
+      selectedUser.value = null
+    }
+  }
+
+  function goToRegistration (): void {
+    newUser.value = {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: '',
+      tipo_contato: '',
+      valor_contato: '',
+      codigo_pais: '+55',
+      id_uf: null,
+      id_municipio: null,
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      cep: '',
+      bairro: '',
+    }
+    createDialog.value = true
+  }
+
+  function cancelCreate (): void {
+    createDialog.value = false
+    newUser.value = {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: '',
+      tipo_contato: '',
+      valor_contato: '',
+      codigo_pais: '+55',
+      id_uf: null,
+      id_municipio: null,
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      cep: '',
+      bairro: '',
+    }
+  }
+
+  async function createUser (): Promise<void> {
+    saving.value = true
+    try {
+      // Buscar todos os usuários
+      const getResponse = await fetch('http://localhost:3001/usuarios')
+      const allData: unknown = await getResponse.json()
+      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
+        ? allData[0]
+        : (Array.isArray(allData) ? allData : [])
+
+      // Verificar se o email já existe
+      const emailExists = usuariosArray.some((u: BackendUser) => u.email === newUser.value.email)
+      if (emailExists) {
+        snackbarText.value = 'Este e-mail já está cadastrado'
+        snackbarColor.value = 'error'
+        snackbar.value = true
+        saving.value = false
+        return
+      }
+
+      // Gerar novo ID
+      const newId: number = usuariosArray.length > 0
+        ? Math.max(...usuariosArray.map((u: BackendUser) => u.id)) + 1
+        : 1
+
+      // Criar novo usuário
+      const newUserData: BackendUser = {
+        id: newId,
+        nome: newUser.value.name,
+        email: newUser.value.email,
+        senha: newUser.value.password,
+        id_contato: newId,
+        role: 'estoquista',
+      }
+
+      // Adicionar ao array
+      usuariosArray.push(newUserData)
+
+      // Salvar o array atualizado
+      const response = await fetch('http://localhost:3001/usuarios', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([usuariosArray]),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar usuário')
+      }
+
+      // Adicionar à lista local
+      const newUserLocal: User = {
+        id: newId,
+        nome: newUser.value.name,
+        name: newUser.value.name,
+        email: newUser.value.email,
+        role: newUser.value.role as UserRole,
+        status: 'active',
+        lastAccess: new Date().toLocaleString('pt-BR'),
+        initials: getInitials(newUser.value.name),
+        avatarColor: getAvatarColor(users.value.length),
+      }
+      users.value.push(newUserLocal)
+
+      snackbarText.value = 'Usuário criado com sucesso!'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+      createDialog.value = false
+      newUser.value = {
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: '',
+        tipo_contato: '',
+        valor_contato: '',
+        codigo_pais: '+55',
+        id_uf: null,
+        id_municipio: null,
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        cep: '',
+        bairro: '',
+      }
+    } catch (error: unknown) {
+      console.error('Erro ao criar usuário:', error)
+      snackbarText.value = 'Erro ao criar usuário'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      saving.value = false
+    }
+  }
+
+  onMounted(() => {
+    fetchUsers()
+    loadUfs()
+  })
+</script>
+
+<style scoped>
+.user-management-page {
+  min-height: 100vh;
+  background: #000000;
+  padding: 2rem 0;
+}
+
+.stat-card {
+  border-radius: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.main-card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.v-data-table) {
+  border-radius: 8px;
+}
+
+:deep(.v-data-table tbody tr) {
+  transition: background-color 0.2s ease;
+}
+
+:deep(.v-data-table tbody tr:hover) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+:deep(.v-card-title.bg-primary) {
+  background: linear-gradient(135deg, #000000 0%, #000000 100%);
+  color: white;
+}
+
+:deep(.v-card-title.bg-error) {
+  background: linear-gradient(135deg, #fb93aa 0%, #f5576c 100%);
+  color: white;
+}
+</style>

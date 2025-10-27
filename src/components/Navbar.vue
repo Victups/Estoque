@@ -209,123 +209,130 @@
   </v-navigation-drawer>
 </template>
 
-<script lang="ts" setup>
-  import type { State } from '../types'
-  import { computed, onMounted, ref } from 'vue'
-  import { useRouter } from 'vue-router'
-  import { UfService } from '../services/api'
-  import { useAuthStore } from '../stores/auth'
+<script lang="ts">
+  import type { State } from '@/types'
+  import { UfService } from '@/services'
+  import { useAuthStore } from '@/stores/auth'
 
-  const router = useRouter()
-  const drawer = ref(false)
-  const ufDialog = ref(false)
-  const ufSearch = ref('')
-  const selectedUfId = ref<number | null>(null)
-  const loading = ref(false)
-
-  const auth = useAuthStore()
-  const displayName = computed(() => auth.displayName)
-  const ufText = computed(() => auth.ufLabel ?? 'UF não definida')
-
-  // UFs carregadas da API
-  const ufs = ref<State[]>([])
-
-  // Carregar UFs da API ao montar o componente
-  onMounted(async () => {
-    try {
-      loading.value = true
-      ufs.value = await UfService.getAll()
-      // Inicializar UF selecionada com a UF atual do usuário
-      if (auth.ufId) {
-        selectedUfId.value = auth.ufId
+  export default {
+    name: 'NavbarComponent',
+    setup () {
+      const auth = useAuthStore()
+      return { auth }
+    },
+    data () {
+      return {
+        drawer: false,
+        ufDialog: false,
+        ufSearch: '',
+        selectedUfId: null as number | null,
+        loading: false,
+        ufs: [] as State[],
+        menuItems: [
+          {
+            title: 'Dashboard',
+            icon: 'mdi-view-dashboard',
+            to: '/',
+          },
+          {
+            title: 'Produtos',
+            icon: 'mdi-package-variant',
+            to: '/produtos',
+          },
+          {
+            title: 'Movimentação',
+            icon: 'mdi-swap-horizontal',
+            to: '/movimentacao',
+          },
+          {
+            title: 'Usuários',
+            icon: 'mdi-account-group',
+            to: '/usuarios',
+          },
+          {
+            title: 'Relatórios',
+            icon: 'mdi-chart-line',
+            to: '/relatorios',
+          },
+        ],
       }
-    } catch (error) {
-      console.error('Erro ao carregar UFs:', error)
-    } finally {
-      loading.value = false
-    }
-  })
-
-  const filteredUFs = computed(() => {
-    if (!ufSearch.value) return ufs.value
-
-    const search = ufSearch.value.toLowerCase()
-    return ufs.value.filter(uf =>
-      uf.sigla.toLowerCase().includes(search)
-      || uf.nome.toLowerCase().includes(search),
-    )
-  })
-
-  const menuItems = [
-    {
-      title: 'Dashboard',
-      icon: 'mdi-view-dashboard',
-      to: '/',
     },
-    {
-      title: 'Produtos',
-      icon: 'mdi-package-variant',
-      to: '/produtos',
-    },
-    {
-      title: 'Estoque',
-      icon: 'mdi-warehouse',
-      to: '/estoque',
-    },
-    {
-      title: 'Relatórios',
-      icon: 'mdi-chart-line',
-      to: '/relatorios',
-    },
-  ]
+    computed: {
+      displayName () {
+        return this.auth.displayName
+      },
+      ufText () {
+        return this.auth.ufLabel ?? 'UF não definida'
+      },
+      filteredUFs () {
+        if (!this.ufSearch) return this.ufs
 
-  function selectUF (ufId: number) {
-    selectedUfId.value = ufId
-  }
-
-  function cancelUFChange () {
-    // Restaurar a UF atual ao cancelar
-    selectedUfId.value = auth.ufId
-    ufDialog.value = false
-    ufSearch.value = ''
-  }
-
-  function confirmUFChange () {
-    if (selectedUfId.value) {
-      const ufData = ufs.value.find(u => u.id === selectedUfId.value)
-      if (ufData) {
-        const ufLabel = `${ufData.sigla} - ${ufData.nome}`
-        // Atualizar a UF no store de autenticação
-        auth.setAuth({
-          name: auth.userName,
-          email: auth.userEmail || '',
-          ufId: selectedUfId.value,
-          ufLabel,
-        })
+        const search = this.ufSearch.toLowerCase()
+        return this.ufs.filter(uf =>
+          uf.sigla.toLowerCase().includes(search)
+          || uf.nome.toLowerCase().includes(search),
+        )
+      },
+    },
+    async mounted () {
+      try {
+        this.loading = true
+        this.ufs = await UfService.getAll()
+        // Inicializar UF selecionada com a UF atual do usuário
+        if (this.auth.ufId) {
+          this.selectedUfId = this.auth.ufId
+        }
+      } catch (error) {
+        console.error('Erro ao carregar UFs:', error)
+      } finally {
+        this.loading = false
       }
-      ufDialog.value = false
-      ufSearch.value = ''
-    }
-  }
-
-  function goToProfile () {
-    router.push('/perfil')
-  }
-
-  function goToSettings () {
-    router.push('/configuracoes')
-  }
-
-  function logout () {
-    auth.logout()
-    router.push('/login')
+    },
+    methods: {
+      selectUF (ufId: number) {
+        this.selectedUfId = ufId
+      },
+      cancelUFChange () {
+        // Restaurar a UF atual ao cancelar
+        this.selectedUfId = this.auth.ufId
+        this.ufDialog = false
+        this.ufSearch = ''
+      },
+      confirmUFChange () {
+        if (this.selectedUfId) {
+          const ufData = this.ufs.find(u => u.id === this.selectedUfId)
+          if (ufData) {
+            const ufLabel = `${ufData.sigla} - ${ufData.nome}`
+            // Atualizar a UF no store de autenticação
+            this.auth.setAuth({
+              name: this.auth.userName,
+              email: this.auth.userEmail || '',
+              ufId: this.selectedUfId,
+              ufLabel,
+            })
+          }
+          this.ufDialog = false
+          this.ufSearch = ''
+        }
+      },
+      goToProfile () {
+        this.$router.push('/perfil')
+      },
+      goToSettings () {
+        this.$router.push('/configuracoes')
+      },
+      logout () {
+        this.auth.logout()
+        this.$router.push('/login')
+      },
+    },
   }
 </script>
 
 <style scoped>
 /* Melhorado o gradiente e adicionado backdrop blur para efeito glassmorphism */
 .norven-navbar {
-  background: linear-gradient(135deg, #7B2CBF 0%, #9C4ED6 50%, #B39DDB 100%) !important;
+  background: #7B2CBF  !important;
   box-shadow: 0 4px 20px rgba(123, 44, 191, 0.25);
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -600,6 +607,21 @@
 
 .drawer-item.v-list-item--active .v-icon {
   color: #7B2CBF;
+}
+
+/* Estilo específico para o item de configurações no menu do perfil */
+.menu-item {
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(123, 44, 191, 0.08) !important;
+  transform: translateX(4px);
+}
+
+.menu-item.logout-item:hover {
+  background-color: rgba(244, 67, 54, 0.08) !important;
+  color: #f44336;
 }
 
 /* Adicionadas animações suaves */

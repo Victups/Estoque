@@ -1,25 +1,24 @@
 import type { BackendUser, User, UserRole } from '@/types'
-import { computed, type ComputedRef } from 'vue'
 
 /**
- * Composable para manipulação de dados de usuários
+ * Utilitários para manipulação de dados de usuários
  */
-export function useUser () {
+export const userUtils = {
   /**
    * Gera as iniciais de um nome
    */
-  function getInitials (name: string): string {
+  getInitials (name: string): string {
     const names = name.split(' ')
     if (names.length >= 2 && names[0]?.[0] && names[1]?.[0]) {
       return `${names[0][0]}${names[1][0]}`.toUpperCase()
     }
     return name.slice(0, 2).toUpperCase()
-  }
+  },
 
   /**
    * Determina a role baseado no nome/email
    */
-  function determineRole (name: string, email: string): UserRole {
+  determineRole (name: string, email: string): UserRole {
     const nameLower = name.toLowerCase()
     const emailLower = email.toLowerCase()
 
@@ -33,21 +32,20 @@ export function useUser () {
       return 'Operador'
     }
     return 'Visualizador'
-  }
-
+  },
 
   /**
    * Gera cor do avatar baseado no index
    */
-  function getAvatarColor (index: number): string {
+  getAvatarColor (index: number): string {
     const colors = ['primary', 'success', 'warning', 'error', 'info', 'secondary']
     return colors[index % colors.length] ?? 'primary'
-  }
+  },
 
   /**
    * Retorna a cor baseado na role
    */
-  function getRoleColor (role: UserRole): string {
+  getRoleColor (role: UserRole): string {
     const colors: Record<UserRole, string> = {
       Admin: 'error',
       Gerente: 'warning',
@@ -55,12 +53,12 @@ export function useUser () {
       Visualizador: 'grey',
     }
     return colors[role]
-  }
+  },
 
   /**
    * Retorna o ícone baseado na role
    */
-  function getRoleIcon (role: UserRole): string {
+  getRoleIcon (role: UserRole): string {
     const icons: Record<UserRole, string> = {
       Admin: 'mdi-shield-crown',
       Gerente: 'mdi-account-tie',
@@ -68,63 +66,57 @@ export function useUser () {
       Visualizador: 'mdi-account-eye',
     }
     return icons[role]
-  }
+  },
 
   /**
    * Converte BackendUser para User
    */
-  function mapBackendToUser (backendUser: BackendUser, index: number): User {
+  mapBackendToUser (backendUser: BackendUser, index: number): User {
     return {
       id: backendUser.id,
       nome: backendUser.nome,
       name: backendUser.nome,
       email: backendUser.email,
-      role: determineRole(backendUser.nome, backendUser.email),
+      role: this.determineRole(backendUser.nome, backendUser.email),
       status: 'active',
-      avatarColor: getAvatarColor(index),
-      initials: getInitials(backendUser.nome),
+      avatarColor: this.getAvatarColor(index),
+      initials: this.getInitials(backendUser.nome),
       lastAccess: new Date().toLocaleString('pt-BR'),
     }
-  }
-
-  return {
-    getInitials,
-    determineRole,
-    getAvatarColor,
-    getRoleColor,
-    getRoleIcon,
-    mapBackendToUser,
-  }
+  },
 }
 
 /**
- * Composable para estatísticas de usuários
+ * Mixin para estatísticas de usuários
  */
-export function useUserStats (users: ComputedRef<User[]> | { value: User[] }) {
-  const activeUsers = computed(() => {
-    return users.value.filter((u: User) => u.status === 'active')
-  })
+export const userStatsMixin = {
+  computed: {
+    activeUsers () {
+      return (this as any).users.filter((u: User) => u.status === 'active')
+    },
 
-  const inactiveUsers = computed(() => {
-    return users.value.filter((u: User) => u.status === 'inactive')
-  })
+    inactiveUsers () {
+      return (this as any).users.filter((u: User) => u.status === 'inactive')
+    },
 
-  const adminUsers = computed(() => {
-    return users.value.filter((u: User) => u.role === 'Admin')
-  })
+    adminUsers () {
+      return (this as any).users.filter((u: User) => u.role === 'Admin')
+    },
 
-  const totalUsers = computed(() => users.value.length)
-  const activeUsersCount = computed(() => activeUsers.value.length)
-  const inactiveUsersCount = computed(() => inactiveUsers.value.length)
-  const adminCount = computed(() => adminUsers.value.length)
+    totalUsers (): number {
+      return (this as any).users.length
+    },
 
-  return {
-    activeUsers,
-    inactiveUsers,
-    adminUsers,
-    totalUsers,
-    activeUsersCount,
-    inactiveUsersCount,
-    adminCount,
-  }
+    activeUsersCount () {
+      return this.activeUsers.length
+    },
+
+    inactiveUsersCount () {
+      return this.inactiveUsers.length
+    },
+
+    adminCount () {
+      return this.adminUsers.length
+    },
+  },
 }
