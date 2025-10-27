@@ -81,16 +81,6 @@
                       label="Lembrar-me"
                     />
                   </v-col>
-                  <v-col class="text-right d-flex align-center justify-end" cols="6">
-                    <v-btn
-                      color="primary"
-                      size="small"
-                      variant="text"
-                      @click="handleForgotPassword"
-                    >
-                      Esqueceu a senha?
-                    </v-btn>
-                  </v-col>
                 </v-row>
 
                 <v-alert
@@ -219,12 +209,6 @@
     } finally {
       loading.value = false
     }
-  }
-
-  function handleForgotPassword () {
-    // Implementar recuperação de senha
-    console.log('Recuperação de senha')
-    // router.push('/recuperar-senha')
   }
 </script>
 
