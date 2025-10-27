@@ -70,12 +70,6 @@
           route: '/perfil',
         },
       ],
-      tips: [
-        'Acompanhe produtos com validade próxima na página Produtos.',
-        'Use o filtro por nome para encontrar itens rapidamente.',
-        'Verifique o estoque mínimo para evitar rupturas.',
-        'O sistema aplica FIFO automaticamente nas saídas.',
-        ],
       }
   },
   computed: {
@@ -197,63 +191,6 @@
             <p class="text-body-2 font-weight-medium">
               {{ action.title }}
             </p>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Dicas e Informações -->
-    <v-row class="mt-6">
-      <v-col cols="12" md="6">
-        <v-card class="rounded-xl" elevation="2">
-          <v-card-title class="bg-primary text-white">
-            <v-icon class="mr-2">mdi-lightbulb-on</v-icon>
-            Dicas Rápidas
-          </v-card-title>
-          <v-list density="comfortable">
-            <v-list-item
-              v-for="(tip, idx) in tips"
-              :key="idx"
-            >
-              <template #prepend>
-                <v-icon color="primary">mdi-check-circle</v-icon>
-              </template>
-              <v-list-item-title>{{ tip }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" md="6">
-        <v-card class="rounded-xl" elevation="2">
-          <v-card-title class="bg-success text-white">
-            <v-icon class="mr-2">mdi-information</v-icon>
-            Informações do Sistema
-          </v-card-title>
-          <v-card-text class="pa-6">
-            <v-list density="comfortable">
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="success">mdi-check-decagram</v-icon>
-                </template>
-                <v-list-item-title>Sistema 100% Frontend</v-list-item-title>
-                <v-list-item-subtitle>Consumindo db.json</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="info">mdi-database</v-icon>
-                </template>
-                <v-list-item-title>Filtro por UF Ativo</v-list-item-title>
-                <v-list-item-subtitle>{{ ufText }}</v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="warning">mdi-truck-fast</v-icon>
-                </template>
-                <v-list-item-title>FIFO Automático</v-list-item-title>
-                <v-list-item-subtitle>First-In, First-Out</v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
           </v-card-text>
         </v-card>
       </v-col>
