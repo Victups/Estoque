@@ -32,61 +32,61 @@
 
               <v-form ref="formRef" v-model="valid" @submit.prevent="handleLogin">
                 <v-text-field
-                  v-model="email"
-                  class="mb-4"
-                  color="primary"
-                  label="E-mail"
-                  prepend-inner-icon="mdi-email"
-                  required
-                  :rules="emailRules"
-                  type="email"
-                  variant="outlined"
+                    v-model="email"
+                    class="mb-4"
+                    color="primary"
+                    label="E-mail"
+                    prepend-inner-icon="mdi-email"
+                    required
+                    :rules="emailRules"
+                    type="email"
+                    variant="outlined"
                 />
 
                 <v-text-field
-                  v-model="password"
-                  :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                  class="mb-2"
-                  color="primary"
-                  label="Senha"
-                  prepend-inner-icon="mdi-lock"
-                  required
-                  :rules="passwordRules"
-                  :type="showPassword ? 'text' : 'password'"
-                  variant="outlined"
-                  @click:append-inner="showPassword = !showPassword"
+                    v-model="password"
+                    :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                    class="mb-2"
+                    color="primary"
+                    label="Senha"
+                    prepend-inner-icon="mdi-lock"
+                    required
+                    :rules="passwordRules"
+                    :type="showPassword ? 'text' : 'password'"
+                    variant="outlined"
+                    @click:append-inner="showPassword = !showPassword"
                 />
 
                 <v-select
-                  v-model="selectedUfId"
-                  class="mb-4"
-                  color="primary"
-                  :item-title="'label'"
-                  :item-value="'id'"
-                  :items="ufOptions"
-                  label="UF"
-                  prepend-inner-icon="mdi-map"
-                  required
-                  :rules="[v => !!v || 'UF é obrigatória']"
-                  variant="outlined"
+                    v-model="selectedUfId"
+                    class="mb-4"
+                    color="primary"
+                    :item-title="'label'"
+                    :item-value="'id'"
+                    :items="ufOptions"
+                    label="UF"
+                    prepend-inner-icon="mdi-map"
+                    required
+                    :rules="[v => !!v || 'UF é obrigatória']"
+                    variant="outlined"
                 />
 
                 <v-row class="mb-4">
                   <v-col cols="6">
                     <v-checkbox
-                      v-model="rememberMe"
-                      color="primary"
-                      density="compact"
-                      hide-details
-                      label="Lembrar-me"
+                        v-model="rememberMe"
+                        color="primary"
+                        density="compact"
+                        hide-details
+                        label="Lembrar-me"
                     />
                   </v-col>
                   <v-col class="text-right d-flex align-center justify-end" cols="6">
                     <v-btn
-                      color="primary"
-                      size="small"
-                      variant="text"
-                      @click="handleForgotPassword"
+                        color="primary"
+                        size="small"
+                        variant="text"
+                        @click="handleForgotPassword"
                     >
                       Esqueceu a senha?
                     </v-btn>
@@ -94,24 +94,24 @@
                 </v-row>
 
                 <v-alert
-                  v-if="error"
-                  class="mb-4"
-                  closable
-                  type="error"
-                  variant="tonal"
-                  @click:close="error = null"
+                    v-if="error"
+                    class="mb-4"
+                    closable
+                    type="error"
+                    variant="tonal"
+                    @click:close="error = null"
                 >
                   {{ error }}
                 </v-alert>
 
                 <v-btn
-                  block
-                  class="mb-4"
-                  color="primary"
-                  :disabled="!valid"
-                  :loading="loading"
-                  size="large"
-                  type="submit"
+                    block
+                    class="mb-4"
+                    color="primary"
+                    :disabled="!valid"
+                    :loading="loading"
+                    size="large"
+                    type="submit"
                 >
                   Entrar
                 </v-btn>
@@ -126,12 +126,12 @@
 
 <script lang="ts">
 import type { State } from '../types'
-import { AuthService, UfService } from '@/services'
+import { AuthService, UfService } from '../services'
 import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'LoginPage',
-  data() {
+  data () {
     return {
       // Form state
       valid: false,
@@ -142,10 +142,10 @@ export default {
       showPassword: false,
       loading: false,
       error: null as string | null,
-      
+
       // UF Options (carregadas do backend)
       ufs: [] as State[],
-      
+
       // Validation rules
       emailRules: [
         (v: string) => !!v || 'E-mail é obrigatório',
@@ -154,18 +154,18 @@ export default {
       passwordRules: [
         (v: string) => !!v || 'Senha é obrigatória',
         (v: string) => v.length >= 6 || 'Senha deve ter no mínimo 6 caracteres',
-      ]
+      ],
     }
   },
   computed: {
-    ufOptions() {
+    ufOptions () {
       return this.ufs.map((uf: State) => ({
         id: uf.id,
         label: `${uf.sigla} - ${uf.nome}`,
       }))
-    }
+    },
   },
-  async mounted() {
+  async mounted () {
     try {
       this.ufs = await UfService.getAll()
     } catch (error) {
@@ -174,7 +174,7 @@ export default {
     }
   },
   methods: {
-    async handleLogin() {
+    async handleLogin () {
       if (!this.valid || !this.selectedUfId) {
         return
       }
@@ -220,18 +220,18 @@ export default {
         this.loading = false
       }
     },
-    handleForgotPassword() {
+    handleForgotPassword () {
       // Implementar recuperação de senha
       console.log('Recuperação de senha')
       // this.$router.push('/recuperar-senha')
-    }
-  }
+    },
+  },
 }
 </script>
 
 <route lang="yaml">
 meta:
-  layout: blank
+layout: blank
 </route>
 
 <style scoped>
