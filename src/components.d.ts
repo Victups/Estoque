@@ -8,14 +8,20 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    CategoriasCRUD: typeof import('./components/CRUD/CategoriasCRUD.vue')['default']
+    DepositosCRUD: typeof import('./components/CRUD/DepositosCRUD.vue')['default']
     DonutChartCard: typeof import('./components/DonutChartCard.vue')['default']
     FiltrosRelatorios: typeof import('./components/FiltrosRelatorios.vue')['default']
     Footer: typeof import('./components/Footer.vue')['default']
+    FornecedoresCRUD: typeof import('./components/CRUD/FornecedoresCRUD.vue')['default']
     GraficoBarrasCompleto: typeof import('./components/GraficoBarrasCompleto.vue')['default']
+    LocalizacoesCRUD: typeof import('./components/CRUD/LocalizacoesCRUD.vue')['default']
     LocationHierarchy: typeof import('./components/LocationHierarchy.vue')['default']
+    MarcasCRUD: typeof import('./components/CRUD/MarcasCRUD.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    UnidadesMedidaCRUD: typeof import('./components/CRUD/UnidadesMedidaCRUD.vue')['default']
     UserCard: typeof import('./components/UserCard.vue')['default']
     UserForm: typeof import('./components/UserForm.vue')['default']
   }

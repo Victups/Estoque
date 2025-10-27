@@ -1,26 +1,29 @@
 {
     "usuarios": [ [
-        {
-          "id": 1,
-          "nome": "Administrador",
-          "email": "admin@sistema.com",
-          "senha": "senha_super_segura_hash",
-          "id_contato": 1
-        },
-        {
-          "id": 2,
-          "nome": "João da Silva (Almoxarife)",
-          "email": "joao.silva@empresa.com",
-          "senha": "senha_segura_hash_123",
-          "id_contato": 2
-        },
-        {
-          "id": 3,
-          "nome": "Maria Souza (Gerente)",
-          "email": "maria.souza@empresa.com",
-          "senha": "senha_segura_hash_456",
-          "id_contato": 3
-        }
+      {
+        "id": 1,
+        "nome": "Administrador",
+        "email": "admin@sistema.com",
+        "senha": "senha_super_segura_hash",
+        "id_contato": 1,
+        "role": "admin"
+      },
+      {
+        "id": 3,
+        "nome": "Maria Souza",
+        "email": "maria.souza@empresa.com",
+        "senha": "senha_segura_hash_456",
+        "id_contato": 3,
+        "role": "gestor"
+      },
+      {
+        "id": 2,
+        "nome": "João da Silva",
+        "email": "joao.silva@empresa.com",
+        "senha": "senha_segura_hash_123",
+        "id_contato": 2,
+        "role": "estoquista"
+      }
       ] ],
     "uf": [ [
         {
@@ -292,6 +295,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 4.50,
+          "preco_venda": 6.00,
           "usuario_log_id": null,
           "id_localizacao": 3
         },

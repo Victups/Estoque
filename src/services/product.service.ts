@@ -150,6 +150,69 @@ class CategoryServiceClass {
       throw new Error('Erro ao buscar categorias')
     }
   }
+
+  async getById (id: number): Promise<Category> {
+    try {
+      const response = await api.get(`${this.endpoint}/${id}`)
+      return response.data
+    } catch {
+      throw new Error('Erro ao buscar categoria')
+    }
+  }
+
+  async create (categoryData: Omit<Category, 'id'>): Promise<Category> {
+    try {
+      const response = await api.get(this.endpoint)
+      const categories = new ArrayResponse<Category>(response.data).get()
+      
+      const newCategory: Category = {
+        id: Math.max(...categories.map(c => c.id), 0) + 1,
+        ...categoryData,
+      }
+      
+      categories.push(newCategory)
+      await api.put(this.endpoint, new ArrayResponse(categories).toNestedArray())
+      return newCategory
+    } catch {
+      throw new Error('Erro ao criar categoria')
+    }
+  }
+
+  async update (id: number, updates: Partial<Omit<Category, 'id'>>): Promise<Category> {
+    try {
+      const response = await api.get(this.endpoint)
+      const categories = new ArrayResponse<Category>(response.data).get()
+      const categoryIndex = categories.findIndex(c => c.id === id)
+      
+      if (categoryIndex === -1) {
+        throw new Error('Categoria não encontrada')
+      }
+      
+      const existingCategory = categories[categoryIndex]!
+      const updatedCategory: Category = {
+        id: existingCategory.id,
+        nome: updates.nome ?? existingCategory.nome,
+      }
+      
+      categories[categoryIndex] = updatedCategory
+      await api.put(this.endpoint, new ArrayResponse(categories).toNestedArray())
+      return updatedCategory
+    } catch {
+      throw new Error('Erro ao atualizar categoria')
+    }
+  }
+
+  async delete (id: number): Promise<void> {
+    try {
+      const response = await api.get(this.endpoint)
+      const categories = new ArrayResponse<Category>(response.data).get()
+      const updatedCategories = categories.filter((c: Category) => c.id !== id)
+      
+      await api.put(this.endpoint, new ArrayResponse(updatedCategories).toNestedArray())
+    } catch {
+      throw new Error('Erro ao excluir categoria')
+    }
+  }
 }
 
 /**
@@ -166,6 +229,83 @@ class BrandServiceClass {
       throw new Error('Erro ao buscar marcas')
     }
   }
+
+  async getById (id: number): Promise<Brand> {
+    try {
+      const response = await api.get(`${this.endpoint}/${id}`)
+      return response.data
+    } catch {
+      throw new Error('Erro ao buscar marca')
+    }
+  }
+
+  async create (brandData: Omit<Brand, 'id'>): Promise<Brand> {
+    try {
+      const response = await api.get(this.endpoint)
+      const brands = new ArrayResponse<Brand>(response.data).get()
+      
+      // Verificar se já existe uma marca com o mesmo nome
+      const existingBrand = brands.find(b => b.nome.toLowerCase() === brandData.nome.toLowerCase())
+      if (existingBrand) {
+        throw new Error('Já existe uma marca com este nome')
+      }
+      
+      const newBrand: Brand = {
+        id: Math.max(...brands.map(b => b.id), 0) + 1,
+        ...brandData,
+      }
+      
+      brands.push(newBrand)
+      await api.put(this.endpoint, new ArrayResponse(brands).toNestedArray())
+      return newBrand
+    } catch {
+      throw new Error('Erro ao criar marca')
+    }
+  }
+
+  async update (id: number, updates: Partial<Omit<Brand, 'id'>>): Promise<Brand> {
+    try {
+      const response = await api.get(this.endpoint)
+      const brands = new ArrayResponse<Brand>(response.data).get()
+      const brandIndex = brands.findIndex(b => b.id === id)
+      
+      if (brandIndex === -1) {
+        throw new Error('Marca não encontrada')
+      }
+      
+      // Verificar se já existe outra marca com o mesmo nome
+      if (updates.nome) {
+        const existingBrand = brands.find(b => b.id !== id && b.nome.toLowerCase() === updates.nome!.toLowerCase())
+        if (existingBrand) {
+          throw new Error('Já existe uma marca com este nome')
+        }
+      }
+      
+      const existingBrand = brands[brandIndex]!
+      const updatedBrand: Brand = {
+        id: existingBrand.id,
+        nome: updates.nome ?? existingBrand.nome,
+      }
+      
+      brands[brandIndex] = updatedBrand
+      await api.put(this.endpoint, new ArrayResponse(brands).toNestedArray())
+      return updatedBrand
+    } catch {
+      throw new Error('Erro ao atualizar marca')
+    }
+  }
+
+  async delete (id: number): Promise<void> {
+    try {
+      const response = await api.get(this.endpoint)
+      const brands = new ArrayResponse<Brand>(response.data).get()
+      const updatedBrands = brands.filter((b: Brand) => b.id !== id)
+      
+      await api.put(this.endpoint, new ArrayResponse(updatedBrands).toNestedArray())
+    } catch {
+      throw new Error('Erro ao excluir marca')
+    }
+  }
 }
 
 /**
@@ -180,6 +320,70 @@ class UnitMeasureServiceClass {
       return new ArrayResponse<UnitMeasure>(response.data).get()
     } catch {
       throw new Error('Erro ao buscar unidades de medida')
+    }
+  }
+
+  async getById (id: number): Promise<UnitMeasure> {
+    try {
+      const response = await api.get(`${this.endpoint}/${id}`)
+      return response.data
+    } catch {
+      throw new Error('Erro ao buscar unidade de medida')
+    }
+  }
+
+  async create (unitData: Omit<UnitMeasure, 'id'>): Promise<UnitMeasure> {
+    try {
+      const response = await api.get(this.endpoint)
+      const units = new ArrayResponse<UnitMeasure>(response.data).get()
+      
+      const newUnit: UnitMeasure = {
+        id: Math.max(...units.map(u => u.id), 0) + 1,
+        ...unitData,
+      }
+      
+      units.push(newUnit)
+      await api.put(this.endpoint, new ArrayResponse(units).toNestedArray())
+      return newUnit
+    } catch {
+      throw new Error('Erro ao criar unidade de medida')
+    }
+  }
+
+  async update (id: number, updates: Partial<Omit<UnitMeasure, 'id'>>): Promise<UnitMeasure> {
+    try {
+      const response = await api.get(this.endpoint)
+      const units = new ArrayResponse<UnitMeasure>(response.data).get()
+      const unitIndex = units.findIndex(u => u.id === id)
+      
+      if (unitIndex === -1) {
+        throw new Error('Unidade de medida não encontrada')
+      }
+      
+      const existingUnit = units[unitIndex]!
+      const updatedUnit: UnitMeasure = {
+        id: existingUnit.id,
+        descricao: updates.descricao ?? existingUnit.descricao,
+        abreviacao: updates.abreviacao ?? existingUnit.abreviacao,
+      }
+      
+      units[unitIndex] = updatedUnit
+      await api.put(this.endpoint, new ArrayResponse(units).toNestedArray())
+      return updatedUnit
+    } catch {
+      throw new Error('Erro ao atualizar unidade de medida')
+    }
+  }
+
+  async delete (id: number): Promise<void> {
+    try {
+      const response = await api.get(this.endpoint)
+      const units = new ArrayResponse<UnitMeasure>(response.data).get()
+      const updatedUnits = units.filter((u: UnitMeasure) => u.id !== id)
+      
+      await api.put(this.endpoint, new ArrayResponse(updatedUnits).toNestedArray())
+    } catch {
+      throw new Error('Erro ao excluir unidade de medida')
     }
   }
 }

@@ -1,5 +1,75 @@
-<script setup lang="ts">
-  import { computed } from 'vue'
+<template>
+  <div class="grafico-barras-completo">
+    <!-- Filtros -->
+    <div v-if="showFilter && filtersConfig && filtersConfig.length > 0" class="filters-section mb-4">
+      <v-row>
+        <v-col
+          v-for="filtro in filtersConfig"
+          :key="filtro.name"
+          cols="12"
+          sm="6"
+          md="4"
+        >
+          <v-select
+            v-if="filtro.type === 'select'"
+            v-model="filtrosSelecionados[filtro.name]"
+            :items="filtro.options"
+            :label="filtro.label"
+            variant="outlined"
+            density="compact"
+            clearable
+            @update:model-value="onFilterChange"
+          />
+          <v-text-field
+            v-else-if="filtro.type === 'text'"
+            v-model="filtrosSelecionados[filtro.name]"
+            :label="filtro.label"
+            :placeholder="filtro.placeholder"
+            variant="outlined"
+            density="compact"
+            clearable
+            @update:model-value="onFilterChange"
+          />
+          <v-checkbox
+            v-else-if="filtro.type === 'checkbox'"
+            v-model="filtrosSelecionados[filtro.name]"
+            :label="filtro.label"
+            @update:model-value="onFilterChange"
+          />
+        </v-col>
+      </v-row>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="chart-container">
+      <VueApexCharts
+        :height="chartHeight"
+        :options="chartOptions"
+        :series="chartSeries"
+        type="bar"
+      />
+    </div>
+
+    <!-- Legenda -->
+    <div v-if="showLegend && legendItems.length > 0" class="legend-section mt-4">
+      <div class="legend-grid">
+        <div
+          v-for="item in legendItems"
+          :key="item.name"
+          class="legend-item"
+        >
+          <div
+            class="legend-color"
+            :style="{ backgroundColor: item.color }"
+          />
+          <span class="legend-label">{{ item.name }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
   import VueApexCharts from 'vue3-apexcharts'
 
   interface FilterOption {
@@ -22,12 +92,6 @@
     [key: string]: any
   }
 
-  interface StackedData {
-    categories: string[]
-    series: Array<{ name: string, data: number[] }>
-    totalProcedimentosRegistrados?: number
-  }
-
   interface ChartData {
     categorias?: DataItem[] | Record<string, DataItem[]>
     categories?: string[]
@@ -40,459 +104,347 @@
     text: string
   }
 
-  interface Props {
-    data: ChartData | null
-    onChartClick?: (event: any, chartContext: any, config: any) => void
-    annotation?: Annotation
-    showLegend?: boolean
-    legendMap?: Record<string, { name: string, color: string }>
-    showFilter?: boolean
-    xAxisTitle?: string
-    yAxisTitle?: string
-    chartOptionsOverride?: any
-    minBarHeight?: number
-    chartPadding?: number
-    direction?: 'horizontal' | 'vertical'
-    stacked?: boolean
-    filtersConfig?: FilterConfig[]
-    filtrosSelecionados?: Record<string, any>
-    escalaLog?: boolean
-    alturaFixa?: number
-  }
-
-  const props = withDefaults(defineProps<Props>(), {
-    showLegend: false,
-    legendMap: () => ({}),
-    showFilter: false,
-    xAxisTitle: 'Quantidade de Registros',
-    yAxisTitle: '',
-    chartOptionsOverride: () => ({}),
-    minBarHeight: 40,
-    chartPadding: 50,
-    direction: 'horizontal',
-    stacked: false,
-    filtrosSelecionados: () => ({}),
-    escalaLog: false,
-  })
-
-  const emit = defineEmits<{
-    filterChange: [filters: Record<string, any>]
-  }>()
-
-  // Dados filtrados
-  const dadosFiltrados = computed(() => {
-    if (!props.data) return []
-    if (props.stacked) return Array.isArray(props.data.categories) ? props.data.categories : []
-
-    let allItems: DataItem[] = []
-    if (Array.isArray(props.data.categorias)) {
-      allItems = props.data.categorias
-    } else if (typeof props.data.categorias === 'object' && props.data.categorias !== null) {
-      allItems = Object.values(props.data.categorias).flat()
-    }
-
-    if (!Array.isArray(allItems)) return []
-    if (!props.filtersConfig || props.filtersConfig.length === 0) return allItems
-
-    const itemsFiltrados = allItems.filter(item => {
-      if (!item) return false
-      return props.filtersConfig!.every(filtro => {
-        const valor = props.filtrosSelecionados[filtro.name]
-        if (!valor || valor === 'todos') return true
-
-        if (!Object.prototype.hasOwnProperty.call(item, filtro.name)) return true
-
-        if (filtro.type === 'select') {
-          return String(item[filtro.name]) === String(valor)
-        }
-        if (filtro.type === 'text') {
-          return String(item[filtro.name]).toLowerCase().includes(String(valor).toLowerCase())
-        }
-        return true
-      })
-    })
-
-    if (props.filtrosSelecionados.mostrarTop10) {
-      return [...itemsFiltrados]
-        .sort((a, b) => (b.valor || 0) - (a.valor || 0))
-        .slice(0, 10)
-    }
-
-    return itemsFiltrados
-  })
-
-  const labels = computed(() => {
-    if (props.stacked && props.data?.categories) return props.data.categories
-    return dadosFiltrados.value.map(item => {
-      if (typeof item === 'string') return item
-      return item?.nome || ''
-    })
-  })
-
-  const valores = computed(() => dadosFiltrados.value.map(item => {
-    if (typeof item === 'string') return 0
-    return item?.valor || 0
-  }))
-  const cores = computed(() => dadosFiltrados.value.map(item => {
-    if (typeof item === 'string') return '#000'
-    return item?.cor || '#000'
-  }))
-
-  const chartHeight = computed(() => {
-    if (props.alturaFixa && props.alturaFixa > 0) return props.alturaFixa
-    const finalCount = props.stacked
-      ? (props.data?.categories?.length || 0)
-      : dadosFiltrados.value.length
-    return Math.max(300, finalCount * props.minBarHeight + props.chartPadding)
-  })
-
-  // Opções base do gráfico
-  const memoizedBaseOptions = computed(() => ({
-    chart: {
-      type: 'bar' as const,
-      toolbar: { show: false },
-      stacked: props.stacked,
-      events: props.onChartClick
-        ? {
-          dataPointSelection: (event: any, chartContext: any, config: any) => {
-            if (props.onChartClick) {
-              props.onChartClick(event, chartContext, config)
-            }
-          },
-        }
-        : undefined,
+  export default {
+    name: 'GraficoBarrasCompleto',
+    components: {
+      VueApexCharts,
     },
-    plotOptions: {
-      bar: {
-        horizontal: props.direction === 'horizontal',
-        borderRadius: 6,
-        barHeight: '70%',
-        distributed: !props.stacked,
+    props: {
+      data: {
+        type: Object as () => ChartData | null,
+        default: null,
+      },
+      onChartClick: {
+        type: Function,
+        default: undefined,
+      },
+      annotation: {
+        type: Object as () => Annotation | undefined,
+        default: undefined,
+      },
+      showLegend: {
+        type: Boolean,
+        default: false,
+      },
+      legendMap: {
+        type: Object as () => Record<string, { name: string, color: string }>,
+        default: () => ({}),
+      },
+      showFilter: {
+        type: Boolean,
+        default: false,
+      },
+      xAxisTitle: {
+        type: String,
+        default: 'Quantidade de Registros',
+      },
+      yAxisTitle: {
+        type: String,
+        default: '',
+      },
+      chartOptionsOverride: {
+        type: Object,
+        default: () => ({}),
+      },
+      minBarHeight: {
+        type: Number,
+        default: 40,
+      },
+      chartPadding: {
+        type: Number,
+        default: 50,
+      },
+      direction: {
+        type: String as () => 'horizontal' | 'vertical',
+        default: 'horizontal',
+      },
+      stacked: {
+        type: Boolean,
+        default: false,
+      },
+      filtersConfig: {
+        type: Array as () => FilterConfig[],
+        default: () => [],
+      },
+      filtrosSelecionados: {
+        type: Object,
+        default: () => ({}),
+      },
+      escalaLog: {
+        type: Boolean,
+        default: false,
+      },
+      alturaFixa: {
+        type: Number,
+        default: undefined,
       },
     },
-    dataLabels: { enabled: false },
-    grid: {
-      show: true,
-      borderColor: '#e0e0e0',
-      strokeDashArray: 0,
-      position: 'back',
-    },
-    legend: { show: props.stacked },
-  }))
-
-  // Eixo X
-  const memoizedXAxis = computed(() => {
-    const totalAtendimentos = (props.data && typeof props.data.totalProcedimentosRegistrados === 'number')
-      ? props.data.totalProcedimentosRegistrados
-      : null
-    let maxVal: number | undefined
-
-    if (!props.escalaLog) {
-      if (totalAtendimentos && totalAtendimentos > 0) {
-        maxVal = totalAtendimentos + (totalAtendimentos * 0.1)
-      } else {
-        const valorMaximo = Math.max(0, ...valores.value)
-        maxVal = valorMaximo > 0 ? valorMaximo * 1.2 : 10
+    emits: ['filterChange'],
+    data () {
+      return {
+        localFiltros: { ...this.filtrosSelecionados },
       }
-    }
+    },
+    computed: {
+      dadosFiltrados () {
+        if (!this.data) return []
+        if (this.stacked && this.data.categories) return this.data.categories
 
-    return {
-      categories: labels.value,
-      ...(!props.escalaLog && { min: 0 }),
-      max: maxVal,
-      title: { text: props.direction === 'horizontal' ? props.xAxisTitle : props.yAxisTitle },
-      ...(props.direction === 'horizontal' && props.escalaLog ? { logarithmic: true } : {}),
-    }
-  })
+        let allItems: DataItem[] = []
+        if (Array.isArray(this.data.categorias)) {
+          allItems = this.data.categorias
+        } else if (typeof this.data.categorias === 'object' && this.data.categorias !== null) {
+          allItems = Object.values(this.data.categorias).flat() as DataItem[]
+        }
 
-  // Eixo Y
-  const memoizedYAxis = computed(() => ({
-    title: { text: props.direction === 'horizontal' ? props.yAxisTitle : props.xAxisTitle },
-    ...(props.direction === 'vertical' && props.escalaLog ? { logarithmic: true } : {}),
-  }))
+        if (!Array.isArray(allItems)) return []
+        if (!this.filtersConfig || this.filtersConfig.length === 0) return allItems
 
-  // Tooltip
-  const memoizedTooltip = computed(() => ({
-    y: { formatter: (val: number) => `${val.toLocaleString()} registros` },
-    shared: props.stacked,
-    intersect: !props.stacked,
-    followCursor: true,
-  }))
+        const itemsFiltrados = allItems.filter(item => {
+          if (!item) return false
+          return this.filtersConfig.every(filtro => {
+            const valor = this.localFiltros[filtro.name]
+            if (!valor || valor === 'todos') return true
 
-  // Anotações
-  const memoizedAnnotations = computed(() => ({
-    xaxis: props.annotation
-      ? [{
-        x: props.annotation.value,
-        borderColor: '#DC2626',
-        borderWidth: 2,
-        strokeDashArray: 6,
-        label: {
-          text: props.annotation.text,
-          position: 'top',
-          style: {
-            color: '#DC2626',
-            fontWeight: 'bold',
-            background: 'transparent',
+            if (!Object.prototype.hasOwnProperty.call(item, filtro.name)) return true
+
+            if (filtro.type === 'select') {
+              return String(item[filtro.name]) === String(valor)
+            }
+            if (filtro.type === 'text') {
+              return String(item[filtro.name]).toLowerCase().includes(String(valor).toLowerCase())
+            }
+            return true
+          })
+        })
+
+        if (this.localFiltros.mostrarTop10) {
+          return [...itemsFiltrados]
+            .sort((a, b) => (b.valor || 0) - (a.valor || 0))
+            .slice(0, 10)
+        }
+
+        return itemsFiltrados
+      },
+      labels () {
+        if (this.stacked && this.data?.categories) return this.data.categories
+        return this.dadosFiltrados.map(item => {
+          if (typeof item === 'string') return item
+          return item?.nome || ''
+        })
+      },
+      valores () {
+        return this.dadosFiltrados.map(item => {
+          if (typeof item === 'string') return 0
+          return item?.valor || 0
+        })
+      },
+      cores () {
+        return this.dadosFiltrados.map(item => {
+          if (typeof item === 'string') return '#000'
+          return item?.cor || '#000'
+        })
+      },
+      chartHeight () {
+        if (this.alturaFixa && this.alturaFixa > 0) return this.alturaFixa
+        const finalCount = this.stacked
+          ? (this.data?.categories?.length || 0)
+          : this.dadosFiltrados.length
+        return Math.max(300, finalCount * this.minBarHeight + this.chartPadding)
+      },
+      chartOptions () {
+        const baseOptions = {
+          chart: {
+            type: 'bar' as const,
+            toolbar: { show: false },
+            stacked: this.stacked,
+            events: this.onChartClick
+              ? {
+                dataPointSelection: (event: any, chartContext: any, config: any) => {
+                  if (this.onChartClick) {
+                    this.onChartClick(event, chartContext, config)
+                  }
+                },
+              }
+              : {},
           },
+          plotOptions: {
+            bar: {
+              horizontal: this.direction === 'horizontal',
+              borderRadius: 4,
+              dataLabels: {
+                position: 'top',
+              },
+            },
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          xaxis: {
+            categories: this.labels,
+            title: {
+              text: this.direction === 'horizontal' ? this.xAxisTitle : this.yAxisTitle,
+            },
+            labels: {
+              style: {
+                colors: '#ffffff',
+              },
+            },
+          },
+          yaxis: {
+            title: {
+              text: this.direction === 'horizontal' ? this.yAxisTitle : this.xAxisTitle,
+              style: {
+                color: '#ffffff',
+              },
+            },
+            logarithmic: this.escalaLog,
+          },
+          colors: this.cores,
+          grid: {
+            borderColor: '#404040',
+            xaxis: {
+              lines: {
+                show: true,
+              },
+            },
+            yaxis: {
+              lines: {
+                show: true,
+              },
+            },
+          },
+          tooltip: {
+            theme: 'dark',
+            y: {
+              formatter: (val: number) => {
+                return this.escalaLog ? val.toExponential(2) : val.toLocaleString('pt-BR')
+              },
+            },
+          },
+          legend: {
+            show: false,
+          },
+          theme: {
+            mode: 'dark' as const,
+          },
+        }
+
+        // Aplicar anotação se fornecida
+        if (this.annotation) {
+          (baseOptions as any).annotations = {
+            yaxis: [
+              {
+                y: this.annotation.value,
+                borderColor: '#ff6b6b',
+                borderWidth: 2,
+                borderDashArray: 5,
+                label: {
+                  text: this.annotation.text,
+                  style: {
+                    color: '#ff6b6b',
+                    background: 'transparent',
+                  },
+                },
+              },
+            ],
+          }
+        }
+
+        // Mesclar com opções customizadas
+        return { ...baseOptions, ...this.chartOptionsOverride }
+      },
+      chartSeries () {
+        if (this.stacked && this.data?.series) {
+          return this.data.series
+        }
+        return [
+          {
+            name: this.xAxisTitle,
+            data: this.valores,
+          },
+        ]
+      },
+      legendItems () {
+        if (!this.showLegend) return []
+        
+        if (this.stacked && this.data?.series) {
+          return this.data.series.map(serie => ({
+            name: serie.name,
+            color: this.legendMap[serie.name]?.color || '#000',
+          }))
+        }
+
+        return this.dadosFiltrados.map((item, index) => ({
+          name: (item as any)?.nome || `Item ${index + 1}`,
+          color: (item as any)?.cor || '#000',
+        }))
+      },
+    },
+    methods: {
+      onFilterChange () {
+        this.$emit('filterChange', { ...this.localFiltros })
+      },
+    },
+    watch: {
+      filtrosSelecionados: {
+        handler (newVal) {
+          this.localFiltros = { ...newVal }
         },
-      }]
-      : [],
-  }))
-
-  // Opções finais mescladas
-  const finalChartOptions = computed(() => {
-    const base = {
-      ...memoizedBaseOptions.value,
-      xaxis: memoizedXAxis.value,
-      yaxis: memoizedYAxis.value,
-      tooltip: memoizedTooltip.value,
-      annotations: memoizedAnnotations.value,
-      colors: props.stacked ? undefined : cores.value,
-    }
-
-    const override = props.chartOptionsOverride
-
-    return {
-      ...base,
-      ...override,
-      chart: { ...base.chart, ...override.chart },
-      plotOptions: { ...base.plotOptions, ...override.plotOptions },
-      xaxis: { ...base.xaxis, ...override.xaxis },
-      yaxis: { ...base.yaxis, ...override.yaxis },
-      grid: { ...base.grid, ...override.grid },
-      tooltip: { ...base.tooltip, ...override.tooltip },
-      legend: { ...base.legend, ...override.legend },
-      annotations: { ...base.annotations, ...override.annotations },
-      colors: props.stacked ? override.colors : base.colors,
-    }
-  })
-
-  // Séries do gráfico
-  const chartSeries = computed(() => {
-    if (props.stacked && props.data?.series) return props.data.series
-    return [{ name: 'Quantidade de Registros', data: valores.value }]
-  })
-
-  // Handler de mudança de filtro
-  function handleFilterChange (filterName: string, value: any) {
-    emit('filterChange', {
-      ...props.filtrosSelecionados,
-      [filterName]: value,
-    })
+        deep: true,
+        immediate: true,
+      },
+    },
   }
 </script>
 
-<template>
-  <div class="flex flex-col h-full">
-    <!-- Filtros -->
-    <div
-      v-if="showFilter && filtersConfig && filtersConfig.length > 0"
-      class="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-4 mb-4 items-end"
-    >
-      <div
-        v-for="filtro in filtersConfig"
-        :key="filtro.name"
-        class="flex flex-col"
-      >
-        <!-- Label (exceto para checkbox) -->
-        <label
-          v-if="filtro.type !== 'checkbox'"
-          class="block text-sm font-medium text-gray-700 mb-1"
-          :for="`filtro-${filtro.name}`"
-        >
-          {{ filtro.label }}
-        </label>
-
-        <!-- Select (Vuetify) -->
-        <v-select
-          v-if="filtro.type === 'select'"
-          :id="`filtro-${filtro.name}`"
-          density="compact"
-          hide-details
-          item-title="label"
-          item-value="value"
-          :items="filtro.options"
-          :model-value="filtrosSelecionados[filtro.name]"
-          variant="outlined"
-          @update:model-value="(val) => handleFilterChange(filtro.name, val)"
-        />
-
-        <!-- Text Input (Vuetify) -->
-        <v-text-field
-          v-else-if="filtro.type === 'text'"
-          :id="`filtro-${filtro.name}`"
-          density="compact"
-          hide-details
-          :model-value="filtrosSelecionados[filtro.name] || ''"
-          :placeholder="filtro.placeholder"
-          variant="outlined"
-          @update:model-value="(val) => handleFilterChange(filtro.name, val)"
-        />
-
-        <!-- Checkbox (Vuetify) -->
-        <div v-else-if="filtro.type === 'checkbox'" class="flex items-center h-full pt-7">
-          <v-checkbox
-            :id="filtro.name"
-            density="compact"
-            hide-details
-            :label="filtro.label"
-            :model-value="filtrosSelecionados[filtro.name] || false"
-            @update:model-value="(val) => handleFilterChange(filtro.name, val)"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Gráfico -->
-    <div class="flex-grow" :style="{ height: `${chartHeight}px` }">
-      <VueApexCharts
-        height="100%"
-        :options="finalChartOptions"
-        :series="chartSeries"
-        type="bar"
-      />
-    </div>
-
-    <!-- Legenda customizada -->
-    <div v-if="showLegend && !stacked" class="mt-4 mb-1">
-      <div
-        class="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-600"
-      >
-        <div
-          v-for="(item, key) in legendMap"
-          :key="key"
-          class="flex items-center"
-        >
-          <span
-            class="w-4 h-4 rounded mr-2 inline-block flex-shrink-0"
-            :style="{ backgroundColor: item.color }"
-          />
-          <span>{{ item.name }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-/* Classes utility (Tailwind-like) */
-.flex {
+.grafico-barras-completo {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+}
+
+.filters-section {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.chart-container {
+  background: #1a1a1a;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.legend-section {
+  background: #2a2a2a;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.legend-item {
   display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.flex-col {
-  flex-direction: column;
-}
-
-.flex-wrap {
-  flex-wrap: wrap;
-}
-
-.flex-grow {
-  flex-grow: 1;
-}
-
-.flex-shrink-0 {
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
   flex-shrink: 0;
 }
 
-.grid {
-  display: grid;
-}
-
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.gap-x-6 {
-  column-gap: 1.5rem;
-}
-
-.gap-y-4 {
-  row-gap: 1rem;
-}
-
-.gap-6 {
-  gap: 1.5rem;
-}
-
-.items-end {
-  align-items: flex-end;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-center {
-  justify-content: center;
-}
-
-.h-full {
-  height: 100%;
-}
-
-.h-4 {
-  height: 1rem;
-}
-
-.w-4 {
-  width: 1rem;
-}
-
-.mb-1 {
-  margin-bottom: 0.25rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.pt-7 {
-  padding-top: 1.75rem;
-}
-
-.block {
-  display: block;
-}
-
-.inline-block {
-  display: inline-block;
-}
-
-.rounded {
-  border-radius: 0.25rem;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.text-gray-700 {
-  color: rgb(55 65 81);
-}
-
-.text-gray-600 {
-  color: rgb(75 85 99);
-}
-
-@media (min-width: 768px) {
-  .md\:grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
+.legend-label {
+  font-size: 14px;
+  color: #ffffff;
 }
 </style>

@@ -282,15 +282,6 @@
             <v-col cols="12" md="6">
               <v-list-item class="px-0">
                 <template #prepend>
-                  <v-icon color="primary" icon="mdi-office-building" />
-                </template>
-                <v-list-item-title class="font-weight-bold">Departamento</v-list-item-title>
-                <v-list-item-subtitle>{{ selectedUser.department }}</v-list-item-subtitle>
-              </v-list-item>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-list-item class="px-0">
-                <template #prepend>
                   <v-icon color="primary" icon="mdi-information" />
                 </template>
                 <v-list-item-title class="font-weight-bold">Status</v-list-item-title>
@@ -384,7 +375,6 @@
     { title: '', key: 'avatar', sortable: false, width: '70px' },
     { title: 'Nome', key: 'name' },
     { title: 'Função', key: 'role' },
-    { title: 'Departamento', key: 'department' },
     { title: 'Status', key: 'status' },
     { title: 'Ações', key: 'actions', sortable: false, width: '180px' },
   ]

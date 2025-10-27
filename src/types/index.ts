@@ -19,18 +19,11 @@ export interface User {
   name?: string // alias para compatibilidade
   email: string
   role: UserRole
-  department: string
   avatar?: string
   status?: 'active' | 'inactive'
   avatarColor?: string
   initials?: string
   lastAccess?: string
-}
-
-export interface Department {
-  id: number
-  nome: string
-  descricao?: string
 }
 
 // Product Types (db.json: produtos)
@@ -46,6 +39,7 @@ export interface Product {
   data_cadastro: string
   usuario_log_id: number | null
   estoque_minimo: number
+  is_perecivel: boolean
 }
 
 // Product Lote (db.json: produto_lotes)
@@ -58,6 +52,7 @@ export interface ProductLote {
   data_entrada: string
   responsavel_cadastro: number
   custo_unitario: number
+  preco_venda: number
   usuario_log_id: number | null
   id_localizacao: number
 }

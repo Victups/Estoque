@@ -1,0 +1,18 @@
+{
+  "/usuarios": "/usuarios",
+  "/produtos": "/produtos",
+  "/produto_lotes": "/produto_lotes",
+  "/movimentacao_estoque": "/movimentacao_estoque",
+  "/categorias": "/categorias",
+  "/marcas": "/marcas",
+  "/unidade_medidas": "/unidade_medidas",
+  "/localizacoes": "/localizacoes",
+  "/depositos": "/depositos",
+  "/enderecos": "/enderecos",
+  "/contatos": "/contatos",
+  "/fornecedores": "/fornecedores",
+  "/uf": "/uf",
+  "/municipios": "/municipios"
+}
+
+

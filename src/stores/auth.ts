@@ -6,6 +6,7 @@ interface AuthState {
   ufId: number | null
   ufLabel: string | null
   isLoggedIn: boolean
+  role: string | null
 }
 
 function deriveNameFromEmail (email: string | null): string | null {
@@ -32,6 +33,7 @@ export const useAuthStore = defineStore('auth', {
     ufId: null,
     ufLabel: null,
     isLoggedIn: false,
+    role: null,
   }),
   getters: {
     displayName: (state): string | null => {
@@ -51,6 +53,7 @@ export const useAuthStore = defineStore('auth', {
         this.ufId = data.ufId ?? null
         this.ufLabel = data.ufLabel ?? null
         this.isLoggedIn = Boolean(data.isLoggedIn)
+        this.role = data.role ?? null
       } catch {
         // ignore
       }
@@ -62,14 +65,16 @@ export const useAuthStore = defineStore('auth', {
         ufId: this.ufId,
         ufLabel: this.ufLabel,
         isLoggedIn: this.isLoggedIn,
+        role: this.role,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     },
-    setAuth (payload: { name?: string | null, email: string, ufId: number, ufLabel: string }) {
+    setAuth (payload: { name?: string | null, email: string, ufId: number, ufLabel: string, role?: string | null }) {
       this.userEmail = payload.email
       this.userName = payload.name ?? deriveNameFromEmail(payload.email)
       this.ufId = payload.ufId
       this.ufLabel = payload.ufLabel
+      this.role = payload.role ?? null
       this.isLoggedIn = true
       this.privateSave()
     },
@@ -78,6 +83,7 @@ export const useAuthStore = defineStore('auth', {
       this.userEmail = null
       this.ufId = null
       this.ufLabel = null
+      this.role = null
       this.isLoggedIn = false
       this.privateSave()
     },

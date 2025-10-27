@@ -6,7 +6,8 @@
         "email": "admin@sistema.com",
         "senha": "senha_super_segura_hash",
         "id_contato": 1,
-        "role": "admin"
+        "role": "admin",
+        "id_uf": 1
       },
       {
         "id": 3,
@@ -14,7 +15,8 @@
         "email": "maria.souza@empresa.com",
         "senha": "senha_segura_hash_456",
         "id_contato": 3,
-        "role": "gestor"
+        "role": "gestor",
+        "id_uf": 1
       },
       {
         "id": 2,
@@ -22,7 +24,8 @@
         "email": "joao.silva@empresa.com",
         "senha": "senha_segura_hash_123",
         "id_contato": 2,
-        "role": "estoquista"
+        "role": "estoquista",
+        "id_uf": 2
       }
       ] ],
     "uf": [ [
@@ -295,6 +298,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 4.50,
+          "preco_venda": 6.00,
           "usuario_log_id": null,
           "id_localizacao": 3
         },
@@ -307,6 +311,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 2.10,
+          "preco_venda": 3.50,
           "usuario_log_id": null,
           "id_localizacao": 3
         },
@@ -319,6 +324,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 0.02,
+          "preco_venda": 0.05,
           "usuario_log_id": null,
           "id_localizacao": 4
         },
@@ -331,6 +337,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 4.55,
+          "preco_venda": 6.50,
           "usuario_log_id": null,
           "id_localizacao": 3
         },
@@ -343,6 +350,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 22.50,
+          "preco_venda": 35.00,
           "usuario_log_id": null,
           "id_localizacao": 1
         },
@@ -355,6 +363,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 22.90,
+          "preco_venda": 35.50,
           "usuario_log_id": null,
           "id_localizacao": 1
         },
@@ -367,6 +376,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 2,
           "custo_unitario": 8.50,
+          "preco_venda": 12.00,
           "usuario_log_id": null,
           "id_localizacao": 1
         },
@@ -379,6 +389,7 @@
           "data_entrada": "2025-10-10",
           "responsavel_cadastro": 3,
           "custo_unitario": 7.80,
+          "preco_venda": 11.50,
           "usuario_log_id": null,
           "id_localizacao": 2
         }

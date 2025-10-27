@@ -1,81 +1,260 @@
-# Vuetify (Default)
+# 📦 Sistema de Gestão de Estoque
 
-This is the official scaffolding tool for Vuetify, designed to give you a head start in building your new Vuetify application. It sets up a base template with all the necessary configurations and standard directory structure, enabling you to begin development without the hassle of setting up the project from scratch.
+Sistema completo de gestão de estoque desenvolvido com Vue 3, Vuetify 3 e TypeScript. Interface moderna e responsiva para controle de produtos, movimentações, relatórios e usuários.
 
-## ❗️ Important Links
+## 🚀 Tecnologias
 
-- 📄 [Docs](https://vuetifyjs.com/)
-- 🚨 [Issues](https://issues.vuetifyjs.com/)
-- 🏬 [Store](https://store.vuetifyjs.com/)
-- 🎮 [Playground](https://play.vuetifyjs.com/)
-- 💬 [Discord](https://community.vuetifyjs.com)
+- **Frontend**: Vue 3 + Composition API
+- **UI Framework**: Vuetify 3
+- **Linguagem**: TypeScript
+- **Estado**: Pinia
+- **Roteamento**: Vue Router
+- **Build Tool**: Vite
+- **Mock API**: json-server
+- **Banco de Dados**: PostgreSQL (schema disponível)
 
-## 💿 Install
+## ✨ Funcionalidades
 
-Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
+### 🔐 Autenticação
+- Login com email/senha
+- Seleção de UF (Unidade Federativa)
+- Controle de sessão com localStorage
+- Diferentes níveis de acesso (admin, gestor, estoquista, relatórios)
 
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
+### 📦 Gestão de Produtos
+- Cadastro completo de produtos
+- Categorias e marcas
+- Unidades de medida
+- Produtos perecíveis com data de validade
+- Preço de custo e venda por lote
+- Códigos automáticos (PROD001, PROD002...)
 
-After completing the installation, your environment is ready for Vuetify development.
+### 📋 Gestão de Lotes
+- Controle de lotes por produto
+- Data de entrada e validade
+- Localização física (depósito, corredor, prateleira)
+- Quantidade em estoque
+- Códigos automáticos (L001, L002...)
 
-## ✨ Features
+### 🔄 Movimentações
+- Entrada e saída de produtos
+- Seleção automática de lotes (FIFO)
+- Preenchimento automático de dados
+- Formatação de valores monetários
+- Validação de estoque mínimo
 
-- 🖼️ **Optimized Front-End Stack**: Leverage the latest Vue 3 and Vuetify 3 for a modern, reactive UI development experience. [Vue 3](https://v3.vuejs.org/) | [Vuetify 3](https://vuetifyjs.com/en/)
-- 🗃️ **State Management**: Integrated with [Pinia](https://pinia.vuejs.org/), the intuitive, modular state management solution for Vue.
-- 🚦 **Routing and Layouts**: Utilizes Vue Router for SPA navigation and vite-plugin-vue-layouts-next for organizing Vue file layouts. [Vue Router](https://router.vuejs.org/) | [vite-plugin-vue-layouts-next](https://github.com/loicduong/vite-plugin-vue-layouts-next)
-- 💻 **Enhanced Development Experience**: Benefit from TypeScript's static type checking and the ESLint plugin suite for Vue, ensuring code quality and consistency. [TypeScript](https://www.typescriptlang.org/) | [ESLint Plugin Vue](https://eslint.vuejs.org/)
-- ⚡ **Next-Gen Tooling**: Powered by Vite, experience fast cold starts and instant HMR (Hot Module Replacement). [Vite](https://vitejs.dev/)
-- 🧩 **Automated Component Importing**: Streamline your workflow with unplugin-vue-components, automatically importing components as you use them. [unplugin-vue-components](https://github.com/antfu/unplugin-vue-components)
-- 🛠️ **Strongly-Typed Vue**: Use vue-tsc for type-checking your Vue components, and enjoy a robust development experience. [vue-tsc](https://github.com/johnsoncodehk/volar/tree/master/packages/vue-tsc)
+### 📊 Relatórios
+- Gráficos de distribuição por categoria
+- Movimentações dos últimos 7 dias
+- Análise de estoque por produto
+- Filtros avançados
+- Interface dark theme
 
-These features are curated to provide a seamless development experience from setup to deployment, ensuring that your Vuetify application is both powerful and maintainable.
+### 👥 Gestão de Usuários
+- Cadastro e edição de usuários
+- Controle de roles e permissões
+- Vinculação com contatos
+- Endereços completos
 
-## 💡 Usage
+### 🏢 Localização
+- Estados (UF)
+- Municípios
+- Endereços completos
+- Depósitos e localizações físicas
 
-This section covers how to start the development server and build your project for production.
+## 🛠️ Instalação
 
-### Starting the Development Server
+### Pré-requisitos
+- Node.js 18+ 
+- npm/yarn/pnpm
 
-To start the development server with hot-reload, run the following command. The server will be accessible at [http://localhost:3000](http://localhost:3000):
+### Passos
 
+1. **Clone o repositório**
 ```bash
+git clone <https://github.com/Victups/Estoque.git>
+cd estoque
+```
+
+2. **Instale as dependências**
+```bash
+npm install
+# ou
+yarn install
+# ou
+pnpm install
+```
+
+3. **Inicie o servidor de desenvolvimento**
+```bash
+npm run dev
+# ou
 yarn dev
+# ou
+pnpm dev
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+4. **Inicie o mock API (em outro terminal)**
+```bash
+npm run json-server
+# ou
+yarn json-server
+# ou
+pnpm json-server
+```
 
-> Add NODE_OPTIONS='--no-warnings' to suppress the JSON import warnings that happen as part of the Vuetify import mapping. If you are on Node [v21.3.0](https://nodejs.org/en/blog/release/v21.3.0) or higher, you can change this to NODE_OPTIONS='--disable-warning=5401'. If you don't mind the warning, you can remove this from your package.json dev script.
+## 📁 Estrutura do Projeto
 
-### Building for Production
+```
+src/
+├── components/          # Componentes reutilizáveis
+│   ├── DonutChartCard.vue
+│   ├── GraficoBarrasCompleto.vue
+│   ├── FiltrosRelatorios.vue
+│   └── ...
+├── pages/              # Páginas da aplicação
+│   ├── Login.vue
+│   ├── Produtos.vue
+│   ├── Movimentacao.vue
+│   ├── Relatorios.vue
+│   └── ...
+├── services/           # Serviços de API
+│   ├── api.config.ts
+│   ├── product.service.ts
+│   ├── movement.service.ts
+│   └── ...
+├── stores/             # Estado global (Pinia)
+│   ├── auth.ts
+│   ├── produtosCache.ts
+│   └── ...
+├── types/              # Definições TypeScript
+│   └── index.ts
+├── composables/        # Composables Vue 3
+│   ├── useFormValidation.ts
+│   ├── useSnackbar.ts
+│   └── ...
+└── router/             # Configuração de rotas
+    └── index.ts
 
-To build your project for production, use:
+db/
+└── db.json            # Mock database
+```
+
+## 🎯 Scripts Disponíveis
 
 ```bash
-yarn build
+# Desenvolvimento
+npm run dev            # Servidor de desenvolvimento
+npm run json-server    # Mock API (porta 3001)
+
+# Build
+npm run build          # Build para produção
+npm run preview        # Preview do build
+
+# Qualidade de código
+npm run lint           # ESLint
+npm run type-check     # Verificação TypeScript
 ```
 
-(Repeat for npm, pnpm, and bun with respective commands.)
+## 🗄️ Banco de Dados
 
-Once the build process is completed, your application will be ready for deployment in a production environment.
+### Schema PostgreSQL
+O projeto inclui o schema completo do banco PostgreSQL com:
+- Tabelas principais (produtos, lotes, movimentações, usuários)
+- Relacionamentos e foreign keys
+- Triggers para geração automática de códigos
+- Constraints de validação
+- Índices para performance
 
-## 💪 Support Vuetify Development
+### Mock Database
+Durante o desenvolvimento, o sistema usa `db.json` como mock:
+- Dados de exemplo para todas as entidades
+- Endpoints REST simulados via json-server
+- Estrutura idêntica ao banco real
 
-This project is built with [Vuetify](https://vuetifyjs.com/en/), a UI Library with a comprehensive collection of Vue components. Vuetify is an MIT licensed Open Source project that has been made possible due to the generous contributions by our [sponsors and backers](https://vuetifyjs.com/introduction/sponsors-and-backers/). If you are interested in supporting this project, please consider:
+## 🔧 Configuração
 
-- [Requesting Enterprise Support](https://support.vuetifyjs.com/)
-- [Sponsoring John on Github](https://github.com/users/johnleider/sponsorship)
-- [Sponsoring Kael on Github](https://github.com/users/kaelwd/sponsorship)
-- [Supporting the team on Open Collective](https://opencollective.com/vuetify)
-- [Becoming a sponsor on Patreon](https://www.patreon.com/vuetify)
-- [Becoming a subscriber on Tidelift](https://tidelift.com/subscription/npm/vuetify)
-- [Making a one-time donation with Paypal](https://paypal.me/vuetify)
+### Variáveis de Ambiente
+```bash
+# .env
+VITE_API_BASE_URL=http://localhost:3001
+VITE_APP_TITLE=Sistema de Estoque
+```
 
-## 📑 License
-[MIT](http://opensource.org/licenses/MIT)
+### json-server
+```json
+// json-server.json
+{
+  "id": "id",
+  "port": 3001,
+  "noCors": false,
+  "readOnly": false
+}
+```
 
-Copyright (c) 2016-present Vuetify, LLC
+## 📱 Interface
+
+### Design System
+- **Tema**: Dark mode por padrão
+- **Cores**: Paleta consistente com Vuetify
+- **Tipografia**: Roboto (padrão Vuetify)
+- **Ícones**: Material Design Icons
+- **Layout**: Responsivo com breakpoints
+
+### Componentes Principais
+- **Charts**: ApexCharts integrado
+- **Forms**: Validação em tempo real
+- **Tables**: Data tables com paginação
+- **Dialogs**: Modais para CRUD
+- **Snackbars**: Notificações de feedback
+
+## 🚀 Deploy
+
+### Build para Produção
+```bash
+npm run build
+```
+
+### Deploy Estático
+O projeto pode ser deployado em qualquer serviço de hospedagem estática:
+- **Vercel**: `vercel --prod`
+- **Netlify**: Drag & drop da pasta `dist`
+- **GitHub Pages**: Configurar workflow
+- **Firebase Hosting**: `firebase deploy`
+
+## 🔮 Próximos Passos
+
+### Backend (Futuro)
+- API REST com PHP Laravel 
+- Autenticação JWT
+- Validação de permissões
+- Auditoria de ações
+- Integração com banco real
+
+### Funcionalidades Adicionais
+- Dashboard com métricas
+- Relatórios avançados
+- Notificações push
+- Integração com APIs externas
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👥 Equipe
+
+- **Desenvolvimento**: Frontend Vue 3 + TypeScript
+- **Design**: Vuetify 3 + Material Design
+- **Arquitetura**: SPA com Mock API
+
+---
+
+**Desenvolvido com ❤️ usando Vue 3 + Vuetify 3**

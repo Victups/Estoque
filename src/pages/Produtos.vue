@@ -148,6 +148,16 @@
                 </p>
               </div>
             </div>
+            <div>
+              <v-btn
+                color="primary"
+                prepend-icon="mdi-package-variant-plus"
+                variant="elevated"
+                :to="{ name: 'CadastroProdutos' }"
+              >
+                Cadastrar Produto
+              </v-btn>
+            </div>
           </v-card-title>
         </v-card>
       </v-col>

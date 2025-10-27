@@ -39,19 +39,6 @@
         />
       </v-col>
 
-      <v-col cols="12" md="6">
-        <v-select
-          v-model="formData.department"
-          density="comfortable"
-          hide-details="auto"
-          :items="departmentOptions"
-          label="Departamento"
-          prepend-inner-icon="mdi-office-building"
-          :rules="departmentRules"
-          variant="outlined"
-        />
-      </v-col>
-
       <v-col v-if="mode === 'create'" cols="12" md="6">
         <v-text-field
           v-model="formData.password"
@@ -107,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-  import type { Department, User, UserRole, ValidationRule } from '@/types'
+  import type { User, UserRole, ValidationRule } from '@/types'
   import { ref, watch } from 'vue'
   import { useFormValidation } from '@/composables/useFormValidation'
 
@@ -115,7 +102,6 @@
     name: string
     email: string
     role: UserRole | null
-    department: string
     password?: string
     confirmPassword?: string
   }
@@ -154,13 +140,11 @@
     name: '',
     email: '',
     role: null,
-    department: '',
     password: '',
     confirmPassword: '',
   })
 
   const roleOptions: UserRole[] = ['Admin', 'Gerente', 'Operador', 'Visualizador']
-  const departmentOptions: string[] = ['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']
 
   const nameRules: ValidationRule[] = [
     validation.required,
@@ -173,10 +157,6 @@
   ]
 
   const roleRules: ValidationRule[] = [
-    validation.required,
-  ]
-
-  const departmentRules: ValidationRule[] = [
     validation.required,
   ]
 
@@ -201,13 +181,11 @@
           name: newUser.name || newUser.nome,
           email: newUser.email,
           role: newUser.role,
-          department: newUser.department,
         }
         : {
           name: '',
           email: '',
           role: null,
-          department: '',
           password: '',
           confirmPassword: '',
         }

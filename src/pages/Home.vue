@@ -1,95 +1,103 @@
-<script setup lang="ts">
-  import { computed } from 'vue'
-  import { useRouter } from 'vue-router'
-
+<script lang="ts">
   import { useAuthStore } from '../stores/auth'
 
-  const auth = useAuthStore()
-  const router = useRouter()
-
-  const greeting = computed(() => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Bom dia'
-    if (hour < 18) return 'Boa tarde'
-    return 'Boa noite'
-  })
-
-  const displayName = computed(() => auth.displayName || 'Usuário')
-  const ufText = computed(() => auth.ufLabel ?? 'UF não definida')
-
-  // Módulos principais do sistema
-  const modules = [
-    {
-      title: 'Produtos',
-      description: 'Gerencie o catálogo de produtos e estoque',
-      icon: 'mdi-package-variant',
-      color: 'primary',
-      route: '/produtos',
-      stats: 'Cadastro completo',
+  export default {
+    name: 'HomePage',
+    setup () {
+      const auth = useAuthStore()
+      return { auth }
     },
-    {
-      title: 'Movimentação',
-      description: 'Registre entradas e saídas de estoque',
-      icon: 'mdi-swap-horizontal',
-      color: 'success',
-      route: '/movimentacao',
-      stats: 'Controle FIFO',
+    data () {
+      return {
+        // Módulos principais do sistema
+        modules: [
+          {
+          title: 'Produtos',
+          description: 'Gerencie o catálogo de produtos e estoque',
+          icon: 'mdi-package-variant',
+          color: 'primary',
+          route: '/produtos',
+          stats: 'Cadastro completo',
+        },
+        {
+          title: 'Movimentação',
+          description: 'Registre entradas e saídas de estoque',
+          icon: 'mdi-swap-horizontal',
+          color: 'success',
+          route: '/movimentacao',
+          stats: 'Controle FIFO',
+        },
+        {
+          title: 'Usuários',
+          description: 'Gerencie usuários e permissões',
+          icon: 'mdi-account-group',
+          color: 'info',
+          route: '/usuarios',
+          stats: 'Administração',
+        },
+        {
+          title: 'Relatórios',
+          description: 'Visualize relatórios e análises',
+          icon: 'mdi-chart-bar',
+          color: 'warning',
+          route: '/relatorios',
+          stats: 'Em breve',
+        },
+      ],
+      quickActions: [
+        {
+          title: 'Novo Produto',
+          icon: 'mdi-plus-circle',
+          color: 'primary',
+          route: '/produtos/cadastrar',
+        },
+        {
+          title: 'Entrada Estoque',
+          icon: 'mdi-arrow-down-bold',
+          color: 'success',
+          route: '/movimentacao',
+        },
+        {
+          title: 'Saída Estoque',
+          icon: 'mdi-arrow-up-bold',
+          color: 'error',
+          route: '/movimentacao',
+        },
+        {
+          title: 'Meu Perfil',
+          icon: 'mdi-account-circle',
+          color: 'info',
+          route: '/perfil',
+        },
+      ],
+      tips: [
+        'Acompanhe produtos com validade próxima na página Produtos.',
+        'Use o filtro por nome para encontrar itens rapidamente.',
+        'Verifique o estoque mínimo para evitar rupturas.',
+        'O sistema aplica FIFO automaticamente nas saídas.',
+        ],
+      }
+  },
+  computed: {
+    greeting () {
+      const hour = new Date().getHours()
+      if (hour < 12) return 'Bom dia'
+      if (hour < 18) return 'Boa tarde'
+      return 'Boa noite'
     },
-    {
-      title: 'Usuários',
-      description: 'Gerencie usuários e permissões',
-      icon: 'mdi-account-group',
-      color: 'info',
-      route: '/usuarios',
-      stats: 'Administração',
+    displayName () {
+      return this.auth.displayName || 'Usuário'
     },
-    {
-      title: 'Relatórios',
-      description: 'Visualize relatórios e análises',
-      icon: 'mdi-chart-bar',
-      color: 'warning',
-      route: '/relatorios',
-      stats: 'Em breve',
+    ufText () {
+      return this.auth.ufLabel ?? 'UF não definida'
     },
-  ]
-
-  const quickActions = [
-    {
-      title: 'Novo Produto',
-      icon: 'mdi-plus-circle',
-      color: 'primary',
-      route: '/produtos/cadastrar',
+  },
+  methods: {
+    navigateTo (route: string) {
+      this.$router.push(route)
     },
-    {
-      title: 'Entrada Estoque',
-      icon: 'mdi-arrow-down-bold',
-      color: 'success',
-      route: '/movimentacao',
-    },
-    {
-      title: 'Saída Estoque',
-      icon: 'mdi-arrow-up-bold',
-      color: 'error',
-      route: '/movimentacao',
-    },
-    {
-      title: 'Meu Perfil',
-      icon: 'mdi-account-circle',
-      color: 'info',
-      route: '/perfil',
-    },
-  ]
-
-  const tips = [
-    'Acompanhe produtos com validade próxima na página Produtos.',
-    'Use o filtro por nome para encontrar itens rapidamente.',
-    'Verifique o estoque mínimo para evitar rupturas.',
-    'O sistema aplica FIFO automaticamente nas saídas.',
-  ]
-
-  function navigateTo (route: string) {
-    router.push(route)
   }
+}
 </script>
 
 <template>

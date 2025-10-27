@@ -168,18 +168,6 @@
                       variant="outlined"
                     />
                   </v-col>
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="department"
-                      color="primary"
-                      density="comfortable"
-                      hide-details="auto"
-                      :items="['TI', 'Gestão', 'Estoque', 'Vendas', 'Financeiro', 'Geral']"
-                      label="Departamento"
-                      prepend-inner-icon="mdi-office-building"
-                      variant="outlined"
-                    />
-                  </v-col>
                 </v-row>
               </div>
 
@@ -269,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-  import type { BackendUser, Department, UserRole, ValidationRule } from '@/types'
+  import type { BackendUser, UserRole, ValidationRule } from '@/types'
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
 
@@ -287,7 +275,6 @@
   const password = ref<string>('')
   const passwordConfirm = ref<string>('')
   const role = ref<UserRole | ''>('')
-  const department = ref<string>('Geral')
   const acceptTerms = ref<boolean>(false)
   const showPassword = ref<boolean>(false)
   const showPasswordConfirm = ref<boolean>(false)
@@ -389,7 +376,6 @@
       password.value = ''
       passwordConfirm.value = ''
       role.value = ''
-      department.value = 'Geral'
       acceptTerms.value = false
       formRef.value.reset()
 
