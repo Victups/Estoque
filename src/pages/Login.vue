@@ -118,7 +118,7 @@
   import { computed, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAuthStore } from '../stores/auth'
-  import { AuthService, UfService } from '../services/api'
+  import { AuthService, UfService } from '../services'
   import type { State } from '../types'
 
   const router = useRouter()
