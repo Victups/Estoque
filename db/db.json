@@ -6,7 +6,8 @@
         "email": "admin@sistema.com",
         "senha": "senha_super_segura_hash",
         "id_contato": 1,
-        "role": "admin"
+        "role": "admin",
+        "id_uf": 1
       },
       {
         "id": 3,
@@ -14,7 +15,8 @@
         "email": "maria.souza@empresa.com",
         "senha": "senha_segura_hash_456",
         "id_contato": 3,
-        "role": "gestor"
+        "role": "gestor",
+        "id_uf": 1
       },
       {
         "id": 2,
@@ -22,7 +24,8 @@
         "email": "joao.silva@empresa.com",
         "senha": "senha_segura_hash_123",
         "id_contato": 2,
-        "role": "estoquista"
+        "role": "estoquista",
+        "id_uf": 2
       }
       ] ],
     "uf": [ [
