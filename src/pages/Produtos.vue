@@ -256,6 +256,7 @@
   export default {}
 </script>
 
+//remover
 <route lang="yaml">
 meta:
   layout: default
