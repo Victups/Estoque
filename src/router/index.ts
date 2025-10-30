@@ -18,7 +18,7 @@ const route = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../pages/Login.vue'),
+    component: () => import('../pages/auth/Login.vue'),
     meta: {
       layout: 'blank',
     },
@@ -26,7 +26,7 @@ const route = [
   {
     path: '/products',
     name: 'Products',
-    component: () => import('@/pages/Produtos.vue'),
+    component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
     },
@@ -34,7 +34,7 @@ const route = [
   {
     path: '/produtos',
     name: 'Produtos',
-    component: () => import('@/pages/Produtos.vue'),
+    component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
     },
@@ -42,7 +42,7 @@ const route = [
   {
     path: '/produtos/cadastrar',
     name: 'CadastroProdutos',
-    component: () => import('@/pages/CadastroProdutos.vue'),
+    component: () => import('@/pages/produtos/CadastroProdutos.vue'),
     meta: {
       layout: 'default',
     },
@@ -50,7 +50,7 @@ const route = [
   {
     path: '/estoque',
     name: 'Estoque',
-    component: () => import('@/pages/Produtos.vue'),
+    component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
     },
@@ -58,7 +58,7 @@ const route = [
   {
     path: '/movimentacao',
     name: 'Movimentacao',
-    component: () => import('@/pages/Movimentacao.vue'),
+    component: () => import('@/pages/estoques/Movimentacao.vue'),
     meta: {
       layout: 'default',
     },
@@ -66,7 +66,7 @@ const route = [
   {
     path: '/relatorios',
     name: 'Relatorios',
-    component: () => import('@/pages/Relatorios.vue'),
+    component: () => import('@/pages/dashboards/Relatorios.vue'),
     meta: {
       layout: 'default',
     },
@@ -74,7 +74,7 @@ const route = [
   {
     path: '/perfil',
     name: 'Perfil',
-    component: () => import('@/pages/Profile.vue'),
+    component: () => import('@/pages/usuarios/Profile.vue'),
     meta: {
       layout: 'default',
     },
@@ -82,7 +82,7 @@ const route = [
   {
     path: '/usuarios',
     name: 'UserManagement',
-    component: () => import('@/pages/UserManagementPage.vue'),
+    component: () => import('@/pages/usuarios/UserManagementPage.vue'),
     meta: {
       layout: 'default',
       requiresAuth: true,
@@ -91,11 +91,19 @@ const route = [
   {
     path: '/configuracoes',
     name: 'Configuracoes',
-    component: () => import('@/pages/Configuracoes.vue'),
+    component: () => import('@/pages/configuracoes/Configuracoes.vue'),
     meta: {
       layout: 'default',
       requiresAuth: true,
-      requiredRole: ['admin', 'gestor'],
+      requiredRole: ['admin'],
+    },
+  },
+  {
+    path: '/registrar',
+    name: 'Registrer',
+    component: () => import('@/pages/auth/Registrer.vue'),
+    meta: {
+      layout: 'blank',
     },
   },
 ]
@@ -118,11 +126,12 @@ router.beforeEach((to, from, next) => {
     }
 
     // Verificar role se especificado
-    if (to.meta.requiredRole) {
-      const userRole = authStore.role
-      const requiredRoles = Array.isArray(to.meta.requiredRole)
-        ? to.meta.requiredRole
-        : [to.meta.requiredRole]
+    const requiredRoleMeta = (to.meta as any)?.requiredRole
+    if (requiredRoleMeta) {
+      const userRole = authStore.role?.toLowerCase()
+      const requiredRoles = Array.isArray(requiredRoleMeta)
+        ? requiredRoleMeta.map((r: string) => r.toLowerCase())
+        : [String(requiredRoleMeta).toLowerCase()]
 
       if (!userRole || !requiredRoles.includes(userRole)) {
         // Redirecionar para home se não tiver permissão

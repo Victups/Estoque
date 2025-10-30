@@ -5,20 +5,14 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, onMounted } from 'vue'
+import { defineComponent } from 'vue'
+import { useAuthStore } from './stores/auth'
 
-  import { useAuthStore } from './stores/auth'
-
-  export default defineComponent({
-    name: 'App',
-    setup () {
-      const auth = useAuthStore()
-
-      onMounted(() => {
-        auth.loadFromStorage()
-      })
-
-      return {}
-    },
-  })
+export default defineComponent({
+  name: 'App',
+  mounted () {
+    const auth = useAuthStore()
+    auth.loadFromStorage()
+  },
+})
 </script>

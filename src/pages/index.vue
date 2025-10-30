@@ -1,9 +1,18 @@
 <template>
-  <HelloWorld />
+  <div>
+    <Home />
+  </div>
 </template>
 
-<script lang="ts" setup>
-  //
+<script lang="ts">
+import Home from './Home.vue'
+
+export default {
+  name: 'IndexPage',
+  components: {
+    Home,
+  },
+}
 </script>
 
 <route lang="yaml">

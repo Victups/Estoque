@@ -1,7 +1,7 @@
 import type { ProductLote } from '@/types'
 
 import { api, ArrayResponse } from './api.config'
-import { LocationService } from './location.service'
+import { LocationService } from './locais/location.service'
 import { ProductService } from './product.service'
 
 /**
