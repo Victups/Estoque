@@ -19,17 +19,17 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
-    '/CadastroProdutos': RouteRecordInfo<'/CadastroProdutos', '/CadastroProdutos', Record<never, never>, Record<never, never>>,
-    '/Configuracoes': RouteRecordInfo<'/Configuracoes', '/Configuracoes', Record<never, never>, Record<never, never>>,
+    '/auth/Login': RouteRecordInfo<'/auth/Login', '/auth/Login', Record<never, never>, Record<never, never>>,
+    '/auth/Registrer': RouteRecordInfo<'/auth/Registrer', '/auth/Registrer', Record<never, never>, Record<never, never>>,
+    '/configuracoes/Configuracoes': RouteRecordInfo<'/configuracoes/Configuracoes', '/configuracoes/Configuracoes', Record<never, never>, Record<never, never>>,
+    '/dashboards/Relatorios': RouteRecordInfo<'/dashboards/Relatorios', '/dashboards/Relatorios', Record<never, never>, Record<never, never>>,
+    '/estoques/Movimentacao': RouteRecordInfo<'/estoques/Movimentacao', '/estoques/Movimentacao', Record<never, never>, Record<never, never>>,
     '/Home': RouteRecordInfo<'/Home', '/Home', Record<never, never>, Record<never, never>>,
-    '/Login': RouteRecordInfo<'/Login', '/Login', Record<never, never>, Record<never, never>>,
-    '/Movimentacao': RouteRecordInfo<'/Movimentacao', '/Movimentacao', Record<never, never>, Record<never, never>>,
-    '/Produtos': RouteRecordInfo<'/Produtos', '/Produtos', Record<never, never>, Record<never, never>>,
-    '/Profile': RouteRecordInfo<'/Profile', '/Profile', Record<never, never>, Record<never, never>>,
-    '/Registrer': RouteRecordInfo<'/Registrer', '/Registrer', Record<never, never>, Record<never, never>>,
-    '/Relatorios': RouteRecordInfo<'/Relatorios', '/Relatorios', Record<never, never>, Record<never, never>>,
-    '/UserManagementPage': RouteRecordInfo<'/UserManagementPage', '/UserManagementPage', Record<never, never>, Record<never, never>>,
-    '/UserManagementPageTyped': RouteRecordInfo<'/UserManagementPageTyped', '/UserManagementPageTyped', Record<never, never>, Record<never, never>>,
+    '/produtos/CadastroProdutos': RouteRecordInfo<'/produtos/CadastroProdutos', '/produtos/CadastroProdutos', Record<never, never>, Record<never, never>>,
+    '/produtos/Produtos': RouteRecordInfo<'/produtos/Produtos', '/produtos/Produtos', Record<never, never>, Record<never, never>>,
+    '/usuarios/Profile': RouteRecordInfo<'/usuarios/Profile', '/usuarios/Profile', Record<never, never>, Record<never, never>>,
+    '/usuarios/UserManagementPage': RouteRecordInfo<'/usuarios/UserManagementPage', '/usuarios/UserManagementPage', Record<never, never>, Record<never, never>>,
+    '/usuarios/UserManagementPageTyped': RouteRecordInfo<'/usuarios/UserManagementPageTyped', '/usuarios/UserManagementPageTyped', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -47,48 +47,48 @@ declare module 'vue-router/auto-routes' {
       routes: '/'
       views: never
     }
-    'src/pages/CadastroProdutos.vue': {
-      routes: '/CadastroProdutos'
+    'src/pages/auth/Login.vue': {
+      routes: '/auth/Login'
       views: never
     }
-    'src/pages/Configuracoes.vue': {
-      routes: '/Configuracoes'
+    'src/pages/auth/Registrer.vue': {
+      routes: '/auth/Registrer'
+      views: never
+    }
+    'src/pages/configuracoes/Configuracoes.vue': {
+      routes: '/configuracoes/Configuracoes'
+      views: never
+    }
+    'src/pages/dashboards/Relatorios.vue': {
+      routes: '/dashboards/Relatorios'
+      views: never
+    }
+    'src/pages/estoques/Movimentacao.vue': {
+      routes: '/estoques/Movimentacao'
       views: never
     }
     'src/pages/Home.vue': {
       routes: '/Home'
       views: never
     }
-    'src/pages/Login.vue': {
-      routes: '/Login'
+    'src/pages/produtos/CadastroProdutos.vue': {
+      routes: '/produtos/CadastroProdutos'
       views: never
     }
-    'src/pages/Movimentacao.vue': {
-      routes: '/Movimentacao'
+    'src/pages/produtos/Produtos.vue': {
+      routes: '/produtos/Produtos'
       views: never
     }
-    'src/pages/Produtos.vue': {
-      routes: '/Produtos'
+    'src/pages/usuarios/Profile.vue': {
+      routes: '/usuarios/Profile'
       views: never
     }
-    'src/pages/Profile.vue': {
-      routes: '/Profile'
+    'src/pages/usuarios/UserManagementPage.vue': {
+      routes: '/usuarios/UserManagementPage'
       views: never
     }
-    'src/pages/Registrer.vue': {
-      routes: '/Registrer'
-      views: never
-    }
-    'src/pages/Relatorios.vue': {
-      routes: '/Relatorios'
-      views: never
-    }
-    'src/pages/UserManagementPage.vue': {
-      routes: '/UserManagementPage'
-      views: never
-    }
-    'src/pages/UserManagementPageTyped.vue': {
-      routes: '/UserManagementPageTyped'
+    'src/pages/usuarios/UserManagementPageTyped.vue': {
+      routes: '/usuarios/UserManagementPageTyped'
       views: never
     }
   }

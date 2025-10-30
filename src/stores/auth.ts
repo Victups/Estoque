@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-interface AuthState {
+export interface AuthState {
   userName: string | null
   userEmail: string | null
   ufId: number | null

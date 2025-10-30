@@ -1,12 +1,9 @@
 <script lang="ts">
-  import { useAuthStore } from '../stores/auth'
+  import { defineComponent } from 'vue'
+  import { useAuthStore } from '@/stores/auth'
 
-  export default {
+  export default defineComponent({
     name: 'HomePage',
-    setup () {
-      const auth = useAuthStore()
-      return { auth }
-    },
     data () {
       return {
         // Módulos principais do sistema
@@ -72,26 +69,29 @@
       ],
       }
   },
-  computed: {
-    greeting () {
-      const hour = new Date().getHours()
-      if (hour < 12) return 'Bom dia'
-      if (hour < 18) return 'Boa tarde'
-      return 'Boa noite'
+    computed: {
+      auth () {
+        return useAuthStore()
+      },
+      greeting () {
+        const hour = new Date().getHours()
+        if (hour < 12) return 'Bom dia'
+        if (hour < 18) return 'Boa tarde'
+        return 'Boa noite'
+      },
+      displayName () {
+        return this.auth.displayName || 'Usuário'
+      },
+      ufText () {
+        return this.auth.ufLabel ?? 'UF não definida'
+      },
     },
-    displayName () {
-      return this.auth.displayName || 'Usuário'
-    },
-    ufText () {
-      return this.auth.ufLabel ?? 'UF não definida'
-    },
-  },
   methods: {
-    navigateTo (route: string) {
-      this.$router.push(route)
+      navigateTo (route: string) {
+        this.$router.push(route)
+      },
     },
-  }
-}
+  })
 </script>
 
 <template>
