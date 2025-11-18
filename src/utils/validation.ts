@@ -1,4 +1,4 @@
-import type { ValidationRule } from '@/types'
+import type { ValidationRule } from '@/interfaces'
 
 /**
  * Utilitário com regras de validação reutilizáveis
@@ -46,7 +46,7 @@ export const validationRules = {
   },
 
   numeric: (v: string): boolean | string => {
-    return !isNaN(Number(v)) || 'Apenas números são permitidos'
+    return !Number.isNaN(Number(v)) || 'Apenas números são permitidos'
   },
 
   positive: (v: string): boolean | string => {
@@ -60,11 +60,6 @@ export const validationRules = {
     } catch {
       return 'URL inválida'
     }
-  },
-
-  cep: (v: string): boolean | string => {
-    const cepRegex = /^\d{5}-?\d{3}$/
-    return cepRegex.test(v) || 'CEP inválido'
   },
 
   uf: (v: string): boolean | string => {

@@ -15,10 +15,10 @@
       <v-card-text>
         <!-- Tabela de Localizações -->
         <v-data-table
+          class="elevation-1"
           :headers="headers"
           :items="localizacoes"
           :loading="loading"
-          class="elevation-1"
         >
           <template #[`item.deposito_nome`]="{ item }">
             <v-chip color="info" variant="outlined">
@@ -27,16 +27,16 @@
           </template>
           <template #[`item.actions`]="{ item }">
             <v-btn
+              color="primary"
               icon="mdi-pencil"
               size="small"
-              color="primary"
               variant="text"
               @click="editItem(item)"
             />
             <v-btn
+              color="error"
               icon="mdi-delete"
               size="small"
-              color="error"
               variant="text"
               @click="deleteItem(item)"
             />
@@ -56,30 +56,30 @@
           <v-form ref="formRef" v-model="validForm">
             <v-select
               v-model="editedItem.id_deposito"
-              :items="depositos"
               item-title="nome"
               item-value="id"
+              :items="depositos"
               label="Depósito"
-              :rules="[sharedRules.required]"
               required
+              :rules="[sharedRules.required]"
             />
             <v-text-field
               v-model="editedItem.corredor"
+              counter="50"
               label="Corredor"
               :rules="[sharedRules.maxLength(50), sharedRules.alfanumerico]"
-              counter="50"
             />
             <v-text-field
               v-model="editedItem.prateleira"
+              counter="50"
               label="Prateleira"
               :rules="[sharedRules.maxLength(50), sharedRules.alfanumerico]"
-              counter="50"
             />
             <v-text-field
               v-model="editedItem.secao"
+              counter="50"
               label="Seção"
               :rules="[sharedRules.maxLength(50), sharedRules.alfanumerico]"
-              counter="50"
             />
           </v-form>
         </v-card-text>
@@ -91,8 +91,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            variant="text"
             :disabled="!validForm"
+            variant="text"
             @click="save"
           >
             Salvar
@@ -123,139 +123,137 @@
 </template>
 
 <script lang="ts">
-import type { Location, Deposit } from '@/types'
-import { LocationService, DepositService } from '@/services'
-import { snackbarMixin } from '@/utils/snackbar'
-import { sharedRules } from '@/utils/rules'
+  import type { Deposit, Location } from '@/interfaces'
+  import { DepositService, LocationService } from '@/services'
+  import { sharedRules } from '@/utils/rules'
+  import { snackbarMixin } from '@/utils/snackbar'
 
-export default {
-  name: 'Localizacoes',
-  mixins: [snackbarMixin],
-  computed: {
-    sharedRules() {
-      return sharedRules
-    },
-    formTitle() {
-      return this.editedIndex === -1 ? 'Nova Localização' : 'Editar Localização'
-    },
-  },
-  data() {
-    return {
-      loading: false,
-      dialog: false,
-      deleteDialog: false,
-      validForm: false,
-      formRef: null as any,
-      localizacoes: [] as Location[],
-      depositos: [] as Deposit[],
-      editedIndex: -1,
-      editedItem: {
-        id: 0,
-        id_deposito: 0,
-        corredor: '',
-        prateleira: '',
-        secao: '',
-      } as any,
-      defaultItem: {
-        id: 0,
-        id_deposito: 0,
-        corredor: '',
-        prateleira: '',
-        secao: '',
-      } as any,
-      headers: [
-        { title: 'ID', key: 'id', sortable: true },
-        { title: 'Depósito', key: 'deposito_nome', sortable: true },
-        { title: 'Corredor', key: 'corredor', sortable: true },
-        { title: 'Prateleira', key: 'prateleira', sortable: true },
-        { title: 'Seção', key: 'secao', sortable: true },
-        { title: 'Ações', key: 'actions', sortable: false },
-      ],
-    }
-  },
-  mounted() {
-    this.loadData()
-  },
-  methods: {
-    async loadData() {
-      this.loading = true
-      try {
-        const [localizacoes, depositos] = await Promise.all([
-          LocationService.getAll(),
-          DepositService.getAll(),
-        ])
-        this.localizacoes = localizacoes
-        this.depositos = depositos
-      } catch (error) {
-        this.showError('Erro ao carregar dados')
-      } finally {
-        this.loading = false
+  export default {
+    name: 'Localizacoes',
+    mixins: [snackbarMixin],
+    data () {
+      return {
+        loading: false,
+        dialog: false,
+        deleteDialog: false,
+        validForm: false,
+        formRef: null as any,
+        localizacoes: [] as Location[],
+        depositos: [] as Deposit[],
+        editedIndex: -1,
+        editedItem: {
+          id: 0,
+          id_deposito: 0,
+          corredor: '',
+          prateleira: '',
+          secao: '',
+        } as any,
+        defaultItem: {
+          id: 0,
+          id_deposito: 0,
+          corredor: '',
+          prateleira: '',
+          secao: '',
+        } as any,
+        headers: [
+          { title: 'ID', key: 'id', sortable: true },
+          { title: 'Depósito', key: 'deposito_nome', sortable: true },
+          { title: 'Corredor', key: 'corredor', sortable: true },
+          { title: 'Prateleira', key: 'prateleira', sortable: true },
+          { title: 'Seção', key: 'secao', sortable: true },
+          { title: 'Ações', key: 'actions', sortable: false },
+        ],
       }
     },
-
-    openDialog() {
-      this.dialog = true
+    computed: {
+      sharedRules () {
+        return sharedRules
+      },
+      formTitle () {
+        return this.editedIndex === -1 ? 'Nova Localização' : 'Editar Localização'
+      },
     },
-
-    editItem(item: any) {
-      this.editedIndex = this.localizacoes.indexOf(item)
-      this.editedItem = { ...item }
-      this.dialog = true
+    mounted () {
+      this.loadData()
     },
-
-    deleteItem(item: any) {
-      this.editedIndex = this.localizacoes.indexOf(item)
-      this.editedItem = { ...item }
-      this.deleteDialog = true
-    },
-
-    async deleteItemConfirm() {
-      try {
-        await LocationService.delete(this.editedItem.id)
-        this.localizacoes.splice(this.editedIndex, 1)
-        this.showSuccess('Localização excluída com sucesso!')
-      } catch (error) {
-        this.showError('Erro ao excluir localização')
-      }
-      this.closeDeleteDialog()
-    },
-
-    closeDialog() {
-      this.dialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    closeDeleteDialog() {
-      this.deleteDialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    async save() {
-      if (!this.validForm) return
-
-      try {
-        if (this.editedIndex > -1) {
-          const updated = await LocationService.update(this.editedItem.id, this.editedItem)
-          this.localizacoes[this.editedIndex] = updated
-          this.showSuccess('Localização atualizada com sucesso!')
-        } else {
-          const newItem = await LocationService.create(this.editedItem)
-          this.localizacoes.push(newItem)
-          this.showSuccess('Localização criada com sucesso!')
+    methods: {
+      async loadData () {
+        this.loading = true
+        try {
+          const [localizacoes, depositos] = await Promise.all([
+            LocationService.getAll(),
+            DepositService.getAll(),
+          ])
+          this.localizacoes = localizacoes
+          this.depositos = depositos
+        } catch {
+          this.showError('Erro ao carregar dados')
+        } finally {
+          this.loading = false
         }
-        this.closeDialog()
-      } catch (error) {
-        this.showError('Erro ao salvar localização')
-      }
+      },
+
+      openDialog () {
+        this.dialog = true
+      },
+
+      editItem (item: any) {
+        this.editedIndex = this.localizacoes.indexOf(item)
+        this.editedItem = { ...item }
+        this.dialog = true
+      },
+
+      deleteItem (item: any) {
+        this.editedIndex = this.localizacoes.indexOf(item)
+        this.editedItem = { ...item }
+        this.deleteDialog = true
+      },
+
+      async deleteItemConfirm () {
+        try {
+          await LocationService.delete(this.editedItem.id)
+          this.localizacoes.splice(this.editedIndex, 1)
+          this.showSuccess('Localização excluída com sucesso!')
+        } catch {
+          this.showError('Erro ao excluir localização')
+        }
+        this.closeDeleteDialog()
+      },
+
+      closeDialog () {
+        this.dialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      closeDeleteDialog () {
+        this.deleteDialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      async save () {
+        if (!this.validForm) return
+
+        try {
+          if (this.editedIndex > -1) {
+            const updated = await LocationService.update(this.editedItem.id, this.editedItem)
+            this.localizacoes[this.editedIndex] = updated
+            this.showSuccess('Localização atualizada com sucesso!')
+          } else {
+            const newItem = await LocationService.create(this.editedItem)
+            this.localizacoes.push(newItem)
+            this.showSuccess('Localização criada com sucesso!')
+          }
+          this.closeDialog()
+        } catch {
+          this.showError('Erro ao salvar localização')
+        }
+      },
     },
-  },
-}
+  }
 </script>
-
-

@@ -34,18 +34,18 @@
       <v-row>
         <v-col cols="12">
           <UsersTable
-            :users="users"
-            :loading="loading"
-            :search="search"
             :filter-role="filterRole"
             :filter-status="filterStatus"
-            @update:search="search = $event"
+            :loading="loading"
+            :search="search"
+            :users="users"
+            @delete="deleteUser"
+            @edit="editUser"
+            @refresh="loadUsers"
             @update:filter-role="filterRole = $event"
             @update:filter-status="filterStatus = $event"
-            @refresh="loadUsers"
+            @update:search="search = $event"
             @view="viewUser"
-            @edit="editUser"
-            @delete="deleteUser"
           />
         </v-col>
       </v-row>
@@ -77,86 +77,86 @@
 </template>
 
 <script lang="ts">
-import type { User } from '@/types'
-import UserStatsCards from '@/components/usuarios/UserStatsCards.vue'
-import UserViewDialog from '@/components/usuarios/UserViewDialog.vue'
-import UsersTable from '@/components/usuarios/UsersTable.vue'
-import { UserService } from '@/services'
-import { getUserStats } from '@/utils/tramposes/userFilters'
-import { mapBackendToUser } from '@/utils/tramposes/user'
+  import type { User } from '@/interfaces'
+  import UsersTable from '@/components/usuarios/UsersTable.vue'
+  import UserStatsCards from '@/components/usuarios/UserStatsCards.vue'
+  import UserViewDialog from '@/components/usuarios/UserViewDialog.vue'
+  import { UserService } from '@/services'
+  import { mapBackendToUser } from '@/utils/tramposes/user'
+  import { getUserStats } from '@/utils/tramposes/userFilters'
 
-export default {
-  name: 'UserManagementPageTyped',
-  components: {
-    UserStatsCards,
-    UserViewDialog,
-    UsersTable,
-  },
-  data () {
-    return {
-      search: '',
-      filterRole: 'Todos',
-      filterStatus: 'Todos',
-      viewDialog: false,
-      selectedUser: null as User | null,
-      loading: false,
-      users: [] as User[],
-      snackbar: {
-        show: false,
-        text: '',
-        color: 'success' as 'success' | 'error' | 'warning' | 'info',
-        timeout: 3000,
-      },
-    }
-  },
-  computed: {
-    stats () {
-      return getUserStats(this.users)
+  export default {
+    name: 'UserManagementPageTyped',
+    components: {
+      UserStatsCards,
+      UserViewDialog,
+      UsersTable,
     },
-  },
-  mounted () {
-    this.loadUsers()
-  },
-  methods: {
-    async loadUsers () {
-      this.loading = true
-      try {
-        const backendUsers = await UserService.getAll()
-        this.users = backendUsers.map(mapBackendToUser)
-        this.showSnackbar('Usuários carregados com sucesso!', 'success')
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error)
-        this.showSnackbar('Erro ao carregar usuários. Verifique se o backend está rodando.', 'error')
-      } finally {
-        this.loading = false
+    data () {
+      return {
+        search: '',
+        filterRole: 'Todos',
+        filterStatus: 'Todos',
+        viewDialog: false,
+        selectedUser: null as User | null,
+        loading: false,
+        users: [] as User[],
+        snackbar: {
+          show: false,
+          text: '',
+          color: 'success' as 'success' | 'error' | 'warning' | 'info',
+          timeout: 3000,
+        },
       }
     },
-    viewUser (user: User) {
-      this.selectedUser = user
-      this.viewDialog = true
+    computed: {
+      stats () {
+        return getUserStats(this.users)
+      },
     },
-    editUser (user: User) {
-      // Implementar modal de edição
-      console.log('Edit user:', user)
-      this.showSnackbar('Funcionalidade de edição em desenvolvimento', 'info')
+    mounted () {
+      this.loadUsers()
     },
-    deleteUser (user: User) {
-      // Implementar confirmação de exclusão
-      console.log('Delete user:', user)
-      this.showSnackbar('Funcionalidade de exclusão em desenvolvimento', 'info')
+    methods: {
+      async loadUsers () {
+        this.loading = true
+        try {
+          const backendUsers = await UserService.getAll()
+          this.users = backendUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
+          this.showSnackbar('Usuários carregados com sucesso!', 'success')
+        } catch (error) {
+          console.error('Erro ao buscar usuários:', error)
+          this.showSnackbar('Erro ao carregar usuários', 'error')
+        } finally {
+          this.loading = false
+        }
+      },
+      viewUser (user: User) {
+        this.selectedUser = user
+        this.viewDialog = true
+      },
+      editUser (user: User) {
+        // Implementar modal de edição
+        console.log('Edit user:', user)
+        this.showSnackbar('Funcionalidade de edição em desenvolvimento', 'info')
+      },
+      deleteUser (user: User) {
+        // Implementar confirmação de exclusão
+        console.log('Delete user:', user)
+        this.showSnackbar('Funcionalidade de exclusão em desenvolvimento', 'info')
+      },
+      openCreateDialog () {
+        // Implementar modal de criação
+        console.log('Open create dialog')
+        this.showSnackbar('Funcionalidade de criação em desenvolvimento', 'info')
+      },
+      showSnackbar (text: string, color: 'success' | 'error' | 'warning' | 'info' = 'success') {
+        this.snackbar.text = text
+        this.snackbar.color = color
+        this.snackbar.show = true
+      },
     },
-    openCreateDialog () {
-      // Implementar modal de criação
-      console.log('Open create dialog')
-      this.showSnackbar('Funcionalidade de criação em desenvolvimento', 'info')
-    },
-    showSnackbar (text: string, color: 'success' | 'error' | 'warning' | 'info' = 'success') {
-      this.snackbar.text = text
-      this.snackbar.color = color
-      this.snackbar.show = true
-    },
-  },
-}
+  }
 </script>
 
 <style scoped>

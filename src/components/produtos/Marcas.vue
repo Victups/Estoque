@@ -15,23 +15,23 @@
       <v-card-text>
         <!-- Tabela de Marcas -->
         <v-data-table
+          class="elevation-1"
           :headers="headers"
           :items="marcas"
           :loading="loading"
-          class="elevation-1"
         >
           <template #[`item.actions`]="{ item }">
             <v-btn
+              color="primary"
               icon="mdi-pencil"
               size="small"
-              color="primary"
               variant="text"
               @click="editItem(item)"
             />
             <v-btn
+              color="error"
               icon="mdi-delete"
               size="small"
-              color="error"
               variant="text"
               @click="deleteItem(item)"
             />
@@ -51,10 +51,10 @@
           <v-form ref="formRef" v-model="validForm">
             <v-text-field
               v-model="editedItem.nome"
-              label="Nome da Marca"
-              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), sharedRules.nome]"
               counter="100"
+              label="Nome da Marca"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), sharedRules.nome]"
             />
           </v-form>
         </v-card-text>
@@ -66,8 +66,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            variant="text"
             :disabled="!validForm"
+            variant="text"
             @click="save"
           >
             Salvar
@@ -98,124 +98,122 @@
 </template>
 
 <script lang="ts">
-import type { Brand } from '@/types'
-import { BrandService } from '@/services'
-import { snackbarMixin } from '@/utils/snackbar'
-import { sharedRules } from '@/utils/rules'
+  import type { Brand } from '@/interfaces'
+  import { BrandService } from '@/services'
+  import { sharedRules } from '@/utils/rules'
+  import { snackbarMixin } from '@/utils/snackbar'
 
-export default {
-  name: 'Marcas',
-  mixins: [snackbarMixin],
-  computed: {
-    sharedRules() {
-      return sharedRules
-    },
-    formTitle() {
-      return this.editedIndex === -1 ? 'Nova Marca' : 'Editar Marca'
-    },
-  },
-  data() {
-    return {
-      loading: false,
-      dialog: false,
-      deleteDialog: false,
-      validForm: false,
-      formRef: null as any,
-      marcas: [] as Brand[],
-      editedIndex: -1,
-      editedItem: {
-        id: 0,
-        nome: '',
-      } as Brand,
-      defaultItem: {
-        id: 0,
-        nome: '',
-      } as Brand,
-      headers: [
-        { title: 'ID', key: 'id', sortable: true },
-        { title: 'Nome', key: 'nome', sortable: true },
-        { title: 'Ações', key: 'actions', sortable: false },
-      ],
-    }
-  },
-  mounted() {
-    this.loadMarcas()
-  },
-  methods: {
-    async loadMarcas() {
-      this.loading = true
-      try {
-        this.marcas = await BrandService.getAll()
-      } catch (error) {
-        this.showError('Erro ao carregar marcas')
-      } finally {
-        this.loading = false
+  export default {
+    name: 'Marcas',
+    mixins: [snackbarMixin],
+    data () {
+      return {
+        loading: false,
+        dialog: false,
+        deleteDialog: false,
+        validForm: false,
+        formRef: null as any,
+        marcas: [] as Brand[],
+        editedIndex: -1,
+        editedItem: {
+          id: 0,
+          nome: '',
+        } as Brand,
+        defaultItem: {
+          id: 0,
+          nome: '',
+        } as Brand,
+        headers: [
+          { title: 'ID', key: 'id', sortable: true },
+          { title: 'Nome', key: 'nome', sortable: true },
+          { title: 'Ações', key: 'actions', sortable: false },
+        ],
       }
     },
-
-    openDialog() {
-      this.dialog = true
+    computed: {
+      sharedRules () {
+        return sharedRules
+      },
+      formTitle () {
+        return this.editedIndex === -1 ? 'Nova Marca' : 'Editar Marca'
+      },
     },
-
-    editItem(item: Brand) {
-      this.editedIndex = this.marcas.indexOf(item)
-      this.editedItem = { ...item }
-      this.dialog = true
+    mounted () {
+      this.loadMarcas()
     },
-
-    deleteItem(item: Brand) {
-      this.editedIndex = this.marcas.indexOf(item)
-      this.editedItem = { ...item }
-      this.deleteDialog = true
-    },
-
-    async deleteItemConfirm() {
-      try {
-        await BrandService.delete(this.editedItem.id)
-        this.marcas.splice(this.editedIndex, 1)
-        this.showSuccess('Marca excluída com sucesso!')
-      } catch (error) {
-        this.showError('Erro ao excluir marca')
-      }
-      this.closeDeleteDialog()
-    },
-
-    closeDialog() {
-      this.dialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    closeDeleteDialog() {
-      this.deleteDialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    async save() {
-      if (!this.validForm) return
-
-      try {
-        if (this.editedIndex > -1) {
-          const updated = await BrandService.update(this.editedItem.id, this.editedItem)
-          this.marcas[this.editedIndex] = updated
-          this.showSuccess('Marca atualizada com sucesso!')
-        } else {
-          const newItem = await BrandService.create(this.editedItem)
-          this.marcas.push(newItem)
-          this.showSuccess('Marca criada com sucesso!')
+    methods: {
+      async loadMarcas () {
+        this.loading = true
+        try {
+          this.marcas = await BrandService.getAll()
+        } catch {
+          this.showError('Erro ao carregar marcas')
+        } finally {
+          this.loading = false
         }
-        this.closeDialog()
-      } catch (error) {
-        this.showError('Erro ao salvar marca')
-      }
+      },
+
+      openDialog () {
+        this.dialog = true
+      },
+
+      editItem (item: Brand) {
+        this.editedIndex = this.marcas.indexOf(item)
+        this.editedItem = { ...item }
+        this.dialog = true
+      },
+
+      deleteItem (item: Brand) {
+        this.editedIndex = this.marcas.indexOf(item)
+        this.editedItem = { ...item }
+        this.deleteDialog = true
+      },
+
+      async deleteItemConfirm () {
+        try {
+          await BrandService.delete(this.editedItem.id)
+          this.marcas.splice(this.editedIndex, 1)
+          this.showSuccess('Marca excluída com sucesso!')
+        } catch {
+          this.showError('Erro ao excluir marca')
+        }
+        this.closeDeleteDialog()
+      },
+
+      closeDialog () {
+        this.dialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      closeDeleteDialog () {
+        this.deleteDialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      async save () {
+        if (!this.validForm) return
+
+        try {
+          if (this.editedIndex > -1) {
+            const updated = await BrandService.update(this.editedItem.id, this.editedItem)
+            this.marcas[this.editedIndex] = updated
+            this.showSuccess('Marca atualizada com sucesso!')
+          } else {
+            const newItem = await BrandService.create(this.editedItem)
+            this.marcas.push(newItem)
+            this.showSuccess('Marca criada com sucesso!')
+          }
+          this.closeDialog()
+        } catch {
+          this.showError('Erro ao salvar marca')
+        }
+      },
     },
-  },
-}
+  }
 </script>
-
-

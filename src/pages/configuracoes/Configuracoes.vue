@@ -83,8 +83,8 @@
 
 <script>
   import Categorias from '@/components/categorias/Categorias.vue'
-  import Depositos from '@/components/locais/Depositos.vue'
   import Fornecedores from '@/components/fornecedores/Fornecedores.vue'
+  import Depositos from '@/components/locais/Depositos.vue'
   import Localizacoes from '@/components/locais/Localizacoes.vue'
   import Marcas from '@/components/produtos/Marcas.vue'
   import UnidadesMedida from '@/components/produtos/UnidadesMedida.vue'

@@ -115,104 +115,99 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { AuthService, UfService } from '@/services'
-import type { State } from '@/types'
+  import type { State } from '@/interfaces'
+  import { defineComponent } from 'vue'
+  import { AuthService, UfService } from '@/services'
+  import { useAuthStore } from '@/stores/auth'
 
-interface VForm {
-  validate: () => Promise<{ valid: boolean }>
-  reset: () => void
-}
+  interface VForm {
+    validate: () => Promise<{ valid: boolean }>
+    reset: () => void
+  }
 
-export default defineComponent({
-  name: 'LoginPage',
-  data () {
-    return {
-      formRef: null as VForm | null,
-      valid: false,
-      email: '',
-      password: '',
-      selectedUfId: null as number | null,
-      rememberMe: false,
-      showPassword: false,
-      loading: false,
-      error: null as string | null,
-      ufs: [] as State[],
-    }
-  },
-  computed: {
-    ufOptions () {
-      return this.ufs.map(uf => ({
-        id: uf.id,
-        label: `${uf.sigla} - ${uf.nome}`,
-      }))
-    },
-    emailRules () {
-      return [
-        (v: string) => !!v || 'E-mail é obrigatório',
-        (v: string) => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
-      ]
-    },
-    passwordRules () {
-      return [
-        (v: string) => !!v || 'Senha é obrigatória',
-        (v: string) => v.length >= 6 || 'Senha deve ter no mínimo 6 caracteres',
-      ]
-    },
-  },
-  async mounted () {
-    try {
-      this.ufs = await UfService.getAll()
-    } catch (err) {
-      console.error('Erro ao carregar UFs:', err)
-      this.error = 'Erro ao carregar estados. Tente novamente.'
-    }
-  },
-  methods: {
-    async handleLogin () {
-      if (!this.valid || !this.selectedUfId) {
-        return
+  export default defineComponent({
+    name: 'LoginPage',
+    data () {
+      return {
+        formRef: null as VForm | null,
+        valid: false,
+        email: '',
+        password: '',
+        selectedUfId: null as number | null,
+        rememberMe: false,
+        showPassword: false,
+        loading: false,
+        error: null as string | null,
+        ufs: [] as State[],
       }
-
-      this.loading = true
-      this.error = null
-
+    },
+    computed: {
+      ufOptions () {
+        return this.ufs.map(uf => ({
+          id: uf.id,
+          label: `${uf.sigla} - ${uf.nome}`,
+        }))
+      },
+      emailRules () {
+        return [
+          (v: string) => !!v || 'E-mail é obrigatório',
+          (v: string) => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
+        ]
+      },
+      passwordRules () {
+        return [
+          (v: string) => !!v || 'Senha é obrigatória',
+          (v: string) => v.length >= 6 || 'Senha deve ter no mínimo 6 caracteres',
+        ]
+      },
+    },
+    async mounted () {
       try {
-        const user = await AuthService.login(this.email, this.password)
-
-        if (!user) {
-          this.error = 'E-mail ou senha inválidos'
+        this.ufs = await UfService.getAll()
+      } catch (error) {
+        console.error('Erro ao carregar UFs:', error)
+        this.error = 'Erro ao carregar estados. Tente novamente.'
+      }
+    },
+    methods: {
+      async handleLogin () {
+        if (!this.valid || !this.selectedUfId) {
           return
         }
 
-        const ufData = this.ufs.find(u => u.id === this.selectedUfId)
-        const ufLabel = ufData ? `${ufData.sigla} - ${ufData.nome}` : ''
+        this.loading = true
+        this.error = null
 
-        if (this.rememberMe) {
-          localStorage.setItem('rememberMe', 'true')
-          localStorage.setItem('userEmail', this.email)
+        try {
+          const user = await AuthService.login(this.email, this.password)
+
+          const ufData = this.ufs.find(u => u.id === this.selectedUfId)
+          const ufLabel = ufData ? `${ufData.sigla} - ${ufData.nome}` : ''
+
+          if (this.rememberMe) {
+            localStorage.setItem('rememberMe', 'true')
+            localStorage.setItem('userEmail', this.email)
+          }
+
+          const auth = useAuthStore()
+          auth.setAuth({
+            name: user.nome,
+            email: user.email,
+            ufId: this.selectedUfId,
+            ufLabel,
+            role: user.role || 'estoquista',
+          })
+
+          this.$router.push('/')
+        } catch (error_) {
+          this.error = 'Erro ao fazer login. Verifique suas credenciais e tente novamente.'
+          console.error('Erro no login:', error_)
+        } finally {
+          this.loading = false
         }
-
-        const auth = useAuthStore()
-        auth.setAuth({
-          name: user.nome,
-          email: user.email,
-          ufId: this.selectedUfId,
-          ufLabel,
-          role: user.role || 'estoquista',
-        })
-
-        this.$router.push('/')
-      } catch (error_) {
-        this.error = 'Erro ao fazer login. Verifique suas credenciais e tente novamente.'
-        console.error('Erro no login:', error_)
-      } finally {
-        this.loading = false
-      }
+      },
     },
-  },
-})
+  })
 </script>
 
 <route lang="yaml">

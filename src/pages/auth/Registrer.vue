@@ -257,144 +257,122 @@
 </template>
 
 <script>
-export default {
-  name: 'RegistrerPage',
-  data () {
-    return {
-      formRef: null,
-      valid: false,
-      name: '',
-      email: '',
-      password: '',
-      passwordConfirm: '',
-      role: '',
-      acceptTerms: false,
-      showPassword: false,
-      showPasswordConfirm: false,
-      loading: false,
-      error: null,
-      snackbar: false,
-      snackbarText: '',
-      snackbarColor: 'success',
-    }
-  },
-  computed: {
-    nameRules () {
-      return [
-        (v) => !!v || 'Nome é obrigatório',
-        (v) => v.trim().length >= 3 || 'Informe pelo menos 3 caracteres',
-      ]
-    },
-    emailRules () {
-      return [
-        (v) => !!v || 'E-mail é obrigatório',
-        (v) => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
-      ]
-    },
-    passwordRules () {
-      return [
-        (v) => !!v || 'Senha é obrigatória',
-        (v) => v.length >= 6 || 'Senha deve ter pelo menos 6 caracteres',
-      ]
-    },
-    passwordConfirmRules () {
-      return [
-        (v) => !!v || 'Confirmação é obrigatória',
-        (v) => v === this.password || 'As senhas não conferem',
-      ]
-    },
-    roleRules () {
-      return [
-        (v) => !!v || 'Função é obrigatória',
-      ]
-    },
-    termsRules () {
-      return [
-        (v) => v || 'Você deve aceitar os termos e condições',
-      ]
-    },
-  },
-  methods: {
-    async handleRegister () {
-      if (!this.formRef) return
+  import { UserService } from '@/services'
+  import { mapUserRoleToBackendRole } from '@/utils/tramposes/user'
 
-      const { valid: isValid } = await this.formRef.validate()
-      if (!isValid) return
-
-      this.loading = true
-      this.error = null
-
-      try {
-        const getResponse = await fetch('http://localhost:3001/usuarios')
-        const allData = await getResponse.json()
-        const usuariosArray = Array.isArray(allData) && Array.isArray(allData[0])
-          ? allData[0]
-          : (Array.isArray(allData) ? allData : [])
-
-        const emailExists = usuariosArray.some((u) => u.email === this.email)
-        if (emailExists) {
-          this.error = 'Este e-mail já está cadastrado'
-          this.loading = false
-          return
-        }
-
-        const newId = usuariosArray.length > 0
-          ? Math.max(...usuariosArray.map((u) => u.id)) + 1
-          : 1
-
-        const newUserData = {
-          id: newId,
-          nome: this.name,
-          email: this.email,
-          senha: this.password,
-          id_contato: newId,
-          role: 'estoquista',
-        }
-
-        usuariosArray.push(newUserData)
-
-        const response = await fetch('http://localhost:3001/usuarios', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify([usuariosArray]),
-        })
-
-        if (!response.ok) {
-          throw new Error('Erro ao cadastrar usuário')
-        }
-
-        this.snackbarText = 'Conta criada com sucesso!'
-        this.snackbarColor = 'success'
-        this.snackbar = true
-
-        this.name = ''
-        this.email = ''
-        this.password = ''
-        this.passwordConfirm = ''
-        this.role = ''
-        this.acceptTerms = false
-        this.formRef.reset()
-
-        setTimeout(() => {
-          this.$router.push('/login')
-        }, 2000)
-      } catch (error_) {
-        console.error('Erro ao cadastrar:', error_)
-        this.error = 'Erro ao cadastrar usuário. Tente novamente.'
-        this.snackbarText = 'Erro ao cadastrar usuário'
-        this.snackbarColor = 'error'
-        this.snackbar = true
-      } finally {
-        this.loading = false
+  export default {
+    name: 'RegistrerPage',
+    data () {
+      return {
+        formRef: null,
+        valid: false,
+        name: '',
+        email: '',
+        password: '',
+        passwordConfirm: '',
+        role: '',
+        acceptTerms: false,
+        showPassword: false,
+        showPasswordConfirm: false,
+        loading: false,
+        error: null,
+        snackbar: false,
+        snackbarText: '',
+        snackbarColor: 'success',
       }
     },
-    goToLogin () {
-      this.$router.push('/login')
+    computed: {
+      nameRules () {
+        return [
+          v => !!v || 'Nome é obrigatório',
+          v => v.trim().length >= 3 || 'Informe pelo menos 3 caracteres',
+        ]
+      },
+      emailRules () {
+        return [
+          v => !!v || 'E-mail é obrigatório',
+          v => /.+@.+\..+/.test(v) || 'E-mail deve ser válido',
+        ]
+      },
+      passwordRules () {
+        return [
+          v => !!v || 'Senha é obrigatória',
+          v => v.length >= 6 || 'Senha deve ter pelo menos 6 caracteres',
+        ]
+      },
+      passwordConfirmRules () {
+        return [
+          v => !!v || 'Confirmação é obrigatória',
+          v => v === this.password || 'As senhas não conferem',
+        ]
+      },
+      roleRules () {
+        return [
+          v => !!v || 'Função é obrigatória',
+        ]
+      },
+      termsRules () {
+        return [
+          v => v || 'Você deve aceitar os termos e condições',
+        ]
+      },
     },
-  },
-}
+    methods: {
+      async handleRegister () {
+        if (!this.formRef) return
+
+        const { valid: isValid } = await this.formRef.validate()
+        if (!isValid) return
+
+        this.loading = true
+        this.error = null
+
+        try {
+          const emailExists = await UserService.emailExists(this.email)
+          if (emailExists) {
+            this.error = 'Este e-mail já está cadastrado'
+            this.loading = false
+            return
+          }
+
+          await UserService.create({
+            nome: this.name,
+            email: this.email,
+            senha: this.password,
+            role: mapUserRoleToBackendRole(this.role || 'Visualizador'),
+            ativo: true,
+          })
+
+          this.snackbarText = 'Conta criada com sucesso!'
+          this.snackbarColor = 'success'
+          this.snackbar = true
+
+          this.name = ''
+          this.email = ''
+          this.password = ''
+          this.passwordConfirm = ''
+          this.role = ''
+          this.acceptTerms = false
+          this.formRef.reset()
+
+          setTimeout(() => {
+            this.$router.push('/login')
+          }, 2000)
+        } catch (error_) {
+          console.error('Erro ao cadastrar:', error_)
+          this.error = 'Erro ao cadastrar usuário. Tente novamente.'
+          this.snackbarText = 'Erro ao cadastrar usuário'
+          this.snackbarColor = 'error'
+          this.snackbar = true
+        } finally {
+          this.loading = false
+        }
+      },
+      goToLogin () {
+        this.$router.push('/login')
+      },
+    },
+  }
 </script>
 
 <style scoped>

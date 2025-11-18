@@ -6,5 +6,3 @@ export const fornecedorRules = {
   nome: sharedRules.nome,
   phone: sharedRules.phone,
 }
-
-

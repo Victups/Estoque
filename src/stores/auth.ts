@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 
+import { clearSession, getStoredUser } from '@/services/auth.storage'
+
 export interface AuthState {
   userName: string | null
   userEmail: string | null
@@ -45,6 +47,13 @@ export const useAuthStore = defineStore('auth', {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
         if (!raw) {
+          const storedUser = getStoredUser()
+          if (storedUser) {
+            this.userEmail = storedUser.email
+            this.userName = storedUser.nome ?? deriveNameFromEmail(storedUser.email)
+            this.role = storedUser.role ?? null
+            this.isLoggedIn = true
+          }
           return
         }
         const data = JSON.parse(raw) as Partial<AuthState>
@@ -54,6 +63,16 @@ export const useAuthStore = defineStore('auth', {
         this.ufLabel = data.ufLabel ?? null
         this.isLoggedIn = Boolean(data.isLoggedIn)
         this.role = data.role ?? null
+
+        if (!this.isLoggedIn) {
+          const storedUser = getStoredUser()
+          if (storedUser) {
+            this.userEmail = storedUser.email
+            this.userName = storedUser.nome ?? deriveNameFromEmail(storedUser.email)
+            this.role = storedUser.role ?? null
+            this.isLoggedIn = true
+          }
+        }
       } catch {
         // ignore
       }
@@ -86,6 +105,7 @@ export const useAuthStore = defineStore('auth', {
       this.role = null
       this.isLoggedIn = false
       this.privateSave()
+      clearSession()
     },
   },
 })

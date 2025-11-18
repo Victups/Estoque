@@ -20,8 +20,8 @@
               <v-btn
                 color="primary"
                 prepend-icon="mdi-package-variant-plus"
-                variant="elevated"
                 :to="{ name: 'CadastroProdutos' }"
+                variant="elevated"
               >
                 Cadastrar Produto
               </v-btn>
@@ -108,125 +108,358 @@
                 </v-chip>
               </template>
 
+              <template #[`item.actions`]="{ item }">
+                <div class="d-flex align-center gap-2">
+                  <v-tooltip location="top" text="Ver detalhes">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        color="info"
+                        icon="mdi-eye"
+                        size="small"
+                        variant="text"
+                        @click.stop="openDetails(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip location="top" text="Editar produto">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        color="primary"
+                        icon="mdi-pencil"
+                        size="small"
+                        variant="text"
+                        @click.stop="editProduct(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip location="top" text="Excluir produto">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        color="error"
+                        icon="mdi-delete"
+                        size="small"
+                        variant="text"
+                        @click.stop="confirmDelete(item)"
+                      />
+                    </template>
+                  </v-tooltip>
+                </div>
+              </template>
+
               <!-- Loading Template -->
               <template #loading>
                 <v-skeleton-loader type="table-row@5" />
               </template>
             </v-data-table>
+
+            <!-- Detalhes do Produto -->
+            <v-dialog v-model="detailDialog" max-width="720">
+              <v-card>
+                <v-card-title class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center">
+                    <v-icon class="mr-2" color="primary">mdi-eye</v-icon>
+                    Detalhes do Produto
+                  </div>
+                  <v-btn icon="mdi-close" variant="text" @click="detailDialog = false" />
+                </v-card-title>
+                <v-card-text>
+                  <v-progress-linear
+                    v-if="detailLoading"
+                    class="mb-4"
+                    color="primary"
+                    indeterminate
+                  />
+                  <div v-else-if="selectedProductDetail">
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <h4 class="text-subtitle-2 text-grey">Informações Gerais</h4>
+                        <p class="mb-1"><strong>Nome:</strong> {{ selectedProductDetail.nome }}</p>
+                        <p class="mb-1"><strong>Código:</strong> {{ selectedProductDetail.codigo }}</p>
+                        <p class="mb-1"><strong>Descrição:</strong> {{ selectedProductDetail.descricao || '-' }}</p>
+                        <p class="mb-1"><strong>Categoria:</strong> {{ selectedProductDetail.categoria_nome || '-' }}</p>
+                        <p class="mb-1"><strong>Marca:</strong> {{ selectedProductDetail.marca_nome || '-' }}</p>
+                        <p class="mb-1">
+                          <strong>Unidade:</strong>
+                          {{ selectedProductDetail.unidade_descricao || '-' }}
+                          <span v-if="selectedProductDetail.unidade_abreviacao">
+                            ({{ selectedProductDetail.unidade_abreviacao }})
+                          </span>
+                        </p>
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <h4 class="text-subtitle-2 text-grey">Auditoria</h4>
+                        <p class="mb-1"><strong>Responsável cadastro:</strong> {{ selectedProductDetail.responsavel_nome || '-' }}</p>
+                        <p class="mb-1"><strong>Último usuário:</strong> {{ selectedProductDetail.usuario_log_nome || '-' }}</p>
+                        <p class="mb-1"><strong>Criado em:</strong> {{ formatDate(selectedProductDetail.created_at) }}</p>
+                        <p class="mb-1"><strong>Atualizado em:</strong> {{ formatDate(selectedProductDetail.updated_at) }}</p>
+                      </v-col>
+                    </v-row>
+
+                    <v-divider class="my-4" />
+
+                    <h4 class="text-subtitle-2 text-grey mb-2">Fornecedores Vinculados</h4>
+                    <div v-if="selectedProductDetail.fornecedores?.length" class="d-flex flex-wrap gap-2 mb-4">
+                      <v-chip
+                        v-for="fornecedor in selectedProductDetail.fornecedores"
+                        :key="fornecedor.id_fornecedor"
+                        color="primary"
+                        size="small"
+                        variant="tonal"
+                      >
+                        {{ fornecedor.nome }}
+                      </v-chip>
+                    </div>
+                    <p v-else class="text-grey mb-4">Nenhum fornecedor vinculado.</p>
+
+                    <h4 class="text-subtitle-2 text-grey mb-2">Lotes cadastrados</h4>
+                    <v-table density="compact">
+                      <thead>
+                        <tr>
+                          <th>Código</th>
+                          <th>Quantidade</th>
+                          <th>Validade</th>
+                          <th>Localização</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="lote in selectedProductDetail.lotes" :key="lote.id">
+                          <td>{{ lote.codigo_lote }}</td>
+                          <td>{{ lote.quantidade }}</td>
+                          <td>{{ lote.data_validade ? formatDate(lote.data_validade) : '-' }}</td>
+                          <td>{{ lote.id_localizacao || '-' }}</td>
+                        </tr>
+                        <tr v-if="!selectedProductDetail.lotes?.length">
+                          <td class="text-grey" colspan="4">Sem lotes registrados.</td>
+                        </tr>
+                      </tbody>
+                    </v-table>
+                  </div>
+                  <div v-else class="text-center text-grey">
+                    Nenhuma informação disponível.
+                  </div>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn color="primary" variant="text" @click="detailDialog = false">
+                    Fechar
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+
+            <!-- Confirmação de Exclusão -->
+            <v-dialog v-model="deleteDialog" max-width="480">
+              <v-card>
+                <v-card-title class="text-h6">
+                  Confirmar exclusão
+                </v-card-title>
+                <v-card-text>
+                  Deseja realmente excluir o produto
+                  <strong>{{ productToDelete?.nome }}</strong>? Esta ação não poderá ser desfeita.
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn color="grey" variant="text" @click="deleteDialog = false">
+                    Cancelar
+                  </v-btn>
+                  <v-btn
+                    color="error"
+                    :loading="deleteLoading"
+                    variant="elevated"
+                    @click="deleteProduct"
+                  >
+                    Excluir
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+
+    <v-snackbar
+      v-model="snackbar"
+      :color="snackbarColor"
+      location="top right"
+      :timeout="snackbarTimeout"
+    >
+      <div class="d-flex align-center">
+        <v-icon class="mr-2" :icon="snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'" />
+        {{ snackbarText }}
+      </div>
+    </v-snackbar>
   </v-container>
 </template>
 
 <script>
-import { getApiBaseUrl } from '@/utils/env'
+  import { LoteService, ProductService } from '@/services'
+  import { snackbarMixin } from '@/utils/snackbar'
 
-export default {
-  name: 'ProdutosPage',
-  data () {
-    return {
-      allProducts: [],
-      allProductLots: [],
-      loading: false,
-      error: null,
-      headers: [
-        { title: 'Produto', key: 'nome', sortable: true },
-        { title: 'Estoque Total', key: 'totalQuantity', sortable: true },
-        { title: 'Validade Próxima', key: 'nearestExpiry', sortable: false },
-        { title: 'Status', key: 'status', sortable: true },
-      ],
-      API_BASE: getApiBaseUrl(),
-    }
-  },
-  computed: {
-    displayProducts () {
-      const lotMap = new Map()
-      for (const lot of this.allProductLots) {
-        const lots = lotMap.get(lot.id_produto) || []
-        lots.push(lot)
-        lotMap.set(lot.id_produto, lots)
+  export default {
+    name: 'ProdutosPage',
+    mixins: [snackbarMixin],
+    data () {
+      return {
+        allProducts: [],
+        allProductLots: [],
+        loading: false,
+        error: null,
+        headers: [
+          { title: 'Produto', key: 'nome', sortable: true },
+          { title: 'Estoque Total', key: 'totalQuantity', sortable: true },
+          { title: 'Validade Próxima', key: 'nearestExpiry', sortable: false },
+          { title: 'Status', key: 'status', sortable: true },
+          { title: 'Ações', key: 'actions', sortable: false, width: '140px' },
+        ],
+        detailDialog: false,
+        detailLoading: false,
+        selectedProductDetail: null,
+        deleteDialog: false,
+        deleteLoading: false,
+        productToDelete: null,
       }
-
-      return this.allProducts.map(product => {
-        const lots = lotMap.get(product.id) || []
-        const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantidade, 0)
-        const validLots = lots.filter(lot => new Date(lot.data_validade) > new Date())
-        const sortedLots = validLots.slice().sort((a, b) => new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime())
-        const nearestExpiryLot = sortedLots[0]
-        const nearestExpiry = nearestExpiryLot ? new Date(nearestExpiryLot.data_validade).toLocaleDateString('pt-BR') : 'N/A'
-
-        let status = 'OK'
-        const thirtyDaysFromNow = new Date()
-        thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
-
-        if (totalQuantity < product.estoque_minimo) {
-          status = 'Estoque Baixo'
-        } else if (nearestExpiryLot && new Date(nearestExpiryLot.data_validade) < thirtyDaysFromNow) {
-          status = 'Vencimento Próximo'
+    },
+    computed: {
+      displayProducts () {
+        const lotMap = new Map()
+        for (const lot of this.allProductLots) {
+          const lots = lotMap.get(lot.id_produto) || []
+          lots.push(lot)
+          lotMap.set(lot.id_produto, lots)
         }
 
-        return {
-          id: product.id,
-          nome: product.nome,
-          totalQuantity,
-          nearestExpiry,
-          status,
+        return this.allProducts.map(product => {
+          const lots = lotMap.get(product.id) || []
+          const totalQuantity = lots.reduce((sum, lot) => sum + lot.quantidade, 0)
+          const validLots = lots.filter(lot => new Date(lot.data_validade) > new Date())
+          const sortedLots = validLots.toSorted((a, b) => new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime())
+          const nearestExpiryLot = sortedLots[0]
+          const nearestExpiry = nearestExpiryLot ? new Date(nearestExpiryLot.data_validade).toLocaleDateString('pt-BR') : 'N/A'
+
+          let status = 'OK'
+          const thirtyDaysFromNow = new Date()
+          thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
+
+          if (totalQuantity < product.estoque_minimo) {
+            status = 'Estoque Baixo'
+          } else if (nearestExpiryLot && new Date(nearestExpiryLot.data_validade) < thirtyDaysFromNow) {
+            status = 'Vencimento Próximo'
+          }
+
+          return {
+            id: product.id,
+            nome: product.nome,
+            totalQuantity,
+            nearestExpiry,
+            status,
+          }
+        })
+      },
+    },
+    mounted () {
+      this.fetchData()
+    },
+    methods: {
+      async fetchData () {
+        this.loading = true
+        this.error = null
+        try {
+          const [productsData, lotsData] = await Promise.all([
+            ProductService.getAll(),
+            LoteService.getAll(),
+          ])
+
+          this.allProducts = productsData
+          this.allProductLots = lotsData
+        } catch (error_) {
+          console.error('Erro ao carregar produtos:', error_)
+          this.error = error_?.message || 'Ocorreu um erro desconhecido'
+          this.showError('Não foi possível carregar os produtos')
+        } finally {
+          this.loading = false
         }
-      })
-    },
-  },
-  mounted () {
-    this.fetchData()
-  },
-  methods: {
-    async fetchData () {
-      this.loading = true
-      this.error = null
-      try {
-        const [productsRes, lotsRes] = await Promise.all([
-          fetch(`${this.API_BASE}/produtos`),
-          fetch(`${this.API_BASE}/produto_lotes`),
-        ])
-        if (!productsRes.ok) throw new Error('Falha ao carregar produtos')
-        if (!lotsRes.ok) throw new Error('Falha ao carregar lotes de produtos')
+      },
+      getStatusColor (status) {
+        switch (status) {
+          case 'Estoque Baixo': {
+            return 'warning'
+          }
+          case 'Vencimento Próximo': {
+            return 'error'
+          }
+          default: {
+            return 'success'
+          }
+        }
+      },
+      getStatusIcon (status) {
+        switch (status) {
+          case 'Estoque Baixo': {
+            return 'mdi-alert-circle'
+          }
+          case 'Vencimento Próximo': {
+            return 'mdi-clock-alert'
+          }
+          default: {
+            return 'mdi-check-circle'
+          }
+        }
+      },
+      formatDate (value) {
+        if (!value) return '-'
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) {
+          return '-'
+        }
+        return date.toLocaleString('pt-BR')
+      },
+      async openDetails (item) {
+        this.detailDialog = true
+        this.detailLoading = true
+        this.selectedProductDetail = null
+        try {
+          this.selectedProductDetail = await ProductService.getDetail(item.id)
+        } catch (error_) {
+          console.error('Erro ao carregar detalhes do produto:', error_)
+          this.showError('Não foi possível carregar os detalhes do produto')
+          this.detailDialog = false
+        } finally {
+          this.detailLoading = false
+        }
+      },
+      editProduct (item) {
+        this.$router.push({ name: 'EditarProduto', params: { id: item.id } })
+      },
+      confirmDelete (item) {
+        this.productToDelete = item
+        this.deleteDialog = true
+      },
+      async deleteProduct () {
+        if (!this.productToDelete) return
 
-        const productsData = await productsRes.json()
-        const lotsData = await lotsRes.json()
-
-        this.allProducts = Array.isArray(productsData[0]) ? productsData[0] : productsData
-        this.allProductLots = Array.isArray(lotsData[0]) ? lotsData[0] : lotsData
-      } catch (error_) {
-        this.error = error_.message || 'Ocorreu um erro desconhecido'
-      } finally {
-        this.loading = false
-      }
+        this.deleteLoading = true
+        try {
+          await ProductService.delete(this.productToDelete.id)
+          this.showSuccess('Produto excluído com sucesso')
+          this.deleteDialog = false
+          this.productToDelete = null
+          await this.fetchData()
+        } catch (error_) {
+          console.error('Erro ao excluir produto:', error_)
+          this.showError('Erro ao excluir produto')
+        } finally {
+          this.deleteLoading = false
+        }
+      },
     },
-    getStatusColor (status) {
-      switch (status) {
-        case 'Estoque Baixo':
-          return 'warning'
-        case 'Vencimento Próximo':
-          return 'error'
-        default:
-          return 'success'
-      }
-    },
-    getStatusIcon (status) {
-      switch (status) {
-        case 'Estoque Baixo':
-          return 'mdi-alert-circle'
-        case 'Vencimento Próximo':
-          return 'mdi-clock-alert'
-        default:
-          return 'mdi-check-circle'
-      }
-    },
-  },
-}
+  }
 </script>
 
+//remover
 <route lang="yaml">
 meta:
   layout: default

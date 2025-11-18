@@ -1,4 +1,4 @@
-import type { BackendUser, User, UserRole } from '@/types'
+import type { BackendUser, User, UserRole } from '@/interfaces'
 
 /**
  * Utilitários para manipulação de dados de usuários

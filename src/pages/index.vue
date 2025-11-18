@@ -5,14 +5,14 @@
 </template>
 
 <script lang="ts">
-import Home from './Home.vue'
+  import Home from './Home.vue'
 
-export default {
-  name: 'IndexPage',
-  components: {
-    Home,
-  },
-}
+  export default {
+    name: 'IndexPage',
+    components: {
+      Home,
+    },
+  }
 </script>
 
 <route lang="yaml">

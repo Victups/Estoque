@@ -1,4 +1,4 @@
-import type { ValidationRule } from '@/types'
+import type { ValidationRule } from '@/interfaces'
 
 /**
  * Utilitários de validação de formulários
@@ -46,7 +46,7 @@ export const cnpj: ValidationRule = (v: string): boolean | string => {
 }
 
 export const numeric: ValidationRule = (v: string): boolean | string => {
-  return !isNaN(Number(v)) || 'Apenas números são permitidos'
+  return !Number.isNaN(Number(v)) || 'Apenas números são permitidos'
 }
 
 export const positive: ValidationRule = (v: string): boolean | string => {
@@ -61,4 +61,3 @@ export const url: ValidationRule = (v: string): boolean | string => {
     return 'URL inválida'
   }
 }
-

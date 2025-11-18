@@ -74,30 +74,7 @@
           </v-card>
 
           <!-- Stats Card -->
-          <v-card class="mt-4" elevation="8">
-            <v-card-title class="bg-gradient">
-              <v-icon class="mr-2" icon="mdi-chart-box" />
-              Estatísticas
-            </v-card-title>
-            <v-card-text class="pa-4">
-              <v-row>
-                <v-col cols="6">
-                  <div class="text-center">
-                    <v-icon color="primary" icon="mdi-package-variant" size="40" />
-                    <h3 class="text-h4 font-weight-bold mt-2">42</h3>
-                    <p class="text-caption text-grey">Produtos</p>
-                  </div>
-                </v-col>
-                <v-col cols="6">
-                  <div class="text-center">
-                    <v-icon color="success" icon="mdi-check-circle" size="40" />
-                    <h3 class="text-h4 font-weight-bold mt-2">98%</h3>
-                    <p class="text-caption text-grey">Taxa de Sucesso</p>
-                  </div>
-                </v-col>
-              </v-row>
-            </v-card-text>
-          </v-card>
+
         </v-col>
 
         <!-- Right Column - Tabs -->
@@ -413,311 +390,226 @@
 </template>
 
 <script lang="ts">
-import type { BackendUser, UserRole, ValidationRule } from '@/types'
-import { userRules } from '@/utils/rules'
-import { getInitials as getInitialsFromUtils, getRoleColor as getRoleColorFromUtils, getRoleIcon as getRoleIconFromUtils } from '@/utils/tramposes/user'
+  import type { UserRole, ValidationRule } from '@/interfaces'
+  import { UserService } from '@/services'
+  import { getStoredUser, setStoredUser } from '@/services/auth.storage'
+  import { useAuthStore } from '@/stores/auth'
+  import { userRules } from '@/utils/rules'
+  import { getInitials as getInitialsFromUtils, getRoleColor as getRoleColorFromUtils, getRoleIcon as getRoleIconFromUtils, mapBackendRoleToUserRole } from '@/utils/tramposes/user'
 
-interface UserProfile {
-  id: number
-  name: string
-  email: string
-  role: UserRole
-  memberSince: string
-  lastAccess: string
-  initials: string
-  avatarColor: string
-}
+  interface UserProfile {
+    id: number
+    name: string
+    email: string
+    role: UserRole
+    memberSince: string
+    lastAccess: string
+    initials: string
+    avatarColor: string
+  }
 
-interface EditData {
-  name: string
-  email: string
-}
+  interface EditData {
+    name: string
+    email: string
+  }
 
-interface PasswordData {
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
-}
+  interface PasswordData {
+    currentPassword: string
+    newPassword: string
+    confirmPassword: string
+  }
 
-interface FormRules {
-  required: ValidationRule
-  email: ValidationRule
-  minLength: ValidationRule
-  passwordMatch: ValidationRule
-}
+  interface FormRules {
+    required: ValidationRule
+    email: ValidationRule
+    minLength: ValidationRule
+    passwordMatch: ValidationRule
+  }
 
-export default {
-  name: 'ProfilePage',
-  data() {
-    return {
-      tab: 'info',
-      validEdit: false,
-      validPassword: false,
-      saving: false,
-      savingPassword: false,
-      deleteDialog: false,
-      snackbar: false,
-      snackbarText: '',
-      snackbarColor: 'success',
-      showCurrentPassword: false,
-      showNewPassword: false,
-      showConfirmPassword: false,
-      userProfile: {
-        id: 1,
-        name: 'Administrador',
-        email: 'admin@sistema.com',
-        role: 'Admin' as UserRole,
-        memberSince: '01/01/2024',
-        lastAccess: new Date().toLocaleString('pt-BR'),
-        initials: 'AD',
-        avatarColor: 'primary',
-      } as UserProfile,
-      editData: {
-        name: '',
-        email: '',
-      } as EditData,
-      passwordData: {
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      } as PasswordData,
-      
-    }
-  },
-  computed: {
-    rules (): FormRules {
-      const self = this as unknown as { passwordData: PasswordData }
+  export default {
+    name: 'ProfilePage',
+    data () {
       return {
-        required: userRules.required,
-        email: userRules.email,
-        minLength: userRules.minLength(6),
-        passwordMatch: userRules.passwordMatch({ value: self.passwordData.newPassword }),
+        tab: 'info',
+        validEdit: false,
+        validPassword: false,
+        saving: false,
+        savingPassword: false,
+        deleteDialog: false,
+        snackbar: false,
+        snackbarText: '',
+        snackbarColor: 'success',
+        showCurrentPassword: false,
+        showNewPassword: false,
+        showConfirmPassword: false,
+        userProfile: {
+          id: 1,
+          name: 'Administrador',
+          email: 'admin@sistema.com',
+          role: 'Admin' as UserRole,
+          memberSince: '01/01/2024',
+          lastAccess: new Date().toLocaleString('pt-BR'),
+          initials: 'AD',
+          avatarColor: 'primary',
+        } as UserProfile,
+        editData: {
+          name: '',
+          email: '',
+        } as EditData,
+        passwordData: {
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        } as PasswordData,
+
       }
     },
-  },
-  methods: {
-    getInitials (name: string): string {
-      return getInitialsFromUtils(name)
+    computed: {
+      rules (): FormRules {
+        const self = this as unknown as { passwordData: PasswordData }
+        return {
+          required: userRules.required,
+          email: userRules.email,
+          minLength: userRules.minLength(6),
+          passwordMatch: userRules.passwordMatch({ value: self.passwordData.newPassword }),
+        }
+      },
     },
-    getRoleColor (role: UserRole): string {
-      return getRoleColorFromUtils(role)
+    async mounted () {
+      await this.loadUserProfile()
     },
-    getRoleIcon (role: UserRole): string {
-      return getRoleIconFromUtils(role)
-    },
-    async loadUserProfile(): Promise<void> {
-    try {
-      // Buscar todos os usuários
-      const response = await fetch('http://localhost:3001/usuarios')
-      if (!response.ok) {
-        throw new Error('Erro ao carregar perfil')
-      }
+    methods: {
+      getInitials (name: string): string {
+        return getInitialsFromUtils(name)
+      },
+      getRoleColor (role: UserRole): string {
+        return getRoleColorFromUtils(role)
+      },
+      getRoleIcon (role: UserRole): string {
+        return getRoleIconFromUtils(role)
+      },
+      async loadUserProfile (): Promise<void> {
+        try {
+          const storedUser = getStoredUser()
+          if (!storedUser?.id) {
+            throw new Error('Usuário não autenticado')
+          }
 
-      const data: unknown = await response.json()
+          const backendUser = await UserService.getById(storedUser.id)
 
-      // O db.json retorna array aninhado [[...]], então pegamos o primeiro elemento
-      const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0])
-        ? data[0]
-        : (Array.isArray(data) ? data : [])
+          this.userProfile = {
+            id: backendUser.id,
+            name: backendUser.nome,
+            email: backendUser.email,
+            role: mapBackendRoleToUserRole(backendUser.role),
+            memberSince: new Date().toLocaleDateString('pt-BR'),
+            lastAccess: new Date().toLocaleString('pt-BR'),
+            initials: this.getInitials(backendUser.nome),
+            avatarColor: 'primary',
+          }
 
-      // Pegar o primeiro usuário (Admin)
-      const userData: BackendUser | undefined = usuariosArray[0]
+          this.editData = {
+            name: backendUser.nome,
+            email: backendUser.email,
+          }
+        } catch (error) {
+          console.error('Erro ao carregar perfil:', error)
+          this.snackbarText = 'Erro ao carregar perfil'
+          this.snackbarColor = 'error'
+          this.snackbar = true
+          this.$router.push('/login')
+        }
+      },
+      cancelEdit (): void {
+        this.editData = {
+          name: this.userProfile.name,
+          email: this.userProfile.email,
+        }
+        this.tab = 'info'
+      },
 
-      if (!userData) {
-        throw new Error('Usuário não encontrado')
-      }
-
-      this.userProfile = {
-        id: userData.id,
-        name: userData.nome,
-        email: userData.email,
-        role: 'Admin',
-        memberSince: '01/01/2024',
-        lastAccess: new Date().toLocaleString('pt-BR'),
-        initials: this.getInitials(userData.nome),
-        avatarColor: 'primary',
-      }
-
-      // Preencher dados de edição
-      this.editData = {
-        name: this.userProfile.name,
-        email: this.userProfile.email,
-      }
-    } catch (error: unknown) {
-      console.error('Erro ao carregar perfil:', error)
-      this.snackbarText = 'Erro ao carregar perfil. Verifique se o backend está rodando.'
-      this.snackbarColor = 'error'
-      this.snackbar = true
-    }
-    },
-    cancelEdit(): void {
-      this.editData = {
-        name: this.userProfile.name,
-        email: this.userProfile.email,
-      }
-      this.tab = 'info'
-    },
-
-    async saveProfile (): Promise<void> {
-      this.saving = true
-      try {
-      // Buscar todos os usuários
-      const getResponse = await fetch('http://localhost:3001/usuarios')
-      const allData: unknown = await getResponse.json()
-      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-        ? allData[0]
-        : (Array.isArray(allData) ? allData : [])
-
-      // Atualizar o usuário específico no array
-      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.userProfile.id)
-      if (userIndex !== -1) {
-        const currentUser = usuariosArray[userIndex]
-        if (currentUser) {
-          usuariosArray[userIndex] = {
-            ...currentUser,
+      async saveProfile (): Promise<void> {
+        this.saving = true
+        try {
+          const updatedUser = await UserService.update(this.userProfile.id, {
             nome: this.editData.name,
             email: this.editData.email,
+          })
+
+          this.userProfile.name = updatedUser.nome
+          this.userProfile.email = updatedUser.email
+          this.userProfile.initials = this.getInitials(updatedUser.nome)
+          this.editData = {
+            name: updatedUser.nome,
+            email: updatedUser.email,
           }
+          setStoredUser(updatedUser)
+
+          this.snackbarText = 'Perfil atualizado com sucesso!'
+          this.snackbarColor = 'success'
+          this.snackbar = true
+          this.tab = 'info'
+        } catch (error) {
+          console.error('Erro ao salvar perfil:', error)
+          this.snackbarText = 'Erro ao atualizar perfil'
+          this.snackbarColor = 'error'
+          this.snackbar = true
+        } finally {
+          this.saving = false
         }
-      }
+      },
 
-      // Salvar o array atualizado
-      const response = await fetch('http://localhost:3001/usuarios', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([usuariosArray]),
-      })
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar perfil')
-      }
-
-      this.userProfile.name = this.editData.name
-      this.userProfile.email = this.editData.email
-      this.userProfile.initials = this.getInitials(this.editData.name)
-
-      this.snackbarText = 'Perfil atualizado com sucesso!'
-      this.snackbarColor = 'success'
-      this.snackbar = true
-      this.tab = 'info'
-    } catch (error: unknown) {
-      console.error('Erro ao salvar perfil:', error)
-      this.snackbarText = 'Erro ao atualizar perfil'
-      this.snackbarColor = 'error'
-      this.snackbar = true
-    } finally {
-      this.saving = false
-    }
-    },
-
-    async changePassword (): Promise<void> {
-      this.savingPassword = true
-      try {
-      // Buscar todos os usuários
-      const getResponse = await fetch('http://localhost:3001/usuarios')
-      const allData: unknown = await getResponse.json()
-      const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-        ? allData[0]
-        : (Array.isArray(allData) ? allData : [])
-
-      // Atualizar a senha do usuário específico no array
-      const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.userProfile.id)
-      if (userIndex !== -1) {
-        const currentUser = usuariosArray[userIndex]
-        if (currentUser) {
-          usuariosArray[userIndex] = {
-            ...currentUser,
+      async changePassword (): Promise<void> {
+        this.savingPassword = true
+        try {
+          await UserService.update(this.userProfile.id, {
             senha: this.passwordData.newPassword,
+          })
+
+          this.snackbarText = 'Senha alterada com sucesso!'
+          this.snackbarColor = 'success'
+          this.snackbar = true
+          this.passwordData = {
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
           }
+        } catch (error) {
+          console.error('Erro ao alterar senha:', error)
+          this.snackbarText = 'Erro ao alterar senha'
+          this.snackbarColor = 'error'
+          this.snackbar = true
+        } finally {
+          this.savingPassword = false
         }
-      }
+      },
 
-      // Salvar o array atualizado
-      const response = await fetch('http://localhost:3001/usuarios', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([usuariosArray]),
-      })
-
-      if (!response.ok) {
-        throw new Error('Erro ao alterar senha')
-      }
-
-      this.snackbarText = 'Senha alterada com sucesso!'
-      this.snackbarColor = 'success'
-      this.snackbar = true
-
-      // Limpar formulário
-      this.passwordData = {
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }
-    } catch (error: unknown) {
-      console.error('Erro ao alterar senha:', error)
-      this.snackbarText = 'Erro ao alterar senha'
-      this.snackbarColor = 'error'
-      this.snackbar = true
-    } finally {
-      this.savingPassword = false
-    }
-    },
-
-    async confirmDeleteAccount (): Promise<void> {
-      try {
-        // Buscar todos os usuários
-        const getResponse = await fetch('http://localhost:3001/usuarios')
-        const allData: unknown = await getResponse.json()
-        const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-          ? allData[0]
-          : (Array.isArray(allData) ? allData : [])
-
-        // Remover o usuário do array
-        const updatedArray = usuariosArray.filter((u: BackendUser) => u.id !== this.userProfile.id)
-
-        // Salvar o array atualizado
-        const response = await fetch('http://localhost:3001/usuarios', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify([updatedArray]),
-        })
-
-        if (!response.ok) {
-          throw new Error('Erro ao excluir conta')
+      async confirmDeleteAccount (): Promise<void> {
+        try {
+          await UserService.delete(this.userProfile.id)
+          const authStore = useAuthStore()
+          authStore.logout()
+          this.snackbarText = 'Conta excluída com sucesso'
+          this.snackbarColor = 'success'
+          this.snackbar = true
+          setTimeout(() => {
+            this.$router.push('/login')
+          }, 2000)
+        } catch (error) {
+          console.error('Erro ao excluir conta:', error)
+          this.snackbarText = 'Erro ao excluir conta'
+          this.snackbarColor = 'error'
+          this.snackbar = true
+        } finally {
+          this.deleteDialog = false
         }
+      },
+      goBack (): void {
+        this.$router.back()
+      },
 
-        this.snackbarText = 'Conta excluída com sucesso'
-        this.snackbarColor = 'success'
-        this.snackbar = true
-
-        // Redirecionar para login após 2 segundos
-        setTimeout(() => {
-          this.$router.push('/login')
-        }, 2000)
-      } catch (error: unknown) {
-        console.error('Erro ao excluir conta:', error)
-        this.snackbarText = 'Erro ao excluir conta'
-        this.snackbarColor = 'error'
-        this.snackbar = true
-      } finally {
-        this.deleteDialog = false
-      }
     },
-    goBack(): void {
-      this.$router.back()
-    }
-
-  },
-  async mounted() {
-    await this.loadUserProfile()
   }
-}
 </script>
 
 <style scoped>

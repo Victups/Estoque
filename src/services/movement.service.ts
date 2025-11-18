@@ -1,149 +1,165 @@
-import type { MovementDisplay, StockMovement } from '@/types'
+import type {
+  LocalizacaoApi,
+  MovementDisplay,
+  RegistroMovimentacaoApi,
+  StockMovement,
+} from '@/interfaces'
 
-import { api, ArrayResponse } from './api.config'
-import { LocationService } from './locais/location.service'
-import { LoteService } from './lote.service'
-import { ProductService } from './product.service'
-import { UserService } from './user.service'
+import { api } from './api.config'
 
-/**
- * Serviço de API para Movimentações de Estoque
- */
+type MovementType = StockMovement['tipo_movimento']
+
+function toNumber (value?: string | number | null, fallback = 0): number {
+  if (value === null || value === undefined) {
+    return fallback
+  }
+  if (typeof value === 'number') {
+    return value
+  }
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? fallback : parsed
+}
+
+function formatLocationName (location?: LocalizacaoApi | null): string | undefined {
+  if (!location) {
+    return undefined
+  }
+  const parts = [location.deposito?.nome, location.corredor, location.prateleira, location.secao]
+    .filter(Boolean)
+  return parts.length > 0 ? parts.join(' - ') : undefined
+}
+
+function mapStockMovement (registro: RegistroMovimentacaoApi): StockMovement {
+  const produto = registro.produto ?? registro.lote?.produto
+  const usuario = registro.usuario ?? registro.createdBy
+  const precoUnitario = registro.precoUnitario !== undefined && registro.precoUnitario !== null
+    ? toNumber(registro.precoUnitario)
+    : undefined
+  const valorTotal = registro.valorTotal !== undefined && registro.valorTotal !== null
+    ? toNumber(registro.valorTotal)
+    : undefined
+
+  return {
+    id: registro.id,
+    id_produto: produto?.id ?? 0,
+    quantidade: toNumber(registro.quantidade),
+    data_mov: registro.dataCriacao ?? registro.createdAt ?? new Date().toISOString(),
+    id_usuario: usuario?.id ?? 0,
+    observacao: registro.observacao ?? null,
+    preco_unitario: precoUnitario,
+    id_lote: registro.lote?.id ?? 0,
+    usuario_log_id: registro.usuarioLogId ?? null,
+    tipo_movimento: registro.tipoMovimento,
+    id_localizacao_origem: registro.localizacaoOrigem?.id ?? null,
+    id_localizacao_destino: registro.localizacaoDestino?.id ?? null,
+    id_localizacao: registro.localizacao?.id ?? null,
+    valor_total: valorTotal,
+  }
+}
+
+function mapMovementDisplay (registro: RegistroMovimentacaoApi): MovementDisplay {
+  const base = mapStockMovement(registro)
+  const produto = registro.produto ?? registro.lote?.produto
+  const usuario = registro.usuario ?? registro.createdBy
+
+  return {
+    ...base,
+    produto_nome: produto?.nome,
+    produto_codigo: produto?.codigo,
+    usuario_nome: usuario?.nome,
+    lote_codigo: registro.lote?.codigoLote,
+    localizacao_origem_nome: formatLocationName(registro.localizacaoOrigem),
+    localizacao_destino_nome: formatLocationName(registro.localizacaoDestino),
+  }
+}
+
 class MovementServiceClass {
-  private endpoint = '/movimentacao_estoque'
+  private readonly endpoint = '/estoques'
 
   async getAll (): Promise<StockMovement[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<StockMovement>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar movimentações')
-    }
+    const { data } = await api.get<RegistroMovimentacaoApi[]>(this.endpoint)
+    return data.map(registro => mapStockMovement(registro))
   }
 
-  /**
-   * Busca movimentações ENRIQUECIDAS com dados dos relacionamentos
-   */
   async getAllEnriched (): Promise<MovementDisplay[]> {
-    try {
-      // Buscar todos os dados necessários em paralelo
-      const [movements, products, users, lotes, locations] = await Promise.all([
-        this.getAll(),
-        ProductService.getAll(),
-        UserService.getAll(),
-        LoteService.getAll(),
-        LocationService.getAll(),
-      ])
-
-      // Criar mapas para lookup rápido
-      const productMap = new Map(products.map(p => [p.id, p]))
-      const userMap = new Map(users.map(u => [u.id, u]))
-      const loteMap = new Map(lotes.map(l => [l.id, l]))
-      const locationMap = new Map(locations.map(l => [l.id, l]))
-
-      // Enriquecer movimentações com dados relacionados
-      return movements.map(mov => {
-        const produto = productMap.get(mov.id_produto)
-        const usuario = userMap.get(mov.id_usuario)
-        const lote = loteMap.get(mov.id_lote)
-        const locOrigem = mov.id_localizacao_origem ? locationMap.get(mov.id_localizacao_origem) : null
-        const locDestino = mov.id_localizacao_destino ? locationMap.get(mov.id_localizacao_destino) : null
-
-        return {
-          ...mov,
-          produto_nome: produto?.nome,
-          usuario_nome: usuario?.nome,
-          lote_codigo: lote?.codigo_lote,
-          localizacao_origem_nome: locOrigem
-            ? `${locOrigem.corredor} - ${locOrigem.prateleira} - ${locOrigem.secao}`
-            : undefined,
-          localizacao_destino_nome: locDestino
-            ? `${locDestino.corredor} - ${locDestino.prateleira} - ${locDestino.secao}`
-            : undefined,
-        }
-      })
-    } catch (error) {
-      console.error('Erro ao buscar movimentações enriquecidas:', error)
-      throw new Error('Erro ao buscar movimentações')
-    }
+    const { data } = await api.get<RegistroMovimentacaoApi[]>(this.endpoint)
+    return data.map(registro => mapMovementDisplay(registro))
   }
 
-  async getById (id: number): Promise<StockMovement | undefined> {
-    const movements = await this.getAll()
-    return movements.find((m: StockMovement) => m.id === id)
+  async getById (id: number): Promise<MovementDisplay> {
+    const { data } = await api.get<RegistroMovimentacaoApi>(`${this.endpoint}/${id}`)
+    return mapMovementDisplay(data)
   }
 
-  async getByProduct (productId: number): Promise<StockMovement[]> {
-    const movements = await this.getAll()
-    return movements.filter((m: StockMovement) => m.id_produto === productId)
+  async getByProduct (productId: number): Promise<MovementDisplay[]> {
+    const movements = await this.getAllEnriched()
+    return movements.filter(movement => movement.id_produto === productId)
   }
 
-  async getByType (type: 'entrada' | 'saida'): Promise<StockMovement[]> {
-    const movements = await this.getAll()
-    return movements.filter((m: StockMovement) => m.tipo_movimento === type)
+  async getByType (type: MovementType): Promise<MovementDisplay[]> {
+    const movements = await this.getAllEnriched()
+    return movements.filter(movement => movement.tipo_movimento === type)
   }
 
-  async create (movementData: Omit<StockMovement, 'id'>): Promise<StockMovement> {
-    const movements = await this.getAll()
-
-    const newId: number = movements.length > 0
-      ? Math.max(...movements.map((m: StockMovement) => m.id)) + 1
-      : 1
-
-    const newMovement: StockMovement = {
-      ...movementData,
-      id: newId,
-      data_mov: new Date().toISOString(),
+  async create (movementData: {
+    id_produto: number
+    id_lote: number
+    id_usuario: number
+    quantidade: number
+    tipo_movimento: MovementType
+    preco_unitario?: number
+    observacao?: string
+    id_localizacao?: number | null
+    id_localizacao_origem?: number | null
+    id_localizacao_destino?: number | null
+    usuario_log_id?: number | null
+  }): Promise<MovementDisplay> {
+    const payload = {
+      id_produto: movementData.id_produto,
+      id_lote: movementData.id_lote,
+      id_usuario: movementData.id_usuario,
+      quantidade: movementData.quantidade,
+      tipo_movimento: movementData.tipo_movimento,
+      preco_unitario: movementData.preco_unitario,
+      valor_total: movementData.preco_unitario === undefined
+        ? undefined
+        : Number((movementData.preco_unitario * movementData.quantidade).toFixed(2)),
+      observacao: movementData.observacao,
+      id_localizacao: movementData.id_localizacao ?? undefined,
+      id_localizacao_origem: movementData.id_localizacao_origem ?? undefined,
+      id_localizacao_destino: movementData.id_localizacao_destino ?? undefined,
+      usuario_log_id: movementData.usuario_log_id ?? undefined,
     }
 
-    movements.push(newMovement)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(movements).toNestedArray())
-      return newMovement
-    } catch {
-      throw new Error('Erro ao criar movimentação')
-    }
+    const { data } = await api.post<RegistroMovimentacaoApi>(this.endpoint, payload)
+    return mapMovementDisplay(data)
   }
 
-  async update (id: number, updates: Partial<Omit<StockMovement, 'id'>>): Promise<StockMovement> {
-    const movements = await this.getAll()
-    const movementIndex = movements.findIndex((m: StockMovement) => m.id === id)
-
-    if (movementIndex === -1) {
-      throw new Error('Movimentação não encontrada')
+  async update (id: number, updates: Partial<{
+    observacao: string | null
+    preco_unitario: number | null
+    valor_total: number | null
+    id_localizacao: number | null
+    id_localizacao_origem: number | null
+    id_localizacao_destino: number | null
+    usuario_log_id: number | null
+  }>): Promise<MovementDisplay> {
+    const payload = {
+      observacao: updates.observacao ?? undefined,
+      preco_unitario: updates.preco_unitario ?? undefined,
+      valor_total: updates.valor_total ?? undefined,
+      id_localizacao: updates.id_localizacao ?? undefined,
+      id_localizacao_origem: updates.id_localizacao_origem ?? undefined,
+      id_localizacao_destino: updates.id_localizacao_destino ?? undefined,
+      usuario_log_id: updates.usuario_log_id ?? undefined,
     }
 
-    const existingMovement = movements[movementIndex]
-    if (!existingMovement) {
-      throw new Error('Movimentação não encontrada')
-    }
-
-    const updatedMovement: StockMovement = {
-      ...existingMovement,
-      ...updates,
-      id: existingMovement.id,
-    }
-
-    movements[movementIndex] = updatedMovement
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(movements).toNestedArray())
-      return updatedMovement
-    } catch {
-      throw new Error('Erro ao atualizar movimentação')
-    }
+    const { data } = await api.patch<RegistroMovimentacaoApi>(`${this.endpoint}/${id}`, payload)
+    return mapMovementDisplay(data)
   }
 
   async delete (id: number): Promise<void> {
-    const movements = await this.getAll()
-    const updatedMovements = movements.filter((m: StockMovement) => m.id !== id)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updatedMovements).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir movimentação')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
   }
 }
 

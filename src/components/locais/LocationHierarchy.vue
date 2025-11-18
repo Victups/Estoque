@@ -21,7 +21,6 @@
         <div><strong>Bairro:</strong> {{ location.municipio_bairro }}</div>
         <div class="mt-2"><strong>Depósito:</strong> {{ location.deposito_nome }}</div>
         <div><strong>Endereço:</strong> {{ location.endereco_completo }}</div>
-        <div><strong>CEP:</strong> {{ location.endereco_cep }}</div>
         <div class="mt-2"><strong>Posição:</strong> {{ location.corredor }}-{{ location.prateleira }}-{{ location.secao }}</div>
       </div>
     </v-tooltip>
@@ -47,7 +46,6 @@
         <div class="ml-4 mb-1 text-caption">
           <v-icon size="small">mdi-home</v-icon>
           <span class="ml-2">{{ location.endereco_completo }}</span>
-          <v-chip class="ml-2" size="x-small" variant="outlined">{{ location.endereco_cep }}</v-chip>
         </div>
 
         <!-- Depósito -->
@@ -69,22 +67,22 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import type { LocationComplete } from '@/services'
+  import type { LocationComplete } from '@/services'
+  import { defineComponent } from 'vue'
 
-export default defineComponent({
-  name: 'LocationHierarchy',
-  props: {
-    location: {
-      type: Object as () => LocationComplete,
-      required: true,
+  export default defineComponent({
+    name: 'LocationHierarchy',
+    props: {
+      location: {
+        type: Object as () => LocationComplete,
+        required: true,
+      },
+      compact: {
+        type: Boolean,
+        default: true,
+      },
     },
-    compact: {
-      type: Boolean,
-      default: true,
-    },
-  },
-})
+  })
 </script>
 
 <style scoped>

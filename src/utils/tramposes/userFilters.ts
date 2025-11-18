@@ -1,4 +1,4 @@
-import type { User } from '@/types'
+import type { User } from '@/interfaces'
 import { calculateUserStats } from './user'
 
 /**
@@ -17,11 +17,11 @@ export function filterUsers (
   return users.filter((user: User) => {
     const roleMatch = filterRole === 'Todos' || user.role === filterRole
     const statusMatch = filterStatus === 'Todos' || user.status === filterStatus
-    
+
     const searchLower = search.toLowerCase()
-    const searchMatch = !search || 
-      (user.name ?? '').toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower)
+    const searchMatch = !search
+      || (user.name ?? '').toLowerCase().includes(searchLower)
+      || user.email.toLowerCase().includes(searchLower)
 
     return roleMatch && statusMatch && searchMatch
   })
@@ -54,4 +54,3 @@ export const userTableHeaders = [
   { title: 'Status', key: 'status' },
   { title: 'Ações', key: 'actions', sortable: false, width: '180px' },
 ]
-

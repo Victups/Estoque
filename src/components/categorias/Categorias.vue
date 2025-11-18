@@ -15,23 +15,23 @@
       <v-card-text>
         <!-- Tabela de Categorias -->
         <v-data-table
+          class="elevation-1"
           :headers="headers"
           :items="categorias"
           :loading="loading"
-          class="elevation-1"
         >
           <template #[`item.actions`]="{ item }">
             <v-btn
+              color="primary"
               icon="mdi-pencil"
               size="small"
-              color="primary"
               variant="text"
               @click="editItem(item)"
             />
             <v-btn
+              color="error"
               icon="mdi-delete"
               size="small"
-              color="error"
               variant="text"
               @click="deleteItem(item)"
             />
@@ -51,10 +51,10 @@
           <v-form ref="formRef" v-model="validForm">
             <v-text-field
               v-model="editedItem.nome"
-              label="Nome da Categoria"
-              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), categoriaRules.nome]"
               counter="100"
+              label="Nome da Categoria"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), categoriaRules.nome]"
             />
           </v-form>
         </v-card-text>
@@ -66,8 +66,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            variant="text"
             :disabled="!validForm"
+            variant="text"
             @click="save"
           >
             Salvar
@@ -98,127 +98,125 @@
 </template>
 
 <script lang="ts">
-import type { Category } from '@/types'
-import { CategoryService } from '@/services'
-import { categoriaRules, sharedRules } from '@/utils/rules'
-import { snackbarMixin } from '@/utils/snackbar'
+  import type { Category } from '@/interfaces'
+  import { CategoryService } from '@/services'
+  import { categoriaRules, sharedRules } from '@/utils/rules'
+  import { snackbarMixin } from '@/utils/snackbar'
 
-export default {
-  name: 'Categorias',
-  mixins: [snackbarMixin],
-  computed: {
-    formTitle() {
-      return this.editedIndex === -1 ? 'Nova Categoria' : 'Editar Categoria'
-    },
-    categoriaRules() {
-      return categoriaRules
-    },
-    sharedRules() {
-      return sharedRules
-    },
-  },
-  data() {
-    return {
-      loading: false,
-      dialog: false,
-      deleteDialog: false,
-      validForm: false,
-      formRef: null as any,
-      categorias: [] as Category[],
-      editedIndex: -1,
-      editedItem: {
-        id: 0,
-        nome: '',
-      } as Category,
-      defaultItem: {
-        id: 0,
-        nome: '',
-      } as Category,
-      headers: [
-        { title: 'ID', key: 'id', sortable: true },
-        { title: 'Nome', key: 'nome', sortable: true },
-        { title: 'Ações', key: 'actions', sortable: false },
-      ],
-    }
-  },
-  mounted() {
-    this.loadCategorias()
-  },
-  methods: {
-    async loadCategorias() {
-      this.loading = true
-      try {
-        this.categorias = await CategoryService.getAll()
-      } catch (error) {
-        this.showError('Erro ao carregar categorias')
-      } finally {
-        this.loading = false
+  export default {
+    name: 'Categorias',
+    mixins: [snackbarMixin],
+    data () {
+      return {
+        loading: false,
+        dialog: false,
+        deleteDialog: false,
+        validForm: false,
+        formRef: null as any,
+        categorias: [] as Category[],
+        editedIndex: -1,
+        editedItem: {
+          id: 0,
+          nome: '',
+        } as Category,
+        defaultItem: {
+          id: 0,
+          nome: '',
+        } as Category,
+        headers: [
+          { title: 'ID', key: 'id', sortable: true },
+          { title: 'Nome', key: 'nome', sortable: true },
+          { title: 'Ações', key: 'actions', sortable: false },
+        ],
       }
     },
-
-    openDialog() {
-      this.dialog = true
+    computed: {
+      formTitle () {
+        return this.editedIndex === -1 ? 'Nova Categoria' : 'Editar Categoria'
+      },
+      categoriaRules () {
+        return categoriaRules
+      },
+      sharedRules () {
+        return sharedRules
+      },
     },
-
-    editItem(item: Category) {
-      this.editedIndex = this.categorias.indexOf(item)
-      this.editedItem = { ...item }
-      this.dialog = true
+    mounted () {
+      this.loadCategorias()
     },
-
-    deleteItem(item: Category) {
-      this.editedIndex = this.categorias.indexOf(item)
-      this.editedItem = { ...item }
-      this.deleteDialog = true
-    },
-
-    async deleteItemConfirm() {
-      try {
-        await CategoryService.delete(this.editedItem.id)
-        this.categorias.splice(this.editedIndex, 1)
-        this.showSuccess('Categoria excluída com sucesso!')
-      } catch (error) {
-        this.showError('Erro ao excluir categoria')
-      }
-      this.closeDeleteDialog()
-    },
-
-    closeDialog() {
-      this.dialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    closeDeleteDialog() {
-      this.deleteDialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    async save() {
-      if (!this.validForm) return
-
-      try {
-        if (this.editedIndex > -1) {
-          const updated = await CategoryService.update(this.editedItem.id, this.editedItem)
-          this.categorias[this.editedIndex] = updated
-          this.showSuccess('Categoria atualizada com sucesso!')
-        } else {
-          const newItem = await CategoryService.create(this.editedItem)
-          this.categorias.push(newItem)
-          this.showSuccess('Categoria criada com sucesso!')
+    methods: {
+      async loadCategorias () {
+        this.loading = true
+        try {
+          this.categorias = await CategoryService.getAll()
+        } catch {
+          this.showError('Erro ao carregar categorias')
+        } finally {
+          this.loading = false
         }
-        this.closeDialog()
-      } catch (error) {
-        this.showError('Erro ao salvar categoria')
-      }
+      },
+
+      openDialog () {
+        this.dialog = true
+      },
+
+      editItem (item: Category) {
+        this.editedIndex = this.categorias.indexOf(item)
+        this.editedItem = { ...item }
+        this.dialog = true
+      },
+
+      deleteItem (item: Category) {
+        this.editedIndex = this.categorias.indexOf(item)
+        this.editedItem = { ...item }
+        this.deleteDialog = true
+      },
+
+      async deleteItemConfirm () {
+        try {
+          await CategoryService.delete(this.editedItem.id)
+          this.categorias.splice(this.editedIndex, 1)
+          this.showSuccess('Categoria excluída com sucesso!')
+        } catch {
+          this.showError('Erro ao excluir categoria')
+        }
+        this.closeDeleteDialog()
+      },
+
+      closeDialog () {
+        this.dialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      closeDeleteDialog () {
+        this.deleteDialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      async save () {
+        if (!this.validForm) return
+
+        try {
+          if (this.editedIndex > -1) {
+            const updated = await CategoryService.update(this.editedItem.id, this.editedItem)
+            this.categorias[this.editedIndex] = updated
+            this.showSuccess('Categoria atualizada com sucesso!')
+          } else {
+            const newItem = await CategoryService.create(this.editedItem)
+            this.categorias.push(newItem)
+            this.showSuccess('Categoria criada com sucesso!')
+          }
+          this.closeDialog()
+        } catch {
+          this.showError('Erro ao salvar categoria')
+        }
+      },
     },
-  },
-}
+  }
 </script>
-
-

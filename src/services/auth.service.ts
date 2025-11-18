@@ -1,72 +1,38 @@
-import type { BackendUser } from '@/types'
+import type { BackendUser } from '@/interfaces'
 
-import { UserService } from './user.service'
+import { api } from './api.config'
+import { clearSession, getStoredToken, getStoredUser, saveSession } from './auth.storage'
 
-/**
- * Serviço de Autenticação
- *
- * ⚠️ ATENÇÃO: Este é um serviço MOCK para desenvolvimento/frontend
- * Em produção real, a autenticação seria feita no backend com:
- * - Hash de senhas (bcrypt, argon2, etc.)
- * - JWT tokens
- * - Sessões seguras
- * - Rate limiting
- */
+interface LoginResponse {
+  access_token: string
+  user: BackendUser
+}
+
 class AuthServiceClass {
-  /**
-   * Realiza login verificando credenciais (MOCK)
-   *
-   * ⚠️ Em um sistema real, NUNCA comparar senhas no frontend!
-   * Esta implementação é apenas para simular autenticação com db.json
-   */
-  async login (email: string, senha: string): Promise<BackendUser | null> {
-    try {
-      const users = await UserService.getAll()
-      // ⚠️ MOCK: Comparação direta de senha (INSEGURO para produção)
-      const user = users.find((u: BackendUser) =>
-        u.email === email && u.senha === senha,
-      )
-      return user ?? null
-    } catch {
-      throw new Error('Erro ao realizar login')
-    }
+  async login (email: string, senha: string): Promise<BackendUser> {
+    const { data } = await api.post<LoginResponse>('/auth/login', {
+      email: email.trim().toLowerCase(),
+      senha,
+    })
+
+    saveSession(data.access_token, data.user)
+    return data.user
   }
 
-  /**
-   * Valida se o usuário está autenticado
-   */
   isAuthenticated (): boolean {
-    // TODO: Implementar lógica de verificação de token/sessão
-    return !!localStorage.getItem('user')
+    return !!getStoredToken()
   }
 
-  /**
-   * Salva os dados do usuário autenticado
-   */
-  setUser (user: BackendUser): void {
-    localStorage.setItem('user', JSON.stringify(user))
+  getToken (): string | null {
+    return getStoredToken()
   }
 
-  /**
-   * Obtém os dados do usuário autenticado
-   */
   getUser (): BackendUser | null {
-    const userStr = localStorage.getItem('user')
-    if (!userStr) {
-      return null
-    }
-    try {
-      return JSON.parse(userStr) as BackendUser
-    } catch {
-      return null
-    }
+    return getStoredUser()
   }
 
-  /**
-   * Remove os dados do usuário (logout)
-   */
   logout (): void {
-    localStorage.removeItem('user')
+    clearSession()
   }
 }
 

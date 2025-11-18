@@ -301,7 +301,7 @@
                   :items="loteOptions"
                   label="Lote"
                   prepend-inner-icon="mdi-barcode"
-                  :rules="[rules.required]"
+                  :rules="dialogType === 'saida' ? [rules.required] : []"
                   variant="outlined"
                   @update:model-value="onLoteChange"
                 />
@@ -371,7 +371,7 @@
                   hide-details="auto"
                   item-title="label"
                   item-value="value"
-                  :items="locationOptions"
+                  :items="saidaLocationOptions"
                   label="Origem"
                   prepend-inner-icon="mdi-source-fork"
                   :rules="dialogType === 'saida' ? [rules.required] : []"
@@ -391,6 +391,50 @@
                   label="Destino"
                   prepend-inner-icon="mdi-target"
                   :rules="dialogType === 'entrada' ? [rules.required] : []"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col
+                v-if="dialogType === 'entrada' && usarNovoLote"
+                cols="12"
+              >
+                <v-alert
+                  border="start"
+                  class="mb-4"
+                  color="info"
+                  density="comfortable"
+                  icon="mdi-information"
+                  variant="tonal"
+                >
+                  Nenhum lote disponível para este produto. Um novo lote será criado utilizando os dados abaixo.
+                </v-alert>
+              </v-col>
+
+              <v-col
+                v-if="dialogType === 'entrada' && usarNovoLote"
+                cols="12"
+                md="6"
+              >
+                <v-text-field
+                  v-model="novoLote.codigo_lote"
+                  label="Código do Lote (opcional)"
+                  placeholder="Gerado automaticamente se vazio"
+                  prepend-inner-icon="mdi-barcode"
+                  variant="outlined"
+                />
+              </v-col>
+
+              <v-col
+                v-if="dialogType === 'entrada' && usarNovoLote"
+                cols="12"
+                md="6"
+              >
+                <v-text-field
+                  v-model="novoLote.data_validade"
+                  label="Data de Validade (opcional)"
+                  prepend-inner-icon="mdi-calendar"
+                  type="date"
                   variant="outlined"
                 />
               </v-col>
@@ -462,11 +506,7 @@
                       </v-col>
                       <v-col cols="6" md="3">
                         <div class="text-caption">Custo Unitário</div>
-                        <div class="font-weight-bold">{{ formatCurrency(selectedLote.custo_unitario) }}</div>
-                      </v-col>
-                      <v-col v-if="selectedLote && 'preco_venda' in selectedLote && selectedLote.preco_venda != null" cols="6" md="3">
-                        <div class="text-caption">Preço de Venda</div>
-                        <div class="font-weight-bold">{{ formatCurrency(selectedLote.preco_venda) }}</div>
+                        <div class="font-weight-bold">{{ formatCurrency(selectedLote.custo_unitario ?? 0) }}</div>
                       </v-col>
                       <v-col v-if="selectedLote.id_localizacao" cols="12">
                         <div class="text-caption">Localização Atual</div>
@@ -655,7 +695,7 @@
                 </template>
                 <v-list-item-title class="font-weight-bold">Valor Total</v-list-item-title>
                 <v-list-item-subtitle class="text-h6 text-success">
-                  {{ formatCurrency(selectedMovement.quantidade * selectedMovement.preco_unitario) }}
+                  {{ formatCurrency(selectedMovement.valor_total ?? (selectedMovement.quantidade * (selectedMovement.preco_unitario ?? 0))) }}
                 </v-list-item-subtitle>
               </v-list-item>
             </v-col>
@@ -695,30 +735,17 @@
 </template>
 
 <script lang="ts">
-  import type { LocationComplete } from '@/services'
-  import type { MovementType, Product, ProductLote, StockMovement } from '@/types'
+  import type { MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
+  import type { CreateLoteInput, LocationComplete } from '@/services'
   import { LocationService, LoteService, MovementService, ProductService } from '@/services'
-  import { snackbarMixin } from '@/utils/snackbar'
-  import { estoqueRules } from '@/utils/rules'
+  import { getStoredUser } from '@/services/auth.storage'
   import { useAuthStore } from '@/stores/auth'
+  import { estoqueRules } from '@/utils/rules'
+  import { snackbarMixin } from '@/utils/snackbar'
 
   // Interface para movimentações enriquecidas
-  interface StockMovementEnriched extends StockMovement {
-    produto_nome?: string
-    lote_codigo?: string
-    localizacao_origem_nome?: string
-    localizacao_destino_nome?: string
-  }
 
-  interface MovementFormData {
-    id_produto: number | null
-    id_lote: number | null
-    quantidade: number
-    preco_unitario: number
-    observacao: string
-    id_localizacao_origem: number | null
-    id_localizacao_destino: number | null
-  }
+  type MovementFormDataExtended = Omit<MovementFormData, 'id_lote'> & { id_lote: number | 'novo' | null }
 
   interface VForm {
     validate: () => Promise<{ valid: boolean }>
@@ -753,17 +780,23 @@
         selectedLote: null as ProductLote | null,
         formData: {
           id_produto: null,
-          id_lote: null,
+          id_lote: null as number | 'novo' | null,
           quantidade: 0,
           preco_unitario: 0,
           observacao: '',
+          id_localizacao: null,
           id_localizacao_origem: null,
           id_localizacao_destino: null,
-        } as MovementFormData,
+        } as MovementFormDataExtended,
         formRef: null as VForm | null,
         // Máscara de formatação para inputs
         quantidadeInput: '',
         precoUnitarioInput: '',
+        usarNovoLote: false,
+        novoLote: {
+          codigo_lote: '',
+          data_validade: '',
+        },
         headers: [
           { title: 'ID', key: 'id', width: '80px' },
           { title: 'Tipo', key: 'tipo_movimento', width: '120px' },
@@ -804,7 +837,7 @@
         })
       },
       valorTotal (): number {
-        return this.formData.quantidade * this.formData.preco_unitario
+        return this.formData.quantidade * (this.formData.preco_unitario || 0)
       },
       productOptions () {
         return this.products.map((p: Product) => ({
@@ -823,16 +856,26 @@
           (l: ProductLote) => l.id_produto === this.formData.id_produto && l.quantidade > 0,
         )
 
-        // Ordenar por data de validade (FIFO - First In, First Out)
-        // Lotes que vencem primeiro devem ser usados primeiro
+        const toTimestamp = (value?: string | null) =>
+          value ? new Date(value).getTime() : Number.MAX_SAFE_INTEGER
+
         const lotesOrdenados = [...productLotes].toSorted((a, b) =>
-          new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime(),
+          toTimestamp(a.data_validade) - toTimestamp(b.data_validade),
         )
 
-        return lotesOrdenados.map((l: ProductLote) => ({
+        const options: Array<{ label: string, value: number | 'novo' }> = lotesOrdenados.map((l: ProductLote) => ({
           label: `${l.codigo_lote} - Val: ${this.formatDate(l.data_validade)} - Qtd: ${l.quantidade}`,
           value: l.id,
         }))
+
+        if (this.dialogType === 'entrada') {
+          options.unshift({
+            label: 'Criar novo lote',
+            value: 'novo' as const,
+          })
+        }
+
+        return options
       },
       /**
        * Opções de localização com hierarquia completa (filtradas por UF se disponível)
@@ -843,6 +886,38 @@
           value: l.id,
         }))
       },
+      saidaLocationOptions () {
+        if (this.dialogType !== 'saida') {
+          return this.locationOptions
+        }
+        if (!this.formData.id_produto) {
+          return []
+        }
+
+        const relatedLotes = this.lotes.filter(
+          (l: ProductLote) => l.id_produto === this.formData.id_produto && (l.quantidade ?? 0) > 0,
+        )
+
+        const options: Array<{ label: string, value: number }> = []
+        const seen = new Set<number>()
+
+        for (const lote of relatedLotes) {
+          if (!lote.id_localizacao || seen.has(lote.id_localizacao)) {
+            continue
+          }
+          seen.add(lote.id_localizacao)
+          const location = this.locations.find((l: LocationComplete) => l.id === lote.id_localizacao)
+          const label = location?.localizacao_completa
+            || this.getLocalizacaoNome(lote.id_localizacao)
+            || `Localização ${lote.id_localizacao}`
+          options.push({
+            value: lote.id_localizacao,
+            label,
+          })
+        }
+
+        return options.length > 0 ? options : this.locationOptions
+      },
       rules () {
         return {
           required: estoqueRules.required,
@@ -850,6 +925,14 @@
           numeric: estoqueRules.numeric,
         }
       },
+    },
+    async mounted () {
+      await Promise.all([
+        this.loadMovements(),
+        this.loadProducts(),
+        this.loadLotes(),
+        this.loadLocations(),
+      ])
     },
     methods: {
       formatBRLFromCents (cents: number): string {
@@ -888,13 +971,14 @@
       formatNumber (value: number): string {
         return value.toLocaleString('pt-BR')
       },
-      formatCurrency (value: number): string {
+      formatCurrency (value?: number | null): string {
+        const numeric = typeof value === 'number' ? value : 0
         return new Intl.NumberFormat('pt-BR', {
           style: 'currency',
           currency: 'BRL',
-        }).format(value)
+        }).format(numeric)
       },
-      formatDate (dateString: string): string {
+      formatDate (dateString?: string | null): string {
         if (!dateString) return '-'
         const date = new Date(dateString)
         return date.toLocaleDateString('pt-BR')
@@ -930,7 +1014,7 @@
       },
       async loadLocations () {
         try {
-          this.locations = await LocationService.getAll()
+          this.locations = await LocationService.getAllComplete(this.authStore.ufId)
         } catch (error) {
           console.error('Erro ao carregar localizações:', error)
         }
@@ -947,13 +1031,19 @@
           quantidade: 0,
           preco_unitario: 0,
           observacao: '',
+          id_localizacao: null,
           id_localizacao_origem: null,
           id_localizacao_destino: null,
-        }
+        } as MovementFormDataExtended
         this.quantidadeInput = ''
         this.precoUnitarioInput = ''
         this.selectedProduct = null
         this.selectedLote = null
+        this.usarNovoLote = false
+        this.novoLote = {
+          codigo_lote: '',
+          data_validade: '',
+        }
       },
       cancelCreate () {
         this.createDialog = false
@@ -963,35 +1053,115 @@
         this.selectedProduct = this.products.find((p: Product) => p.id === productId) || null
         this.formData.id_lote = null
         this.selectedLote = null
+
+        if (this.dialogType === 'entrada') {
+          const hasLotes = this.lotes.some((l: ProductLote) => l.id_produto === productId && (l.quantidade ?? 0) > 0)
+          this.usarNovoLote = !hasLotes
+          this.formData.id_lote = this.usarNovoLote ? 'novo' : null
+        } else {
+          this.usarNovoLote = false
+        }
       },
-      onLoteChange (loteId: number) {
-        this.selectedLote = this.lotes.find((l: ProductLote) => l.id === loteId) || null
+      onLoteChange (loteId: number | 'novo' | null) {
+        if (loteId === 'novo') {
+          this.usarNovoLote = true
+          this.selectedLote = null
+          return
+        }
+
+        this.usarNovoLote = false
+        this.selectedLote = loteId
+          ? this.lotes.find((l: ProductLote) => l.id === loteId) || null
+          : null
 
         // Sugerir preço baseado no lote selecionado
         if (this.selectedLote && this.dialogType === 'saida') {
-          const precoVenda = (this.selectedLote as any).preco_venda
-          if (precoVenda) {
-            this.precoUnitarioInput = this.formatBRLFromCents(precoVenda * 100)
-            this.formData.preco_unitario = precoVenda
+          const custoUnitario = this.selectedLote.custo_unitario
+          if (custoUnitario) {
+            this.precoUnitarioInput = this.formatBRLFromCents(Math.round(custoUnitario * 100))
+            this.formData.preco_unitario = custoUnitario
           }
+        }
+
+        if (this.selectedLote && this.dialogType === 'saida') {
+          this.formData.id_localizacao_origem = this.selectedLote.id_localizacao ?? null
         }
       },
       async saveMovement () {
-        if (!this.validForm) return
+        if (!this.formData.id_produto) {
+          this.showError('Selecione um produto para continuar')
+          return
+        }
+
+        const validation = await this.formRef?.validate?.()
+        if (validation && !validation.valid) {
+          return
+        }
 
         this.saving = true
         try {
-          const movementData = {
-            ...this.formData,
-            tipo_movimento: this.dialogType,
-            id_usuario: this.authStore.userName ? 1 : 1,
-            data_mov: new Date().toISOString(),
-            usuario_log_id: this.authStore.userName ? 1 : 1,
-            id_produto: this.formData.id_produto || 0,
-            id_lote: this.formData.id_lote || 0,
+          const storedUser = getStoredUser()
+          const idUsuario = storedUser?.id ?? 1
+
+          let loteId: number | null = typeof this.formData.id_lote === 'number'
+            ? this.formData.id_lote
+            : null
+
+          if (this.dialogType === 'entrada' && (this.usarNovoLote || this.formData.id_lote === 'novo' || !loteId)) {
+            if (!this.formData.id_localizacao_destino) {
+              this.showError('Informe a localização de destino para criar o lote')
+              this.saving = false
+              return
+            }
+            if (this.formData.quantidade <= 0) {
+              this.showError('Quantidade deve ser maior que zero')
+              this.saving = false
+              return
+            }
+
+            const payload: CreateLoteInput = {
+              id_produto: this.formData.id_produto,
+              codigo_lote: this.novoLote.codigo_lote || undefined,
+              data_validade: this.novoLote.data_validade || undefined,
+              quantidade: this.formData.quantidade,
+              data_entrada: new Date().toISOString().slice(0, 10),
+              responsavel_cadastro: idUsuario,
+              usuario_log_id: idUsuario,
+              id_localizacao: this.formData.id_localizacao_destino ?? undefined,
+              custo_unitario: this.formData.preco_unitario || undefined,
+              ativo: true,
+            }
+
+            const novoLoteCriado = await LoteService.create(payload)
+            loteId = novoLoteCriado.id
+            this.lotes.push(novoLoteCriado)
+            this.formData.id_lote = loteId
+            this.usarNovoLote = false
           }
 
-          await MovementService.create(movementData)
+          if (!loteId) {
+            this.showError('Selecione um lote para continuar')
+            this.saving = false
+            return
+          }
+
+          const idLocalizacao = this.dialogType === 'entrada'
+            ? this.formData.id_localizacao_destino
+            : this.formData.id_localizacao_origem
+
+          await MovementService.create({
+            id_produto: this.formData.id_produto,
+            id_lote: loteId,
+            id_usuario: idUsuario,
+            quantidade: this.formData.quantidade,
+            tipo_movimento: this.dialogType,
+            preco_unitario: this.formData.preco_unitario || undefined,
+            observacao: this.formData.observacao?.trim() || undefined,
+            id_localizacao: idLocalizacao ?? null,
+            id_localizacao_origem: this.formData.id_localizacao_origem ?? null,
+            id_localizacao_destino: this.formData.id_localizacao_destino ?? null,
+            usuario_log_id: idUsuario,
+          })
 
           this.showSuccess(
             `${this.dialogType === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`,
@@ -1011,14 +1181,6 @@
         this.selectedMovement = movement
         this.viewDialog = true
       },
-    },
-    async mounted () {
-      await Promise.all([
-        this.loadMovements(),
-        this.loadProducts(),
-        this.loadLotes(),
-        this.loadLocations(),
-      ])
     },
   }
 </script>

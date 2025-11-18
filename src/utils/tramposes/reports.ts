@@ -1,4 +1,4 @@
-import type { Category, Product, ProductLote, StockMovement } from '@/types'
+import type { Category, Product, ProductLote, StockMovement } from '@/interfaces'
 
 /**
  * Utilitários para cálculos de estatísticas de estoque
@@ -23,13 +23,18 @@ export function calculateStockStats (
   const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
 
   const totalStock = lotes.reduce((sum, lote) => sum + (lote.quantidade || 0), 0)
-  
   const totalValue = lotes.reduce((sum, lote) =>
-    sum + ((lote.quantidade || 0) * (lote.custo_unitario || 0)), 0
+    sum + ((lote.quantidade || 0) * (lote.custo_unitario ?? 0)), 0,
   )
 
   const productsNearExpiration = lotes.filter(lote => {
+    if (!lote.data_validade) {
+      return false
+    }
     const expDate = new Date(lote.data_validade)
+    if (Number.isNaN(expDate.getTime())) {
+      return false
+    }
     return expDate >= today && expDate <= thirtyDaysFromNow
   }).length
 
@@ -53,12 +58,14 @@ export function calculateStockStats (
  */
 export function calculateProductsByCategory (
   products: Product[],
-  categories: Category[],
 ): Record<number, number> {
   const productsByCategory: Record<number, number> = {}
 
   for (const product of products) {
     const catId = product.id_categoria
+    if (catId === null || catId === undefined) {
+      continue
+    }
     productsByCategory[catId] = (productsByCategory[catId] || 0) + 1
   }
 
@@ -72,10 +79,12 @@ export function prepareDonutChartData (
   products: Product[],
   categories: Category[],
 ) {
-  const productsByCategory = calculateProductsByCategory(products, categories)
+  const productsByCategory = calculateProductsByCategory(products)
   const total = products.length
 
-  if (total === 0) return null
+  if (total === 0) {
+    return null
+  }
 
   const labels = categories.map(cat => cat.nome)
   const values = categories.map(cat => productsByCategory[cat.id] || 0)
@@ -172,7 +181,7 @@ export function getTopLowStockProducts (
       }
     })
     .filter(p => p.currentStock < p.stockMin)
-    .sort((a, b) => b.difference - a.difference)
+    .toSorted((a, b) => b.difference - a.difference)
     .slice(0, limit)
 
   return productsWithStock
@@ -189,12 +198,15 @@ export function calculateValueByCategory (
   const valueByCategory: Record<number, number> = {}
 
   for (const product of products) {
+    const catId = product.id_categoria
+    if (catId === null || catId === undefined) {
+      continue
+    }
     const productLotes = lotes.filter(l => l.id_produto === product.id)
     const totalValue = productLotes.reduce((sum, l) =>
-      sum + ((l.quantidade || 0) * (l.custo_unitario || 0)), 0
+      sum + ((l.quantidade || 0) * (l.custo_unitario ?? 0)), 0,
     )
 
-    const catId = product.id_categoria
     valueByCategory[catId] = (valueByCategory[catId] || 0) + totalValue
   }
 
@@ -396,4 +408,3 @@ export function prepareValueChartOptions (
     },
   }
 }
-

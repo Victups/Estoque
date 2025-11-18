@@ -1,9 +1,7 @@
-export { sharedRules } from './shared'
-export { productRules } from './produtos'
-export { estoqueRules } from './estoques'
-export { userRules } from './usuarios'
 export { categoriaRules } from './categorias'
+export { estoqueRules } from './estoques'
 export { fornecedorRules } from './fornecedores'
 export { locaisRules } from './locais'
-
-
+export { productRules } from './produtos'
+export { sharedRules } from './shared'
+export { userRules } from './usuarios'

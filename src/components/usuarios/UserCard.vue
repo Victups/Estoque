@@ -64,42 +64,42 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import type { User } from '@/types'
-import { getRoleColor, getRoleIcon } from '@/utils/tramposes'
+  import type { User } from '@/interfaces'
+  import { defineComponent } from 'vue'
+  import { getRoleColor, getRoleIcon } from '@/utils/tramposes'
 
-export default defineComponent({
-  name: 'UserCard',
-  props: {
-    user: {
-      type: Object as () => User,
-      required: true,
+  export default defineComponent({
+    name: 'UserCard',
+    props: {
+      user: {
+        type: Object as () => User,
+        required: true,
+      },
     },
-  },
-  emits: ['view', 'edit', 'delete'],
-  computed: {
-    roleColor (): string {
-      return getRoleColor(this.user.role)
+    emits: ['view', 'edit', 'delete'],
+    computed: {
+      roleColor (): string {
+        return getRoleColor(this.user.role)
+      },
+      roleIcon (): string {
+        return getRoleIcon(this.user.role)
+      },
+      statusColor (): string {
+        return this.user.status === 'active' ? 'success' : 'error'
+      },
     },
-    roleIcon (): string {
-      return getRoleIcon(this.user.role)
+    methods: {
+      handleView () {
+        this.$emit('view', this.user)
+      },
+      handleEdit () {
+        this.$emit('edit', this.user)
+      },
+      handleDelete () {
+        this.$emit('delete', this.user)
+      },
     },
-    statusColor (): string {
-      return this.user.status === 'active' ? 'success' : 'error'
-    },
-  },
-  methods: {
-    handleView () {
-      this.$emit('view', this.user)
-    },
-    handleEdit () {
-      this.$emit('edit', this.user)
-    },
-    handleDelete () {
-      this.$emit('delete', this.user)
-    },
-  },
-})
+  })
 </script>
 
 <style scoped>

@@ -1,7 +1,6 @@
-import type { Deposit, Location } from '@/types'
+import type { Deposit, DepositoApi, EnderecoApi, LocalizacaoApi, Location } from '@/interfaces'
 
-import { AddressService } from './address.service'
-import { api, ArrayResponse } from '../api.config'
+import { api } from '../api.config'
 
 /**
  * Interface para localização COMPLETA (com toda hierarquia)
@@ -13,7 +12,6 @@ export interface LocationComplete extends Location {
 
   // Endereço
   endereco_completo?: string
-  endereco_cep?: string
   endereco_id?: number
 
   // Município
@@ -33,170 +31,112 @@ export interface LocationComplete extends Location {
 /**
  * Serviço de API para Localizações
  */
+function mapLocation (loc: LocalizacaoApi): Location {
+  return {
+    id: loc.id,
+    id_deposito: loc.deposito?.id ?? 0,
+    corredor: loc.corredor ?? '',
+    prateleira: loc.prateleira ?? '',
+    secao: loc.secao ?? '',
+  }
+}
+
+function buildEnderecoCompleto (endereco?: EnderecoApi | null): string | undefined {
+  if (!endereco) {
+    return undefined
+  }
+  const partes = [endereco.logradouro, endereco.numero, endereco.complemento].filter(Boolean)
+  return partes.length > 0 ? partes.join(', ') : undefined
+}
+
 class LocationServiceClass {
-  private endpoint = '/localizacoes'
+  private endpoint = '/locais'
 
   async getAll (): Promise<Location[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Location>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar localizações')
-    }
+    const localizacoes = await this.fetchAll()
+    return localizacoes.map(loc => mapLocation(loc))
   }
 
   /**
-   * Busca localização COMPLETA com toda hierarquia até UF
+   * Busca localização COMPLETA com toda hierarquia até UF (quando disponível)
    * @param ufId - ID da UF para filtrar (opcional)
    */
   async getAllComplete (ufId?: number | null): Promise<LocationComplete[]> {
-    try {
-      console.log('🔍 LocationService.getAllComplete - UF ID:', ufId)
+    const localizacoes = await this.fetchAll()
 
-      const [locations, deposits, addresses] = await Promise.all([
-        this.getAll(),
-        DepositService.getAllEnriched(ufId),
-        AddressService.getAllEnriched(ufId),
-      ])
+    const filtradas = ufId
+      ? localizacoes.filter(loc => loc.deposito?.endereco?.municipio?.uf?.id === ufId)
+      : localizacoes
 
-      console.log('✅ Dados carregados:', {
-        locations: locations.length,
-        deposits: deposits.length,
-        addresses: addresses.length,
-      })
+    return filtradas.map(loc => {
+      const base = mapLocation(loc)
+      const endereco = loc.deposito?.endereco
+      const localizacaoCompleta = [
+        loc.deposito?.nome,
+        loc.corredor,
+        loc.prateleira,
+        loc.secao,
+      ].filter(Boolean).join(' - ')
 
-      const depositMap = new Map(deposits.map(d => [d.id, d]))
-      const addressMap = new Map(addresses.map(a => [a.id, a]))
-
-      const locationsFiltradas = locations.filter(loc => {
-        const deposito = depositMap.get(loc.id_deposito)
-        if (!deposito) {
-          return false
-        }
-
-        // Se foi passado ufId, filtrar apenas dessa UF
-        if (ufId !== undefined && ufId !== null) {
-          const endereco = addressMap.get(deposito.id_endereco)
-          return endereco?.uf_id === ufId
-        }
-
-        return true
-      })
-
-      return locationsFiltradas.map(loc => {
-        const deposito = depositMap.get(loc.id_deposito)
-        const endereco = deposito ? addressMap.get(deposito.id_endereco) : null
-
-        const localizacao_completa = [
-          endereco?.uf_sigla,
-          endereco?.municipio_nome,
-          deposito?.nome,
-          `${loc.corredor}-${loc.prateleira}-${loc.secao}`,
-        ].filter(Boolean).join(' / ')
-
-        return {
-          ...loc,
-          // Depósito
-          deposito_nome: deposito?.nome,
-          deposito_id: deposito?.id,
-
-          // Endereço
-          endereco_completo: endereco
-            ? `${endereco.logradouro}, ${endereco.numero}${endereco.complemento ? ' - ' + endereco.complemento : ''}`
-            : undefined,
-          endereco_cep: endereco?.cep,
-          endereco_id: endereco?.id,
-
-          // Município
-          municipio_nome: endereco?.municipio_nome,
-          municipio_bairro: endereco?.municipio_bairro,
-          municipio_id: endereco?.municipio_id,
-
-          // UF
-          uf_sigla: endereco?.uf_sigla,
-          uf_nome: endereco?.uf_nome,
-          uf_id: endereco?.uf_id,
-
-          // Formatado
-          localizacao_completa,
-        }
-      })
-    } catch (error) {
-      console.error('Erro detalhado em getAllComplete:', error)
-      throw new Error('Erro ao buscar localizações completas')
-    }
+      return {
+        ...base,
+        deposito_nome: loc.deposito?.nome,
+        deposito_id: loc.deposito?.id,
+        endereco_completo: buildEnderecoCompleto(endereco),
+        endereco_id: endereco?.id,
+        municipio_nome: endereco?.municipio?.nome,
+        municipio_bairro: endereco?.municipio?.bairro ?? undefined,
+        municipio_id: endereco?.municipio?.id,
+        uf_sigla: endereco?.municipio?.uf?.sigla,
+        uf_nome: endereco?.municipio?.uf?.nome,
+        uf_id: endereco?.municipio?.uf?.id,
+        localizacao_completa: localizacaoCompleta || undefined,
+      }
+    })
   }
 
-  async getById (id: number): Promise<Location | undefined> {
-    const locations = await this.getAll()
-    return locations.find((l: Location) => l.id === id)
+  async getById (id: number): Promise<Location> {
+    const { data } = await api.get<LocalizacaoApi>(`${this.endpoint}/${id}`)
+    return mapLocation(data)
   }
 
   async getByDeposit (depositId: number): Promise<Location[]> {
-    const locations = await this.getAll()
-    return locations.filter((l: Location) => l.id_deposito === depositId)
+    const localizacoes = await this.getAll()
+    return localizacoes.filter(loc => loc.id_deposito === depositId)
   }
 
   async create (locationData: Omit<Location, 'id'>): Promise<Location> {
-    const locations = await this.getAll()
-
-    const newId: number = locations.length > 0
-      ? Math.max(...locations.map((l: Location) => l.id)) + 1
-      : 1
-
-    const newLocation: Location = {
-      ...locationData,
-      id: newId,
+    const payload = {
+      corredor: locationData.corredor,
+      prateleira: locationData.prateleira,
+      secao: locationData.secao,
+      id_deposito: locationData.id_deposito,
+      ativo: true,
     }
 
-    locations.push(newLocation)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(locations).toNestedArray())
-      return newLocation
-    } catch {
-      throw new Error('Erro ao criar localização')
-    }
+    const { data } = await api.post<LocalizacaoApi>(this.endpoint, payload)
+    return mapLocation(data)
   }
 
   async update (id: number, updates: Partial<Omit<Location, 'id'>>): Promise<Location> {
-    const locations = await this.getAll()
-    const locationIndex = locations.findIndex((l: Location) => l.id === id)
-
-    if (locationIndex === -1) {
-      throw new Error('Localização não encontrada')
+    const payload = {
+      corredor: updates.corredor,
+      prateleira: updates.prateleira,
+      secao: updates.secao,
+      id_deposito: updates.id_deposito,
     }
 
-    const existingLocation = locations[locationIndex]
-    if (!existingLocation) {
-      throw new Error('Localização não encontrada')
-    }
-
-    const updatedLocation: Location = {
-      ...existingLocation,
-      ...updates,
-      id: existingLocation.id,
-    }
-
-    locations[locationIndex] = updatedLocation
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(locations).toNestedArray())
-      return updatedLocation
-    } catch {
-      throw new Error('Erro ao atualizar localização')
-    }
+    const { data } = await api.patch<LocalizacaoApi>(`${this.endpoint}/${id}`, payload)
+    return mapLocation(data)
   }
 
   async delete (id: number): Promise<void> {
-    const locations = await this.getAll()
-    const updatedLocations = locations.filter((l: Location) => l.id !== id)
+    await api.delete(`${this.endpoint}/${id}`)
+  }
 
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updatedLocations).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir localização')
-    }
+  private async fetchAll (): Promise<LocalizacaoApi[]> {
+    const { data } = await api.get<LocalizacaoApi[]>(this.endpoint)
+    return data
   }
 }
 
@@ -205,7 +145,6 @@ class LocationServiceClass {
  */
 export interface DepositEnriched extends Deposit {
   endereco_completo?: string
-  endereco_cep?: string
   municipio_nome?: string
   municipio_bairro?: string
   uf_sigla?: string
@@ -219,119 +158,73 @@ class DepositServiceClass {
   private endpoint = '/depositos'
 
   async getAll (): Promise<Deposit[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Deposit>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar depósitos')
-    }
+    const depositos = await this.fetchAll()
+    return depositos.map(deposito => ({
+      id: deposito.id,
+      nome: deposito.nome,
+      id_endereco: deposito.endereco?.id ?? 0,
+    }))
   }
 
-  /**
-   * Busca depósitos ENRIQUECIDOS com endereço completo até UF
-   * @param ufId - ID da UF para filtrar (opcional)
-   */
-  async getAllEnriched (ufId?: number | null): Promise<DepositEnriched[]> {
-    try {
-      const [deposits, addresses] = await Promise.all([
-        this.getAll(),
-        AddressService.getAllEnriched(ufId),
-      ])
-
-      const addressMap = new Map(addresses.map(a => [a.id, a]))
-
-      // Filtrar depósitos pela UF se fornecida
-      const depositsFiltrados = deposits.filter(deposit => {
-        if (ufId !== undefined && ufId !== null) {
-          const endereco = addressMap.get(deposit.id_endereco)
-          return endereco?.uf_id === ufId
-        }
-        return true
-      })
-
-      return depositsFiltrados.map(deposit => {
-        const endereco = addressMap.get(deposit.id_endereco)
-
-        return {
-          ...deposit,
-          endereco_completo: endereco
-            ? `${endereco.logradouro}, ${endereco.numero}${endereco.complemento ? ' - ' + endereco.complemento : ''}`
-            : undefined,
-          endereco_cep: endereco?.cep,
-          municipio_nome: endereco?.municipio_nome,
-          municipio_bairro: endereco?.municipio_bairro,
-          uf_sigla: endereco?.uf_sigla,
-          uf_nome: endereco?.uf_nome,
-        }
-      })
-    } catch (error) {
-      console.error('Erro detalhado em DepositService.getAllEnriched:', error)
-      throw new Error('Erro ao buscar depósitos enriquecidos')
-    }
+  async getAllEnriched (): Promise<DepositEnriched[]> {
+    const depositos = await this.fetchAll()
+    return depositos.map(deposito => ({
+      id: deposito.id,
+      nome: deposito.nome,
+      id_endereco: deposito.endereco?.id ?? 0,
+      endereco_completo: buildEnderecoCompleto(deposito.endereco),
+      municipio_nome: deposito.endereco?.municipio?.nome,
+      municipio_bairro: deposito.endereco?.municipio?.bairro ?? undefined,
+      uf_sigla: deposito.endereco?.municipio?.uf?.sigla,
+      uf_nome: deposito.endereco?.municipio?.uf?.nome,
+    }))
   }
 
-  async getById (id: number): Promise<Deposit | undefined> {
-    const deposits = await this.getAll()
-    return deposits.find((d: Deposit) => d.id === id)
+  async getById (id: number): Promise<Deposit> {
+    const { data } = await api.get<DepositoApi>(`${this.endpoint}/${id}`)
+    return {
+      id: data.id,
+      nome: data.nome,
+      id_endereco: data.endereco?.id ?? 0,
+    }
   }
 
   async create (depositData: Omit<Deposit, 'id'>): Promise<Deposit> {
-    try {
-      const response = await api.get(this.endpoint)
-      const deposits = new ArrayResponse<Deposit>(response.data).get()
-      
-      const newDeposit: Deposit = {
-        id: Math.max(...deposits.map(d => d.id), 0) + 1,
-        ...depositData,
-      }
-      
-      deposits.push(newDeposit)
-      await api.put(this.endpoint, new ArrayResponse(deposits).toNestedArray())
-      return newDeposit
-    } catch {
-      throw new Error('Erro ao criar depósito')
+    const { data } = await api.post<DepositoApi>(this.endpoint, {
+      nome: depositData.nome,
+      id_endereco: depositData.id_endereco,
+      ativo: true,
+    })
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      id_endereco: data.endereco?.id ?? depositData.id_endereco,
     }
   }
 
   async update (id: number, updates: Partial<Omit<Deposit, 'id'>>): Promise<Deposit> {
-    try {
-      const response = await api.get(this.endpoint)
-      const deposits = new ArrayResponse<Deposit>(response.data).get()
-      const depositIndex = deposits.findIndex(d => d.id === id)
-      
-      if (depositIndex === -1) {
-        throw new Error('Depósito não encontrado')
-      }
-      
-      const existingDeposit = deposits[depositIndex]!
-      const updatedDeposit: Deposit = {
-        id: existingDeposit.id,
-        nome: updates.nome ?? existingDeposit.nome,
-        id_endereco: updates.id_endereco ?? existingDeposit.id_endereco,
-      }
-      
-      deposits[depositIndex] = updatedDeposit
-      await api.put(this.endpoint, new ArrayResponse(deposits).toNestedArray())
-      return updatedDeposit
-    } catch {
-      throw new Error('Erro ao atualizar depósito')
+    const { data } = await api.patch<DepositoApi>(`${this.endpoint}/${id}`, {
+      nome: updates.nome,
+      id_endereco: updates.id_endereco,
+    })
+
+    return {
+      id: data.id,
+      nome: data.nome,
+      id_endereco: data.endereco?.id ?? updates.id_endereco ?? 0,
     }
   }
 
   async delete (id: number): Promise<void> {
-    try {
-      const response = await api.get(this.endpoint)
-      const deposits = new ArrayResponse<Deposit>(response.data).get()
-      const updatedDeposits = deposits.filter((d: Deposit) => d.id !== id)
-      
-      await api.put(this.endpoint, new ArrayResponse(updatedDeposits).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir depósito')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
+  }
+
+  private async fetchAll (): Promise<DepositoApi[]> {
+    const { data } = await api.get<DepositoApi[]>(this.endpoint)
+    return data
   }
 }
 
 export const LocationService = new LocationServiceClass()
 export const DepositService = new DepositServiceClass()
-
-

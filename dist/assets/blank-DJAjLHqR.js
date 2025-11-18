@@ -1,0 +1,1 @@
+import{_ as t,f as r,a as e,w as n,S as a,o as c}from"./index-2CK1TBd1.js";import{V as s}from"./VMain-BkaJPv2e.js";import"./tag-ClhzHHXz.js";import"./ssrBoot-DL-QNHNL.js";const _={};function i(l,m){const o=a("router-view");return c(),r("div",null,[e(s,null,{default:n(()=>[e(o)]),_:1})])}const v=t(_,[["render",i]]);export{v as default};

@@ -7,5 +7,3 @@ export const userRules = {
   passwordMatch: sharedRules.passwordMatch,
   nome: sharedRules.nome,
 }
-
-

@@ -94,113 +94,111 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import type { User, UserRole, ValidationRule } from '@/types'
-import { required, email, minLength, passwordMatch } from '@/utils/tramposes'
+  import type { User, UserRole, ValidationRule } from '@/interfaces'
+  import { defineComponent } from 'vue'
+  import { email, minLength, passwordMatch, required } from '@/utils/tramposes'
 
-interface UserFormData {
-  name: string
-  email: string
-  role: UserRole | null
-  password?: string
-  confirmPassword?: string
-}
+  interface UserFormData {
+    name: string
+    email: string
+    role: UserRole | null
+    password?: string
+    confirmPassword?: string
+  }
 
-interface VForm {
-  validate: () => Promise<{ valid: boolean }>
-  reset: () => void
-}
+  interface VForm {
+    validate: () => Promise<{ valid: boolean }>
+    reset: () => void
+  }
 
-export default defineComponent({
-  name: 'UserForm',
-  props: {
-    user: {
-      type: Object as () => User | null,
-      default: null,
-    },
-    mode: {
-      type: String as () => 'create' | 'edit',
-      required: true,
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  emits: ['submit', 'cancel'],
-  data () {
-    return {
-      valid: false,
-      showPassword: false,
-      showConfirmPassword: false,
-      formData: {
-        name: '',
-        email: '',
-        role: null as UserRole | null,
-        password: '',
-        confirmPassword: '',
-      } as UserFormData,
-      formRef: null as VForm | null,
-      roleOptions: ['Admin', 'Gerente', 'Operador', 'Visualizador'] as UserRole[],
-    }
-  },
-  computed: {
-    nameRules (): ValidationRule[] {
-      return [
-        required,
-        minLength(3),
-      ]
-    },
-    emailRules (): ValidationRule[] {
-      return [
-        required,
-        email,
-      ]
-    },
-    roleRules (): ValidationRule[] {
-      return [
-        required,
-      ]
-    },
-    passwordRules (): ValidationRule[] {
-      return this.mode === 'create'
-        ? [required, minLength(6)]
-        : []
-    },
-    confirmPasswordRules (): ValidationRule[] {
-      return this.mode === 'create'
-        ? [required, passwordMatch({ value: this.formData.password || '' })]
-        : []
-    },
-  },
-  watch: {
-    user: {
-      handler (newUser: User | null | undefined) {
-        if (newUser) {
-          this.formData = {
-            name: newUser.name || newUser.nome,
-            email: newUser.email,
-            role: newUser.role,
-          }
-        } else {
-          this.formData = {
-            name: '',
-            email: '',
-            role: null,
-            password: '',
-            confirmPassword: '',
-          }
-        }
+  export default defineComponent({
+    name: 'UserForm',
+    props: {
+      user: {
+        type: Object as () => User | null,
+        default: null,
       },
-      immediate: true,
+      mode: {
+        type: String as () => 'create' | 'edit',
+        required: true,
+      },
+      loading: {
+        type: Boolean,
+        default: false,
+      },
     },
-  },
-  methods: {
-    handleSubmit (): void {
-      this.$emit('submit', this.formData)
+    emits: ['submit', 'cancel'],
+    data () {
+      return {
+        valid: false,
+        showPassword: false,
+        showConfirmPassword: false,
+        formData: {
+          name: '',
+          email: '',
+          role: null as UserRole | null,
+          password: '',
+          confirmPassword: '',
+        } as UserFormData,
+        formRef: null as VForm | null,
+        roleOptions: ['Admin', 'Gerente', 'Operador', 'Visualizador'] as UserRole[],
+      }
     },
-  },
-})
+    computed: {
+      nameRules (): ValidationRule[] {
+        return [
+          required,
+          minLength(3),
+        ]
+      },
+      emailRules (): ValidationRule[] {
+        return [
+          required,
+          email,
+        ]
+      },
+      roleRules (): ValidationRule[] {
+        return [
+          required,
+        ]
+      },
+      passwordRules (): ValidationRule[] {
+        return this.mode === 'create'
+          ? [required, minLength(6)]
+          : []
+      },
+      confirmPasswordRules (): ValidationRule[] {
+        return this.mode === 'create'
+          ? [required, passwordMatch({ value: this.formData.password || '' })]
+          : []
+      },
+    },
+    watch: {
+      user: {
+        handler (newUser: User | null | undefined) {
+          this.formData = newUser
+            ? {
+              name: newUser.name || newUser.nome,
+              email: newUser.email,
+              role: newUser.role,
+            }
+            : {
+              name: '',
+              email: '',
+              role: null,
+              password: '',
+              confirmPassword: '',
+            }
+        },
+        immediate: true,
+      },
+    },
+    methods: {
+      handleSubmit (): void {
+        this.$emit('submit', this.formData)
+      },
+    },
+  })
 </script>
 
 <style scoped>
