@@ -1,11 +1,7 @@
-import type { Address } from '@/types'
+import type { Address, EnderecoApi } from '@/interfaces'
 
-import { api, ArrayResponse } from '../api.config'
-import { MunicipalityService, UfService } from './uf.service'
+import { api } from '../api.config'
 
-/**
- * Interface para endereço enriquecido
- */
 export interface AddressEnriched extends Address {
   municipio_nome?: string
   municipio_bairro?: string
@@ -15,144 +11,74 @@ export interface AddressEnriched extends Address {
   uf_id?: number
 }
 
-/**
- * Serviço de API para Endereços
- */
+function mapAddress (endereco: EnderecoApi): Address {
+  return {
+    id: endereco.id,
+    logradouro: endereco.logradouro,
+    numero: endereco.numero ?? '',
+    complemento: endereco.complemento ?? null,
+    id_municipio: endereco.municipio?.id ?? endereco.idMunicipio ?? 0,
+  }
+}
+
+function mapAddressEnriched (endereco: EnderecoApi): AddressEnriched {
+  return {
+    ...mapAddress(endereco),
+    municipio_nome: endereco.municipio?.nome,
+    municipio_bairro: endereco.municipio?.bairro ?? undefined,
+    municipio_id: endereco.municipio?.id,
+    uf_sigla: endereco.municipio?.uf?.sigla,
+    uf_nome: endereco.municipio?.uf?.nome,
+    uf_id: endereco.municipio?.uf?.id,
+  }
+}
+
 class AddressServiceClass {
   private endpoint = '/enderecos'
 
   async getAll (): Promise<Address[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Address>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar endereços')
-    }
+    const { data } = await api.get<EnderecoApi[]>(this.endpoint)
+    return data.map(endereco => mapAddress(endereco))
   }
 
-  /**
-   * Busca endereços ENRIQUECIDOS com município e UF
-   * @param ufId - ID da UF para filtrar (opcional)
-   */
-  async getAllEnriched (ufId?: number | null): Promise<AddressEnriched[]> {
-    try {
-      console.log('🔍 AddressService.getAllEnriched - UF ID:', ufId)
-
-      const [addresses, municipalities, ufs] = await Promise.all([
-        this.getAll(),
-        MunicipalityService.getAll(),
-        UfService.getAll(),
-      ])
-
-      console.log('✅ AddressService dados:', {
-        addresses: addresses.length,
-        municipalities: municipalities.length,
-        ufs: ufs.length,
-      })
-
-      const municipalityMap = new Map(municipalities.map(m => [m.id, m]))
-      const ufMap = new Map(ufs.map(u => [u.id, u]))
-
-      // Filtrar endereços pela UF se fornecida
-      const addressesFiltrados = addresses.filter(address => {
-        if (ufId !== undefined && ufId !== null) {
-          const municipio = municipalityMap.get(address.id_municipio)
-          return municipio?.id_uf === ufId
-        }
-        return true
-      })
-
-      return addressesFiltrados.map(address => {
-        const municipio = municipalityMap.get(address.id_municipio)
-        const uf = municipio ? ufMap.get(municipio.id_uf) : null
-
-        return {
-          ...address,
-          municipio_nome: municipio?.nome,
-          municipio_bairro: municipio?.bairro,
-          municipio_id: municipio?.id,
-          uf_sigla: uf?.sigla,
-          uf_nome: uf?.nome,
-          uf_id: uf?.id,
-        }
-      })
-    } catch (error) {
-      console.error('Erro detalhado em AddressService.getAllEnriched:', error)
-      throw new Error('Erro ao buscar endereços enriquecidos')
-    }
+  async getAllEnriched (): Promise<AddressEnriched[]> {
+    const { data } = await api.get<EnderecoApi[]>(this.endpoint)
+    return data.map(endereco => mapAddressEnriched(endereco))
   }
 
-  async getById (id: number): Promise<Address | undefined> {
-    const addresses = await this.getAll()
-    return addresses.find((a: Address) => a.id === id)
+  async getById (id: number): Promise<AddressEnriched> {
+    const { data } = await api.get<EnderecoApi>(`${this.endpoint}/${id}`)
+    return mapAddressEnriched(data)
   }
 
-  async create (addressData: Omit<Address, 'id'>): Promise<Address> {
-    const addresses = await this.getAll()
-
-    const newId: number = addresses.length > 0
-      ? Math.max(...addresses.map((a: Address) => a.id)) + 1
-      : 1
-
-    const newAddress: Address = {
-      ...addressData,
-      id: newId,
+  async create (addressData: Omit<Address, 'id'>): Promise<AddressEnriched> {
+    const payload = {
+      logradouro: addressData.logradouro,
+      numero: addressData.numero,
+      complemento: addressData.complemento,
+      id_municipio: addressData.id_municipio,
+      ativo: true,
     }
 
-    addresses.push(newAddress)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(addresses).toNestedArray())
-      return newAddress
-    } catch {
-      throw new Error('Erro ao criar endereço')
-    }
+    const { data } = await api.post<EnderecoApi>(this.endpoint, payload)
+    return mapAddressEnriched(data)
   }
 
-  async update (id: number, updates: Partial<Omit<Address, 'id'>>): Promise<Address> {
-    const addresses = await this.getAll()
-    const addressIndex = addresses.findIndex((a: Address) => a.id === id)
-
-    if (addressIndex === -1) {
-      throw new Error('Endereço não encontrado')
+  async update (id: number, updates: Partial<Omit<Address, 'id'>>): Promise<AddressEnriched> {
+    const payload = {
+      logradouro: updates.logradouro,
+      numero: updates.numero,
+      complemento: updates.complemento,
+      id_municipio: updates.id_municipio,
     }
 
-    const existingAddress = addresses[addressIndex]
-    if (!existingAddress) {
-      throw new Error('Endereço não encontrado')
-    }
-
-    const updatedAddress: Address = {
-      id: existingAddress.id,
-      logradouro: updates.logradouro ?? existingAddress.logradouro,
-      numero: updates.numero ?? existingAddress.numero,
-      complemento: updates.complemento ?? existingAddress.complemento,
-      cep: updates.cep ?? existingAddress.cep,
-      id_municipio: updates.id_municipio ?? existingAddress.id_municipio,
-    }
-
-    addresses[addressIndex] = updatedAddress
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(addresses).toNestedArray())
-      return updatedAddress
-    } catch {
-      throw new Error('Erro ao atualizar endereço')
-    }
+    const { data } = await api.patch<EnderecoApi>(`${this.endpoint}/${id}`, payload)
+    return mapAddressEnriched(data)
   }
 
   async delete (id: number): Promise<void> {
-    const addresses = await this.getAll()
-    const updatedAddresses = addresses.filter((a: Address) => a.id !== id)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updatedAddresses).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir endereço')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
   }
 }
 
 export const AddressService = new AddressServiceClass()
-
-
