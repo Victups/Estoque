@@ -7,6 +7,7 @@
 import { setupLayouts } from 'virtual:generated-layouts'
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
+import { AuthService } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth'
 
 const route = [
@@ -14,6 +15,10 @@ const route = [
     path: '/',
     name: 'Home',
     component: () => import('../pages/Home.vue'),
+    meta: {
+      layout: 'default',
+      requiresAuth: true,
+    },
   },
   {
     path: '/login',
@@ -21,6 +26,7 @@ const route = [
     component: () => import('../pages/auth/Login.vue'),
     meta: {
       layout: 'blank',
+      public: true,
     },
   },
   {
@@ -29,6 +35,7 @@ const route = [
     component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -37,6 +44,7 @@ const route = [
     component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -45,6 +53,16 @@ const route = [
     component: () => import('@/pages/produtos/CadastroProdutos.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/produtos/:id/editar',
+    name: 'EditarProduto',
+    component: () => import('@/pages/produtos/CadastroProdutos.vue'),
+    meta: {
+      layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -53,6 +71,7 @@ const route = [
     component: () => import('@/pages/produtos/Produtos.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -61,6 +80,7 @@ const route = [
     component: () => import('@/pages/estoques/Movimentacao.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -69,6 +89,7 @@ const route = [
     component: () => import('@/pages/dashboards/Relatorios.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -77,6 +98,7 @@ const route = [
     component: () => import('@/pages/usuarios/Profile.vue'),
     meta: {
       layout: 'default',
+      requiresAuth: true,
     },
   },
   {
@@ -104,6 +126,7 @@ const route = [
     component: () => import('@/pages/auth/Registrer.vue'),
     meta: {
       layout: 'blank',
+      public: true,
     },
   },
 ]
@@ -116,16 +139,33 @@ const router = createRouter({
 // Navigation guard para verificar autenticação e roles
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  if (!authStore.isLoggedIn) {
+    authStore.loadFromStorage()
+  }
 
-  // Verificar se a rota requer autenticação
-  if (to.meta.requiresAuth) {
-    if (!authStore.isLoggedIn) {
-      // Redirecionar para login se não estiver autenticado
-      next('/login')
-      return
+  const isPublicRoute = Boolean((to.meta as any)?.public)
+  const isAuthenticated = AuthService.isAuthenticated()
+
+  if (!isAuthenticated && !isPublicRoute) {
+    if (to.path !== '/login') {
+      window.alert('Sua sessão expirou ou você não está autenticado. Faça login para continuar.')
     }
+    authStore.logout()
+    const redirectQuery = to.fullPath && to.fullPath !== '/login' ? { redirect: to.fullPath } : null
+    next(
+      redirectQuery
+        ? { path: '/login', query: redirectQuery }
+        : { path: '/login' },
+    )
+    return
+  }
 
-    // Verificar role se especificado
+  if (to.path === '/login' && isAuthenticated) {
+    next('/')
+    return
+  }
+
+  if (to.meta.requiresAuth) {
     const requiredRoleMeta = (to.meta as any)?.requiredRole
     if (requiredRoleMeta) {
       const userRole = authStore.role?.toLowerCase()
@@ -134,8 +174,9 @@ router.beforeEach((to, from, next) => {
         : [String(requiredRoleMeta).toLowerCase()]
 
       if (!userRole || !requiredRoles.includes(userRole)) {
-        // Redirecionar para home se não tiver permissão
-        next('/')
+        window.alert('Você não tem permissão para acessar esta funcionalidade.')
+        const fallback = from?.fullPath && from.fullPath !== to.fullPath ? from.fullPath : '/'
+        next(fallback)
         return
       }
     }

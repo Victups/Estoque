@@ -1,6 +1,44 @@
-import type { Brand, Category, Product, UnitMeasure } from '@/types'
+import type {
+  Brand,
+  CategoriaApi,
+  Category,
+  MarcaApi,
+  Product,
+  ProductDetail,
+  ProductFornecedorLink,
+  ProductLoteResumo,
+  ProdutoApi,
+  UnidadeApi,
+  UnitMeasure,
+} from '@/interfaces'
 
-import { api, ArrayResponse } from './api.config'
+import { api } from './api.config'
+
+function toNumber (value: string | number | null | undefined, fallback = 0): number {
+  if (value === null || value === undefined) {
+    return fallback
+  }
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isNaN(parsed) ? fallback : parsed
+}
+
+function mapProductBase (produto: ProdutoApi): Product {
+  return {
+    id: produto.id,
+    nome: produto.nome,
+    codigo: produto.codigo,
+    descricao: produto.descricao ?? undefined,
+    id_unidade_medida: produto.unidadeMedida?.id ?? 0,
+    id_marca: produto.marca?.id ?? null,
+    id_categoria: produto.categoria?.id ?? null,
+    responsavel_cadastro: produto.responsavelCadastro?.id ?? 0,
+    data_cadastro: produto.dataCadastro ?? produto.createdAt ?? undefined,
+    usuario_log_id: produto.usuarioLogId ?? null,
+    estoque_minimo: toNumber(produto.estoqueMinimo, 0),
+    is_perecivel: Boolean(produto.isPerecivel),
+    ativo: produto.ativo ?? true,
+  }
+}
 
 /**
  * Interface para produto enriquecido com dados relacionados
@@ -13,126 +51,147 @@ export interface ProductEnriched extends Product {
   responsavel_nome?: string
 }
 
+function mapProductEnriched (produto: ProdutoApi): ProductEnriched {
+  return {
+    ...mapProductBase(produto),
+    categoria_nome: produto.categoria?.nome,
+    marca_nome: produto.marca?.nome,
+    unidade_abreviacao: produto.unidadeMedida?.abreviacao as UnitMeasure['abreviacao'] | undefined,
+    unidade_descricao: produto.unidadeMedida?.descricao,
+    responsavel_nome: produto.responsavelCadastro?.nome,
+  }
+}
+
+function mapProductDetail (produto: ProdutoApi): ProductDetail {
+  return {
+    ...mapProductBase(produto),
+    categoria_nome: produto.categoria?.nome,
+    marca_nome: produto.marca?.nome,
+    unidade_abreviacao: produto.unidadeMedida?.abreviacao as UnitMeasure['abreviacao'] | undefined,
+    unidade_descricao: produto.unidadeMedida?.descricao,
+    responsavel_nome: produto.responsavelCadastro?.nome,
+    usuario_log_nome: produto.usuarioLog?.nome,
+    criado_por_nome: produto.createdBy?.nome,
+    atualizado_por_nome: produto.updatedBy?.nome,
+    created_at: produto.createdAt ?? undefined,
+    updated_at: produto.updatedAt ?? undefined,
+    fornecedores: produto.fornecedores?.map<ProductFornecedorLink>(fornecedor => ({
+      id_fornecedor: fornecedor.fornecedor?.id ?? fornecedor.id_fornecedor,
+      nome: fornecedor.fornecedor?.nome ?? `Fornecedor ${fornecedor.id_fornecedor}`,
+      cnpj: fornecedor.fornecedor?.cnpj ?? null,
+    })) ?? [],
+    lotes: produto.lotes?.map<ProductLoteResumo>(lote => ({
+      id: lote.id,
+      codigo_lote: lote.codigo_lote,
+      quantidade: toNumber(lote.quantidade, 0),
+      data_validade: lote.data_validade ?? null,
+      id_localizacao: lote.localizacao?.id ?? null,
+    })) ?? [],
+  }
+}
+
+function cleanPayload<T extends Record<string, unknown>> (payload: T): T {
+  const entries = Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+  return Object.fromEntries(entries) as T
+}
+
+type CreateProdutoPayload = {
+  nome: string
+  descricao?: string
+  codigo?: string
+  id_unidade_medida: number
+  id_marca?: number
+  id_categoria?: number
+  responsavel_cadastro: number
+  usuario_log_id?: number
+  estoque_minimo?: number
+  ativo?: boolean
+  is_perecivel?: boolean
+}
+
 /**
  * Serviço de API para Produtos
  */
 class ProductServiceClass {
   private endpoint = '/produtos'
+  private supplierEndpoint = '/produto-fornecedor'
 
   async getAll (): Promise<Product[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Product>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar produtos')
-    }
+    const produtos = await this.fetchAll()
+    return produtos.map(produto => mapProductBase(produto))
   }
 
   /**
    * Busca produtos ENRIQUECIDOS com dados dos relacionamentos
    */
   async getAllEnriched (): Promise<ProductEnriched[]> {
-    try {
-      const [products, categories, brands, units] = await Promise.all([
-        this.getAll(),
-        CategoryService.getAll(),
-        BrandService.getAll(),
-        UnitMeasureService.getAll(),
-      ])
-
-      const categoryMap = new Map(categories.map(c => [c.id, c]))
-      const brandMap = new Map(brands.map(b => [b.id, b]))
-      const unitMap = new Map(units.map(u => [u.id, u]))
-
-      return products.map(product => {
-        const categoria = categoryMap.get(product.id_categoria)
-        const marca = brandMap.get(product.id_marca)
-        const unidade = unitMap.get(product.id_unidade_medida)
-
-        return {
-          ...product,
-          categoria_nome: categoria?.nome,
-          marca_nome: marca?.nome,
-          unidade_abreviacao: unidade?.abreviacao,
-          unidade_descricao: unidade?.descricao,
-        }
-      })
-    } catch {
-      throw new Error('Erro ao buscar produtos enriquecidos')
-    }
+    const produtos = await this.fetchAll()
+    return produtos.map(produto => mapProductEnriched(produto))
   }
 
-  async getById (id: number): Promise<Product | undefined> {
-    const products = await this.getAll()
-    return products.find((p: Product) => p.id === id)
+  async getById (id: number): Promise<Product> {
+    const { data } = await api.get<ProdutoApi>(`${this.endpoint}/${id}`)
+    return mapProductBase(data)
+  }
+
+  async getDetail (id: number): Promise<ProductDetail> {
+    const { data } = await api.get<ProdutoApi>(`${this.endpoint}/${id}`)
+    return mapProductDetail(data)
   }
 
   async create (productData: Omit<Product, 'id'>): Promise<Product> {
-    const products = await this.getAll()
+    const payload: CreateProdutoPayload = cleanPayload({
+      nome: productData.nome,
+      descricao: productData.descricao,
+      codigo: productData.codigo?.trim() || undefined,
+      id_unidade_medida: productData.id_unidade_medida,
+      id_marca: productData.id_marca ?? undefined,
+      id_categoria: productData.id_categoria ?? undefined,
+      responsavel_cadastro: productData.responsavel_cadastro,
+      usuario_log_id: productData.usuario_log_id ?? undefined,
+      estoque_minimo: productData.estoque_minimo,
+      ativo: productData.ativo,
+      is_perecivel: productData.is_perecivel,
+    })
 
-    const newId: number = products.length > 0
-      ? Math.max(...products.map((p: Product) => p.id)) + 1
-      : 1
-
-    // Gerar código automaticamente se não fornecido (simula trigger do banco)
-    const codigo = productData.codigo && productData.codigo.trim() !== ''
-      ? productData.codigo
-      : `PROD${newId.toString().padStart(3, '0')}`
-
-    const newProduct: Product = {
-      ...productData,
-      id: newId,
-      codigo,
-    }
-
-    products.push(newProduct)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(products).toNestedArray())
-      return newProduct
-    } catch {
-      throw new Error('Erro ao criar produto')
-    }
+    const { data } = await api.post<ProdutoApi>(this.endpoint, payload)
+    return mapProductBase(data)
   }
 
   async update (id: number, updates: Partial<Omit<Product, 'id'>>): Promise<Product> {
-    const products = await this.getAll()
-    const productIndex = products.findIndex((p: Product) => p.id === id)
+    const payload = cleanPayload({
+      nome: updates.nome,
+      descricao: updates.descricao,
+      codigo: updates.codigo?.trim(),
+      id_unidade_medida: updates.id_unidade_medida,
+      id_marca: updates.id_marca,
+      id_categoria: updates.id_categoria,
+      responsavel_cadastro: updates.responsavel_cadastro,
+      usuario_log_id: updates.usuario_log_id,
+      estoque_minimo: updates.estoque_minimo,
+      ativo: updates.ativo,
+      is_perecivel: updates.is_perecivel,
+    })
 
-    if (productIndex === -1) {
-      throw new Error('Produto não encontrado')
-    }
-
-    const existingProduct = products[productIndex]
-    if (!existingProduct) {
-      throw new Error('Produto não encontrado')
-    }
-
-    const updatedProduct: Product = {
-      ...existingProduct,
-      ...updates,
-      id: existingProduct.id,
-    }
-
-    products[productIndex] = updatedProduct
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(products).toNestedArray())
-      return updatedProduct
-    } catch {
-      throw new Error('Erro ao atualizar produto')
-    }
+    const { data } = await api.patch<ProdutoApi>(`${this.endpoint}/${id}`, payload)
+    return mapProductBase(data)
   }
 
   async delete (id: number): Promise<void> {
-    const products = await this.getAll()
-    const updatedProducts = products.filter((p: Product) => p.id !== id)
+    await api.delete(`${this.endpoint}/${id}`)
+  }
 
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updatedProducts).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir produto')
-    }
+  async linkToSupplier (productId: number, supplierId: number, usuarioLogId?: number | null): Promise<void> {
+    await api.post(this.supplierEndpoint, {
+      id_produto: productId,
+      id_fornecedor: supplierId,
+      usuario_log_id: usuarioLogId ?? null,
+    })
+  }
+
+  private async fetchAll (): Promise<ProdutoApi[]> {
+    const { data } = await api.get<ProdutoApi[]>(this.endpoint)
+    return data
   }
 }
 
@@ -143,75 +202,27 @@ class CategoryServiceClass {
   private endpoint = '/categorias'
 
   async getAll (): Promise<Category[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Category>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar categorias')
-    }
+    const { data } = await api.get<CategoriaApi[]>(this.endpoint)
+    return data
   }
 
   async getById (id: number): Promise<Category> {
-    try {
-      const response = await api.get(`${this.endpoint}/${id}`)
-      return response.data
-    } catch {
-      throw new Error('Erro ao buscar categoria')
-    }
+    const { data } = await api.get<CategoriaApi>(`${this.endpoint}/${id}`)
+    return data
   }
 
   async create (categoryData: Omit<Category, 'id'>): Promise<Category> {
-    try {
-      const response = await api.get(this.endpoint)
-      const categories = new ArrayResponse<Category>(response.data).get()
-      
-      const newCategory: Category = {
-        id: Math.max(...categories.map(c => c.id), 0) + 1,
-        ...categoryData,
-      }
-      
-      categories.push(newCategory)
-      await api.put(this.endpoint, new ArrayResponse(categories).toNestedArray())
-      return newCategory
-    } catch {
-      throw new Error('Erro ao criar categoria')
-    }
+    const { data } = await api.post<CategoriaApi>(this.endpoint, categoryData)
+    return data
   }
 
   async update (id: number, updates: Partial<Omit<Category, 'id'>>): Promise<Category> {
-    try {
-      const response = await api.get(this.endpoint)
-      const categories = new ArrayResponse<Category>(response.data).get()
-      const categoryIndex = categories.findIndex(c => c.id === id)
-      
-      if (categoryIndex === -1) {
-        throw new Error('Categoria não encontrada')
-      }
-      
-      const existingCategory = categories[categoryIndex]!
-      const updatedCategory: Category = {
-        id: existingCategory.id,
-        nome: updates.nome ?? existingCategory.nome,
-      }
-      
-      categories[categoryIndex] = updatedCategory
-      await api.put(this.endpoint, new ArrayResponse(categories).toNestedArray())
-      return updatedCategory
-    } catch {
-      throw new Error('Erro ao atualizar categoria')
-    }
+    const { data } = await api.patch<CategoriaApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    return data
   }
 
   async delete (id: number): Promise<void> {
-    try {
-      const response = await api.get(this.endpoint)
-      const categories = new ArrayResponse<Category>(response.data).get()
-      const updatedCategories = categories.filter((c: Category) => c.id !== id)
-      
-      await api.put(this.endpoint, new ArrayResponse(updatedCategories).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir categoria')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
   }
 }
 
@@ -222,89 +233,27 @@ class BrandServiceClass {
   private endpoint = '/marcas'
 
   async getAll (): Promise<Brand[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Brand>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar marcas')
-    }
+    const { data } = await api.get<MarcaApi[]>(this.endpoint)
+    return data
   }
 
   async getById (id: number): Promise<Brand> {
-    try {
-      const response = await api.get(`${this.endpoint}/${id}`)
-      return response.data
-    } catch {
-      throw new Error('Erro ao buscar marca')
-    }
+    const { data } = await api.get<MarcaApi>(`${this.endpoint}/${id}`)
+    return data
   }
 
   async create (brandData: Omit<Brand, 'id'>): Promise<Brand> {
-    try {
-      const response = await api.get(this.endpoint)
-      const brands = new ArrayResponse<Brand>(response.data).get()
-      
-      // Verificar se já existe uma marca com o mesmo nome
-      const existingBrand = brands.find(b => b.nome.toLowerCase() === brandData.nome.toLowerCase())
-      if (existingBrand) {
-        throw new Error('Já existe uma marca com este nome')
-      }
-      
-      const newBrand: Brand = {
-        id: Math.max(...brands.map(b => b.id), 0) + 1,
-        ...brandData,
-      }
-      
-      brands.push(newBrand)
-      await api.put(this.endpoint, new ArrayResponse(brands).toNestedArray())
-      return newBrand
-    } catch {
-      throw new Error('Erro ao criar marca')
-    }
+    const { data } = await api.post<MarcaApi>(this.endpoint, brandData)
+    return data
   }
 
   async update (id: number, updates: Partial<Omit<Brand, 'id'>>): Promise<Brand> {
-    try {
-      const response = await api.get(this.endpoint)
-      const brands = new ArrayResponse<Brand>(response.data).get()
-      const brandIndex = brands.findIndex(b => b.id === id)
-      
-      if (brandIndex === -1) {
-        throw new Error('Marca não encontrada')
-      }
-      
-      // Verificar se já existe outra marca com o mesmo nome
-      if (updates.nome) {
-        const existingBrand = brands.find(b => b.id !== id && b.nome.toLowerCase() === updates.nome!.toLowerCase())
-        if (existingBrand) {
-          throw new Error('Já existe uma marca com este nome')
-        }
-      }
-      
-      const existingBrand = brands[brandIndex]!
-      const updatedBrand: Brand = {
-        id: existingBrand.id,
-        nome: updates.nome ?? existingBrand.nome,
-      }
-      
-      brands[brandIndex] = updatedBrand
-      await api.put(this.endpoint, new ArrayResponse(brands).toNestedArray())
-      return updatedBrand
-    } catch {
-      throw new Error('Erro ao atualizar marca')
-    }
+    const { data } = await api.patch<MarcaApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    return data
   }
 
   async delete (id: number): Promise<void> {
-    try {
-      const response = await api.get(this.endpoint)
-      const brands = new ArrayResponse<Brand>(response.data).get()
-      const updatedBrands = brands.filter((b: Brand) => b.id !== id)
-      
-      await api.put(this.endpoint, new ArrayResponse(updatedBrands).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir marca')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
   }
 }
 
@@ -312,79 +261,30 @@ class BrandServiceClass {
  * Serviço de API para Unidades de Medida
  */
 class UnitMeasureServiceClass {
-  private endpoint = '/unidade_medidas'
+  private endpoint = '/unidades'
 
   async getAll (): Promise<UnitMeasure[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<UnitMeasure>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar unidades de medida')
-    }
+    const { data } = await api.get<UnidadeApi[]>(this.endpoint)
+    return data
   }
 
   async getById (id: number): Promise<UnitMeasure> {
-    try {
-      const response = await api.get(`${this.endpoint}/${id}`)
-      return response.data
-    } catch {
-      throw new Error('Erro ao buscar unidade de medida')
-    }
+    const { data } = await api.get<UnidadeApi>(`${this.endpoint}/${id}`)
+    return data
   }
 
   async create (unitData: Omit<UnitMeasure, 'id'>): Promise<UnitMeasure> {
-    try {
-      const response = await api.get(this.endpoint)
-      const units = new ArrayResponse<UnitMeasure>(response.data).get()
-      
-      const newUnit: UnitMeasure = {
-        id: Math.max(...units.map(u => u.id), 0) + 1,
-        ...unitData,
-      }
-      
-      units.push(newUnit)
-      await api.put(this.endpoint, new ArrayResponse(units).toNestedArray())
-      return newUnit
-    } catch {
-      throw new Error('Erro ao criar unidade de medida')
-    }
+    const { data } = await api.post<UnidadeApi>(this.endpoint, unitData)
+    return data
   }
 
   async update (id: number, updates: Partial<Omit<UnitMeasure, 'id'>>): Promise<UnitMeasure> {
-    try {
-      const response = await api.get(this.endpoint)
-      const units = new ArrayResponse<UnitMeasure>(response.data).get()
-      const unitIndex = units.findIndex(u => u.id === id)
-      
-      if (unitIndex === -1) {
-        throw new Error('Unidade de medida não encontrada')
-      }
-      
-      const existingUnit = units[unitIndex]!
-      const updatedUnit: UnitMeasure = {
-        id: existingUnit.id,
-        descricao: updates.descricao ?? existingUnit.descricao,
-        abreviacao: updates.abreviacao ?? existingUnit.abreviacao,
-      }
-      
-      units[unitIndex] = updatedUnit
-      await api.put(this.endpoint, new ArrayResponse(units).toNestedArray())
-      return updatedUnit
-    } catch {
-      throw new Error('Erro ao atualizar unidade de medida')
-    }
+    const { data } = await api.patch<UnidadeApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    return data
   }
 
   async delete (id: number): Promise<void> {
-    try {
-      const response = await api.get(this.endpoint)
-      const units = new ArrayResponse<UnitMeasure>(response.data).get()
-      const updatedUnits = units.filter((u: UnitMeasure) => u.id !== id)
-      
-      await api.put(this.endpoint, new ArrayResponse(updatedUnits).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir unidade de medida')
-    }
+    await api.delete(`${this.endpoint}/${id}`)
   }
 }
 
@@ -392,3 +292,5 @@ export const ProductService = new ProductServiceClass()
 export const CategoryService = new CategoryServiceClass()
 export const BrandService = new BrandServiceClass()
 export const UnitMeasureService = new UnitMeasureServiceClass()
+
+export { type ProductDetail, type ProductFornecedorLink, type ProductLoteResumo } from '@/interfaces'

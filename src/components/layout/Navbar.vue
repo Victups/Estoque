@@ -210,9 +210,10 @@
 </template>
 
 <script lang="ts">
+  import type { State } from '@/interfaces'
   import { defineComponent } from 'vue'
-  import type { State } from '@/types'
   import { UfService } from '@/services'
+  import { AuthService } from '@/services/auth.service'
   import { useAuthStore } from '@/stores/auth'
 
   export default defineComponent({
@@ -323,6 +324,7 @@
       },
       logout () {
         this.auth.logout()
+        AuthService.logout()
         this.$router.push('/login')
       },
     },

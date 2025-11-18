@@ -1,190 +1,177 @@
-import type { ProductLote } from '@/types'
+import type { LoteApi, ProductLote } from '@/interfaces'
 
-import { api, ArrayResponse } from './api.config'
-import { LocationService } from './locais/location.service'
-import { ProductService } from './product.service'
+import { api } from './api.config'
 
-/**
- * Interface para lote enriquecido básico
- */
+function toNumber (value: string | number | null | undefined, fallback = 0): number {
+  if (value === null || value === undefined) {
+    return fallback
+  }
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isNaN(parsed) ? fallback : parsed
+}
+
+function mapLoteBase (lote: LoteApi): ProductLote {
+  return {
+  id: lote.id,
+  id_produto: lote.produto?.id ?? 0,
+  codigo_lote: lote.codigoLote ?? lote.codigo_lote ?? '',
+  data_validade: lote.dataValidade ?? lote.data_validade ?? null,
+  quantidade: toNumber(lote.quantidade, 0),
+  data_entrada: lote.dataEntrada ?? lote.data_entrada ?? new Date().toISOString(),
+  responsavel_cadastro: lote.responsavelCadastro?.id ?? lote.responsavel_cadastro ?? 0,
+    custo_unitario: lote.custoUnitario === undefined
+      ? (lote.custo_unitario === undefined ? undefined : toNumber(lote.custo_unitario, 0))
+      : toNumber(lote.custoUnitario, 0),
+  usuario_log_id: lote.usuarioLogId ?? lote.usuario_log_id ?? null,
+  id_localizacao: lote.localizacao?.id ?? lote.id_localizacao ?? null,
+  ativo: lote.ativo ?? true,
+  }
+}
+
 export interface LoteEnriched extends ProductLote {
   produto_nome?: string
   produto_codigo?: string
   localizacao_nome?: string
 }
 
-/**
- * Interface para lote com localização COMPLETA (até UF)
- */
+function mapLoteEnriched (lote: LoteApi): LoteEnriched {
+  const base = mapLoteBase(lote)
+  const corredor = lote.localizacao?.corredor ?? ''
+  const prateleira = lote.localizacao?.prateleira ?? ''
+  const secao = lote.localizacao?.secao ?? ''
+  const localizacaoNome = [corredor, prateleira, secao].filter(Boolean).join(' - ') || undefined
+
+  return {
+    ...base,
+    produto_nome: lote.produto?.nome,
+    produto_codigo: lote.produto?.codigo,
+    localizacao_nome: localizacaoNome,
+  }
+}
+
 export interface LoteComplete extends ProductLote {
-  // Produto
   produto_nome?: string
   produto_codigo?: string
-
-  // Localização física
   localizacao_corredor?: string
   localizacao_prateleira?: string
   localizacao_secao?: string
-
-  // Depósito
   deposito_nome?: string
-
-  // Endereço
   endereco_completo?: string
-  endereco_cep?: string
-
-  // Município
   municipio_nome?: string
   municipio_bairro?: string
-
-  // UF
   uf_sigla?: string
   uf_nome?: string
   uf_id?: number
-
-  // Formatado para exibição
   localizacao_completa?: string
 }
+
+function mapLoteComplete (lote: LoteApi): LoteComplete {
+  const base = mapLoteBase(lote)
+  const endereco = lote.localizacao?.deposito?.endereco
+  const municipio = endereco?.municipio
+  const uf = municipio?.uf
+  const enderecoCompleto = [
+    endereco?.logradouro,
+    endereco?.numero,
+    endereco?.complemento,
+  ].filter(Boolean).join(', ')
+
+  const localizacaoCompleta = [
+    lote.localizacao?.deposito?.nome,
+    lote.localizacao?.corredor,
+    lote.localizacao?.prateleira,
+    lote.localizacao?.secao,
+  ].filter(Boolean).join(' - ')
+
+  return {
+    ...base,
+    produto_nome: lote.produto?.nome,
+    produto_codigo: lote.produto?.codigo,
+    localizacao_corredor: lote.localizacao?.corredor ?? undefined,
+    localizacao_prateleira: lote.localizacao?.prateleira ?? undefined,
+    localizacao_secao: lote.localizacao?.secao ?? undefined,
+    deposito_nome: lote.localizacao?.deposito?.nome,
+    endereco_completo: enderecoCompleto || undefined,
+    municipio_nome: municipio?.nome,
+    municipio_bairro: municipio?.bairro ?? undefined,
+    uf_sigla: uf?.sigla,
+    uf_nome: uf?.nome,
+    uf_id: uf?.id,
+    localizacao_completa: localizacaoCompleta || undefined,
+  }
+}
+
+function cleanPayload<T extends Record<string, unknown>> (payload: T): T {
+  const entries = Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+  return Object.fromEntries(entries) as T
+}
+
+type CreateLotePayload = {
+  id_produto: number
+  codigo_lote?: string
+  data_validade?: string
+  quantidade: number
+  data_entrada: string
+  responsavel_cadastro: number
+  custo_unitario?: number
+  usuario_log_id?: number
+  id_localizacao?: number
+  ativo?: boolean
+}
+
+export type CreateLoteInput = CreateLotePayload
 
 /**
  * Serviço de API para Lotes de Produtos
  */
 class LoteServiceClass {
-  private endpoint = '/produto_lotes'
+  private endpoint = '/lotes'
 
   async getAll (): Promise<ProductLote[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<ProductLote>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar lotes')
-    }
+    const lotes = await this.fetchAll()
+    return lotes.map(lote => mapLoteBase(lote))
   }
 
-  /**
-   * Busca lotes ENRIQUECIDOS com dados básicos
-   */
   async getAllEnriched (): Promise<LoteEnriched[]> {
-    try {
-      const [lotes, products, locations] = await Promise.all([
-        this.getAll(),
-        ProductService.getAll(),
-        LocationService.getAll(),
-      ])
-
-      const productMap = new Map(products.map(p => [p.id, p]))
-      const locationMap = new Map(locations.map(l => [l.id, l]))
-
-      return lotes.map(lote => {
-        const produto = productMap.get(lote.id_produto)
-        const localizacao = lote.id_localizacao ? locationMap.get(lote.id_localizacao) : null
-
-        return {
-          ...lote,
-          produto_nome: produto?.nome,
-          produto_codigo: produto?.codigo,
-          localizacao_nome: localizacao
-            ? `${localizacao.corredor} - ${localizacao.prateleira} - ${localizacao.secao}`
-            : undefined,
-        }
-      })
-    } catch {
-      throw new Error('Erro ao buscar lotes enriquecidos')
-    }
+    const lotes = await this.fetchAll()
+    return lotes.map(lote => mapLoteEnriched(lote))
   }
 
-  /**
-   * Busca lotes com LOCALIZAÇÃO COMPLETA (até UF)
-   * @param ufId - ID da UF para filtrar (opcional)
-   */
   async getAllComplete (ufId?: number | null): Promise<LoteComplete[]> {
-    try {
-      const [lotes, products, locationsComplete] = await Promise.all([
-        this.getAll(),
-        ProductService.getAll(),
-        LocationService.getAllComplete(ufId),
-      ])
-
-      const productMap = new Map(products.map(p => [p.id, p]))
-      const locationMap = new Map(locationsComplete.map(l => [l.id, l]))
-
-      // Filtrar lotes pela UF se fornecida
-      const lotesFiltrados = lotes.filter(lote => {
-        if (ufId !== undefined && ufId !== null) {
-          const loc = lote.id_localizacao ? locationMap.get(lote.id_localizacao) : null
-          return loc?.uf_id === ufId
+    const lotes = await this.fetchAll()
+    return lotes
+      .filter(lote => {
+        if (ufId === undefined || ufId === null) {
+          return true
         }
-        return true
+        return lote.localizacao?.deposito?.endereco?.municipio?.uf?.id === ufId
       })
-
-      return lotesFiltrados.map(lote => {
-        const produto = productMap.get(lote.id_produto)
-        const loc = lote.id_localizacao ? locationMap.get(lote.id_localizacao) : null
-
-        return {
-          ...lote,
-          // Produto
-          produto_nome: produto?.nome,
-          produto_codigo: produto?.codigo,
-
-          // Localização física
-          localizacao_corredor: loc?.corredor,
-          localizacao_prateleira: loc?.prateleira,
-          localizacao_secao: loc?.secao,
-
-          // Depósito
-          deposito_nome: loc?.deposito_nome,
-
-          // Endereço
-          endereco_completo: loc?.endereco_completo,
-          endereco_cep: loc?.endereco_cep,
-
-          // Município
-          municipio_nome: loc?.municipio_nome,
-          municipio_bairro: loc?.municipio_bairro,
-
-          // UF
-          uf_sigla: loc?.uf_sigla,
-          uf_nome: loc?.uf_nome,
-          uf_id: loc?.uf_id,
-
-          // Formatado
-          localizacao_completa: loc?.localizacao_completa,
-        }
-      })
-    } catch {
-      throw new Error('Erro ao buscar lotes completos')
-    }
+      .map(lote => mapLoteComplete(lote))
   }
 
-  async getById (id: number): Promise<ProductLote | undefined> {
-    const lotes = await this.getAll()
-    return lotes.find((l: ProductLote) => l.id === id)
+  async getById (id: number): Promise<ProductLote> {
+    const { data } = await api.get<LoteApi>(`${this.endpoint}/${id}`)
+    return mapLoteBase(data)
   }
 
   async getByProduct (productId: number): Promise<ProductLote[]> {
     const lotes = await this.getAll()
-    return lotes.filter((l: ProductLote) => l.id_produto === productId)
+    return lotes.filter(lote => lote.id_produto === productId)
   }
 
-  /**
-   * Busca lotes disponíveis de um produto ordenados por FIFO (validade)
-   */
   async getAvailableByProductFIFO (productId: number): Promise<ProductLote[]> {
     const lotes = await this.getByProduct(productId)
-
-    // Filtrar apenas lotes com quantidade disponível
-    const disponíveis = lotes.filter(l => l.quantidade > 0)
-
-    // Ordenar por data de validade (FIFO - First In, First Out)
-    return disponíveis.sort((a, b) =>
-      new Date(a.data_validade).getTime() - new Date(b.data_validade).getTime(),
-    )
+    const disponiveis = lotes.filter(lote => lote.quantidade > 0)
+    return disponiveis.toSorted((a, b) => {
+      const dataA = a.data_validade ? new Date(a.data_validade).getTime() : Number.MAX_SAFE_INTEGER
+      const dataB = b.data_validade ? new Date(b.data_validade).getTime() : Number.MAX_SAFE_INTEGER
+      return dataA - dataB
+    })
   }
 
   async getByLocation (locationId: number): Promise<ProductLote[]> {
     const lotes = await this.getAll()
-    return lotes.filter((l: ProductLote) => l.id_localizacao === locationId)
+    return lotes.filter(lote => lote.id_localizacao === locationId)
   }
 
   async getExpiringSoon (days = 30): Promise<ProductLote[]> {
@@ -193,78 +180,58 @@ class LoteServiceClass {
     const limitDate = new Date()
     limitDate.setDate(today.getDate() + days)
 
-    return lotes.filter((l: ProductLote) => {
-      const expiryDate = new Date(l.data_validade)
+    return lotes.filter(lote => {
+      if (!lote.data_validade) {
+        return false
+      }
+      const expiryDate = new Date(lote.data_validade)
       return expiryDate >= today && expiryDate <= limitDate
     })
   }
 
-  async create (loteData: Omit<ProductLote, 'id'>): Promise<ProductLote> {
-    const lotes = await this.getAll()
+  async create (loteData: CreateLoteInput): Promise<ProductLote> {
+    const payload: CreateLotePayload = cleanPayload({
+      id_produto: loteData.id_produto,
+      codigo_lote: loteData.codigo_lote?.trim() || undefined,
+      data_validade: loteData.data_validade ?? undefined,
+      quantidade: loteData.quantidade,
+      data_entrada: loteData.data_entrada,
+      responsavel_cadastro: loteData.responsavel_cadastro,
+      custo_unitario: loteData.custo_unitario,
+      usuario_log_id: loteData.usuario_log_id ?? undefined,
+      id_localizacao: loteData.id_localizacao ?? undefined,
+      ativo: loteData.ativo,
+    })
 
-    const newId: number = lotes.length > 0
-      ? Math.max(...lotes.map((l: ProductLote) => l.id)) + 1
-      : 1
-
-    // Gerar código automaticamente se não fornecido (simula trigger do banco)
-    const codigoLote = loteData.codigo_lote && loteData.codigo_lote.trim() !== ''
-      ? loteData.codigo_lote
-      : `L${newId.toString().padStart(3, '0')}`
-
-    const newLote: ProductLote = {
-      ...loteData,
-      id: newId,
-      codigo_lote: codigoLote,
-    }
-
-    lotes.push(newLote)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(lotes).toNestedArray())
-      return newLote
-    } catch {
-      throw new Error('Erro ao criar lote')
-    }
+    const { data } = await api.post<LoteApi>(this.endpoint, payload)
+    return mapLoteBase(data)
   }
 
   async update (id: number, updates: Partial<Omit<ProductLote, 'id'>>): Promise<ProductLote> {
-    const lotes = await this.getAll()
-    const loteIndex = lotes.findIndex((l: ProductLote) => l.id === id)
+    const payload = cleanPayload({
+      id_produto: updates.id_produto,
+      codigo_lote: updates.codigo_lote?.trim(),
+      data_validade: updates.data_validade ?? undefined,
+      quantidade: updates.quantidade,
+      data_entrada: updates.data_entrada,
+      responsavel_cadastro: updates.responsavel_cadastro,
+      custo_unitario: updates.custo_unitario,
+      usuario_log_id: updates.usuario_log_id,
+      id_localizacao: updates.id_localizacao,
+      ativo: updates.ativo,
+    })
 
-    if (loteIndex === -1) {
-      throw new Error('Lote não encontrado')
-    }
-
-    const existingLote = lotes[loteIndex]
-    if (!existingLote) {
-      throw new Error('Lote não encontrado')
-    }
-
-    const updatedLote: ProductLote = {
-      ...existingLote,
-      ...updates,
-      id: existingLote.id,
-    }
-
-    lotes[loteIndex] = updatedLote
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(lotes).toNestedArray())
-      return updatedLote
-    } catch {
-      throw new Error('Erro ao atualizar lote')
-    }
+    const { data } = await api.patch<LoteApi>(`${this.endpoint}/${id}`, payload)
+    return mapLoteBase(data)
   }
 
   async delete (id: number): Promise<void> {
-    const lotes = await this.getAll()
-    const updatedLotes = lotes.filter((l: ProductLote) => l.id !== id)
+    await api.delete(`${this.endpoint}/${id}`)
+  }
 
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updatedLotes).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir lote')
-    }
+  private async fetchAll (): Promise<LoteApi[]> {
+    const { data } = await api.get<LoteApi[]>(this.endpoint)
+    return data
   }
 }
 

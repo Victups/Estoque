@@ -9,66 +9,66 @@
         // Módulos principais do sistema
         modules: [
           {
-          title: 'Produtos',
-          description: 'Gerencie o catálogo de produtos e estoque',
-          icon: 'mdi-package-variant',
-          color: 'primary',
-          route: '/produtos',
-          stats: 'Cadastro completo',
-        },
-        {
-          title: 'Movimentação',
-          description: 'Registre entradas e saídas de estoque',
-          icon: 'mdi-swap-horizontal',
-          color: 'success',
-          route: '/movimentacao',
-          stats: 'Controle FIFO',
-        },
-        {
-          title: 'Usuários',
-          description: 'Gerencie usuários e permissões',
-          icon: 'mdi-account-group',
-          color: 'info',
-          route: '/usuarios',
-          stats: 'Administração',
-        },
-        {
-          title: 'Relatórios',
-          description: 'Visualize relatórios e análises',
-          icon: 'mdi-chart-bar',
-          color: 'warning',
-          route: '/relatorios',
-          stats: 'Em breve',
-        },
-      ],
-      quickActions: [
-        {
-          title: 'Novo Produto',
-          icon: 'mdi-plus-circle',
-          color: 'primary',
-          route: '/produtos/cadastrar',
-        },
-        {
-          title: 'Entrada Estoque',
-          icon: 'mdi-arrow-down-bold',
-          color: 'success',
-          route: '/movimentacao',
-        },
-        {
-          title: 'Saída Estoque',
-          icon: 'mdi-arrow-up-bold',
-          color: 'error',
-          route: '/movimentacao',
-        },
-        {
-          title: 'Meu Perfil',
-          icon: 'mdi-account-circle',
-          color: 'info',
-          route: '/perfil',
-        },
-      ],
+            title: 'Produtos',
+            description: 'Gerencie o catálogo de produtos e estoque',
+            icon: 'mdi-package-variant',
+            color: 'primary',
+            route: '/produtos',
+            stats: 'Cadastro completo',
+          },
+          {
+            title: 'Movimentação',
+            description: 'Registre entradas e saídas de estoque',
+            icon: 'mdi-swap-horizontal',
+            color: 'success',
+            route: '/movimentacao',
+            stats: 'Controle FIFO',
+          },
+          {
+            title: 'Usuários',
+            description: 'Gerencie usuários e permissões',
+            icon: 'mdi-account-group',
+            color: 'info',
+            route: '/usuarios',
+            stats: 'Administração',
+          },
+          {
+            title: 'Relatórios',
+            description: 'Visualize relatórios e análises',
+            icon: 'mdi-chart-bar',
+            color: 'warning',
+            route: '/relatorios',
+            stats: 'BI',
+          },
+        ],
+        quickActions: [
+          {
+            title: 'Novo Produto',
+            icon: 'mdi-plus-circle',
+            color: 'primary',
+            route: '/produtos/cadastrar',
+          },
+          {
+            title: 'Entrada Estoque',
+            icon: 'mdi-arrow-down-bold',
+            color: 'success',
+            route: '/movimentacao',
+          },
+          {
+            title: 'Saída Estoque',
+            icon: 'mdi-arrow-up-bold',
+            color: 'error',
+            route: '/movimentacao',
+          },
+          {
+            title: 'Meu Perfil',
+            icon: 'mdi-account-circle',
+            color: 'info',
+            route: '/perfil',
+          },
+        ],
       }
-  },
+    },
     computed: {
       auth () {
         return useAuthStore()
@@ -86,7 +86,7 @@
         return this.auth.ufLabel ?? 'UF não definida'
       },
     },
-  methods: {
+    methods: {
       navigateTo (route: string) {
         this.$router.push(route)
       },

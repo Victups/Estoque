@@ -5,5 +5,3 @@ export const estoqueRules = {
   positive: sharedRules.positive,
   numeric: sharedRules.numeric,
 }
-
-

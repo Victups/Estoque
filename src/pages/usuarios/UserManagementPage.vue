@@ -16,10 +16,10 @@
             </div>
             <v-btn
               color="primary"
+              :disabled="!canCreateUsers"
               elevation="2"
               prepend-icon="mdi-plus"
               size="large"
-              :disabled="!canCreateUsers"
               @click="goToRegistration"
             >
               Novo Usuário
@@ -224,10 +224,10 @@
                         v-bind="props"
                         class="mr-1"
                         color="primary"
+                        :disabled="!canManageUsers"
                         icon="mdi-pencil"
                         size="small"
                         variant="tonal"
-                        :disabled="!canManageUsers"
                         @click="editUser(item)"
                       />
                     </template>
@@ -238,10 +238,10 @@
                       <v-btn
                         v-bind="props"
                         :color="item.status === 'active' ? 'warning' : 'success'"
+                        :disabled="!canManageUsers"
                         :icon="item.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'"
                         size="small"
                         variant="tonal"
-                        :disabled="!canManageUsers"
                         @click="toggleUserStatus(item)"
                       />
                     </template>
@@ -538,8 +538,8 @@
                   density="comfortable"
                   hide-details="auto"
                   label="Valor do Contato"
-                  prepend-inner-icon="mdi-account-voice"
                   :mask="getContactMask(newUser.tipo_contato)"
+                  prepend-inner-icon="mdi-account-voice"
                   :rules="[rules.required]"
                   variant="outlined"
                   @input="formatContactValue"
@@ -631,21 +631,6 @@
                   label="Complemento"
                   prepend-inner-icon="mdi-home"
                   variant="outlined"
-                />
-              </v-col>
-
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="newUser.cep"
-                  density="comfortable"
-                  hide-details="auto"
-                  label="CEP"
-                  prepend-inner-icon="mdi-mailbox"
-                  mask="#####-###"
-                  :rules="[rules.required]"
-                  variant="outlined"
-                  @input="formatCEP"
-                  @keypress="onCEPKeypress"
                 />
               </v-col>
 
@@ -760,7 +745,7 @@
     <!-- Toggle Status Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="500">
       <v-card elevation="8">
-        <v-card-title :class="selectedUser?.status === 'active' ? 'bg-warning' : 'bg-success'" class="pa-4">
+        <v-card-title class="pa-4" :class="selectedUser?.status === 'active' ? 'bg-warning' : 'bg-success'">
           <v-icon class="mr-2" :icon="selectedUser?.status === 'active' ? 'mdi-account-off' : 'mdi-account-check'" size="30" />
           <span class="text-h5">{{ selectedUser?.status === 'active' ? 'Confirmar Inativação' : 'Confirmar Ativação' }}</span>
         </v-card-title>
@@ -810,11 +795,12 @@
 </template>
 
 <script lang="ts">
+  import type { BackendUser, Contact, Municipality, State, User, UserRole } from '@/interfaces'
   import { defineComponent } from 'vue'
-  import type { BackendUser, Municipality, State, User, UserRole, ValidationRule } from '@/types'
+  import { ContactService, MunicipalityService, UfService, UserService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
   import { userRules } from '@/utils/rules'
-  import { getInitials, getAvatarColor, getRoleColor, getRoleIcon, determineRole } from '@/utils/tramposes/user'
+  import { getRoleColor, getRoleIcon, mapBackendToUser, mapUserRoleToBackendRole } from '@/utils/tramposes/user'
 
   interface NewUserForm {
     name: string
@@ -830,7 +816,6 @@
     logradouro: string
     numero: string
     complemento: string
-    cep: string
     bairro: string
   }
 
@@ -949,30 +934,16 @@
     methods: {
       async loadUfs () {
         try {
-          const response = await fetch('http://localhost:3001/uf')
-          if (!response.ok) {
-            throw new Error('Erro ao carregar UFs')
-          }
-          const data: unknown = await response.json()
-          this.ufs = Array.isArray(data) && Array.isArray(data[0])
-            ? data[0]
-            : (Array.isArray(data) ? data : [])
+          this.ufs = await UfService.getAll()
         } catch (error) {
           console.error('Erro ao carregar UFs:', error)
         }
       },
       async loadMunicipios (ufId: number) {
         try {
-          const response = await fetch(`http://localhost:3001/municipio?id_uf=${ufId}`)
-          if (!response.ok) {
-            throw new Error('Erro ao carregar municípios')
-          }
-          const data: unknown = await response.json()
-          this.municipios = Array.isArray(data) && Array.isArray(data[0])
-            ? data[0]
-            : (Array.isArray(data) ? data : [])
+          this.municipios = await MunicipalityService.getByUf(ufId)
         } catch (error) {
-          console.error('Erro ao carregar municípios:', error)
+          console.error('Erro ao carregar munic�pios:', error)
         }
       },
       onUfChange (ufId: number) {
@@ -1023,15 +994,6 @@
           this.newUser.valor_contato = value.slice(0, 100)
         }
       },
-      formatCEP (event: Event) {
-        const target = event.target as HTMLInputElement
-        const value = target.value
-        const numbers = value.replace(/\D/g, '')
-        const limitedNumbers = numbers.slice(0, 8)
-        this.newUser.cep = limitedNumbers.length <= 5
-          ? limitedNumbers
-          : `${limitedNumbers.slice(0, 5)}-${limitedNumbers.slice(5)}`
-      },
       onContactKeypress (event: KeyboardEvent) {
         const tipoContato = this.newUser.tipo_contato
         if (tipoContato === 'telefone' || tipoContato === 'whatsapp') {
@@ -1041,42 +1003,17 @@
           }
         }
       },
-      onCEPKeypress (event: KeyboardEvent) {
-        const char = String.fromCodePoint(event.which)
-        if (!/[0-9]/.test(char)) {
-          event.preventDefault()
-        }
-      },
       async fetchUsers () {
         this.loading = true
         try {
-          const response = await fetch('http://localhost:3001/usuarios')
-          if (!response.ok) {
-            throw new Error('Erro ao buscar usuários')
-          }
-          const data: unknown = await response.json()
-          const usuariosArray: BackendUser[] = Array.isArray(data) && Array.isArray(data[0])
-            ? data[0]
-            : (Array.isArray(data) ? data : [])
-
-          this.users = usuariosArray.map((user: BackendUser, index: number): User => ({
-            id: user.id,
-            nome: user.nome,
-            name: user.nome,
-            email: user.email,
-            role: determineRole(user.nome, user.email),
-            status: 'active',
-            lastAccess: new Date().toLocaleString('pt-BR'),
-            initials: getInitials(user.nome),
-            avatarColor: getAvatarColor(index),
-          }))
-
+          const backendUsers = await UserService.getAll()
+          this.users = backendUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
           this.snackbarText = 'Usuários carregados com sucesso!'
           this.snackbarColor = 'success'
           this.snackbar = true
-        } catch (error: unknown) {
+        } catch (error) {
           console.error('Erro ao buscar usuários:', error)
-          this.snackbarText = 'Erro ao carregar usuários. Verifique se o backend está rodando.'
+          this.snackbarText = 'Erro ao carregar usuários'
           this.snackbarColor = 'error'
           this.snackbar = true
         } finally {
@@ -1103,51 +1040,18 @@
       },
       async saveUser () {
         if (!this.editingUser) return
-
         this.saving = true
         try {
-          const getResponse = await fetch('http://localhost:3001/usuarios')
-          const allData: unknown = await getResponse.json()
-          const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-            ? allData[0]
-            : (Array.isArray(allData) ? allData : [])
-
-          const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.editingUser!.id)
-          if (userIndex !== -1) {
-            const currentUser = usuariosArray[userIndex]
-            if (currentUser) {
-              usuariosArray[userIndex] = {
-                ...currentUser,
-                nome: this.editingUser.name || this.editingUser.nome || '',
-                email: this.editingUser.email,
-              }
-
-              if (this.changePassword && this.newPassword) {
-                usuariosArray[userIndex]!.senha = this.newPassword
-              }
-            }
+          const payload: Partial<BackendUser> = {
+            nome: this.editingUser.name || this.editingUser.nome || '',
+            email: this.editingUser.email,
+            role: mapUserRoleToBackendRole(this.editingUser.role || 'Visualizador'),
+            ativo: this.editingUser.status !== 'inactive',
           }
-
-          const response = await fetch('http://localhost:3001/usuarios', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify([usuariosArray]),
-          })
-
-          if (!response.ok) {
-            throw new Error('Erro ao atualizar usuário')
+          if (this.changePassword && this.newPassword) {
+            payload.senha = this.newPassword
           }
-
-          const index = this.users.findIndex((u: User) => u.id === this.editingUser!.id)
-          if (index !== -1 && this.editingUser) {
-            this.users[index] = {
-              ...this.editingUser,
-              initials: getInitials(this.editingUser.name || this.editingUser.nome || ''),
-            }
-          }
-
+          await UserService.update(this.editingUser.id, payload)
           this.snackbarText = 'Usuário atualizado com sucesso!'
           this.snackbarColor = 'success'
           this.snackbar = true
@@ -1156,7 +1060,8 @@
           this.changePassword = false
           this.newPassword = ''
           this.confirmPassword = ''
-        } catch (error: unknown) {
+          await this.fetchUsers()
+        } catch (error) {
           console.error('Erro ao atualizar usuário:', error)
           this.snackbarText = 'Erro ao atualizar usuário'
           this.snackbarColor = 'error'
@@ -1171,27 +1076,14 @@
       },
       async confirmToggleStatus () {
         if (!this.selectedUser) return
-
         try {
-          const getResponse = await fetch('http://localhost:3001/usuarios')
-          const allData: unknown = await getResponse.json()
-          const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-            ? allData[0]
-            : (Array.isArray(allData) ? allData : [])
-
-          const userIndex = usuariosArray.findIndex((u: BackendUser) => u.id === this.selectedUser!.id)
-          if (userIndex !== -1) {
-            const newStatus = this.selectedUser.status === 'active' ? 'inactive' : 'active'
-            const userIndexLocal = this.users.findIndex((u: User) => u.id === this.selectedUser!.id)
-            if (userIndexLocal !== -1 && this.users[userIndexLocal]) {
-              this.users[userIndexLocal].status = newStatus
-            }
-
-            this.snackbarText = `Usuário ${this.selectedUser.name} ${newStatus === 'active' ? 'ativado' : 'inativado'} com sucesso!`
-            this.snackbarColor = 'success'
-            this.snackbar = true
-          }
-        } catch (error: unknown) {
+          const activating = this.selectedUser.status !== 'active'
+          await UserService.update(this.selectedUser.id, { ativo: activating })
+          this.snackbarText = `Usuário ${this.selectedUser.name} ${activating ? 'ativado' : 'inativado'} com sucesso!`
+          this.snackbarColor = 'success'
+          this.snackbar = true
+          await this.fetchUsers()
+        } catch (error) {
           console.error('Erro ao alterar status do usuário:', error)
           this.snackbarText = 'Erro ao alterar status do usuário'
           this.snackbarColor = 'error'
@@ -1216,7 +1108,6 @@
           logradouro: '',
           numero: '',
           complemento: '',
-          cep: '',
           bairro: '',
         }
         this.createDialog = true
@@ -1237,67 +1128,42 @@
           logradouro: '',
           numero: '',
           complemento: '',
-          cep: '',
           bairro: '',
         }
       },
       async createUser () {
         this.saving = true
         try {
-          const getResponse = await fetch('http://localhost:3001/usuarios')
-          const allData: unknown = await getResponse.json()
-          const usuariosArray: BackendUser[] = Array.isArray(allData) && Array.isArray(allData[0])
-            ? allData[0]
-            : (Array.isArray(allData) ? allData : [])
-
-          const emailExists = usuariosArray.some((u: BackendUser) => u.email === this.newUser.email)
+          const emailExists = await UserService.emailExists(this.newUser.email)
           if (emailExists) {
             this.snackbarText = 'Este e-mail já está cadastrado'
             this.snackbarColor = 'error'
             this.snackbar = true
-            this.saving = false
             return
           }
 
-          const newId: number = usuariosArray.length > 0
-            ? Math.max(...usuariosArray.map((u: BackendUser) => u.id)) + 1
-            : 1
+          let contactId: number | undefined
+          if (this.newUser.tipo_contato && this.newUser.valor_contato) {
+            const contact = await ContactService.create({
+              nome: this.newUser.name,
+              valor: this.newUser.valor_contato,
+              tipo_contato: this.newUser.tipo_contato as Contact['tipo_contato'],
+              codigo_pais: this.newUser.codigo_pais || null,
+            })
+            contactId = contact.id
+          }
 
-          const newUserData: BackendUser = {
-            id: newId,
+          const createdUser = await UserService.create({
             nome: this.newUser.name,
             email: this.newUser.email,
             senha: this.newUser.password,
-            id_contato: newId,
-            role: 'estoquista',
-          }
-
-          usuariosArray.push(newUserData)
-
-          const response = await fetch('http://localhost:3001/usuarios', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify([usuariosArray]),
+            role: mapUserRoleToBackendRole(this.newUser.role || 'Visualizador'),
+            id_contato: contactId,
+            id_uf: this.newUser.id_uf ?? undefined,
+            ativo: true,
           })
 
-          if (!response.ok) {
-            throw new Error('Erro ao criar usuário')
-          }
-
-          const newUserLocal: User = {
-            id: newId,
-            nome: this.newUser.name,
-            name: this.newUser.name,
-            email: this.newUser.email,
-            role: this.newUser.role as UserRole,
-            status: 'active',
-            lastAccess: new Date().toLocaleString('pt-BR'),
-            initials: getInitials(this.newUser.name),
-            avatarColor: getAvatarColor(this.users.length),
-          }
-          this.users.push(newUserLocal)
+          this.users.push(mapBackendToUser(createdUser, this.users.length))
 
           this.snackbarText = 'Usuário criado com sucesso!'
           this.snackbarColor = 'success'
@@ -1320,7 +1186,7 @@
             cep: '',
             bairro: '',
           }
-        } catch (error: unknown) {
+        } catch (error) {
           console.error('Erro ao criar usuário:', error)
           this.snackbarText = 'Erro ao criar usuário'
           this.snackbarColor = 'error'

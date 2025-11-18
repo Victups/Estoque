@@ -1,4 +1,4 @@
-import type { Product } from '@/types'
+import type { Product } from '@/interfaces'
 import { defineStore } from 'pinia'
 
 import { ProductService } from '@/services'
@@ -27,7 +27,7 @@ function normalizeFilters (filters?: ProductsFilters): Record<string, string> {
     return {}
   }
   return (Object.keys(filters) as (keyof ProductsFilters)[])
-    .sort()
+    .toSorted()
     .filter(k => filters[k] !== undefined && filters[k] !== '')
     .reduce((acc, k) => {
       acc[k as string] = String(filters[k] as unknown as string)

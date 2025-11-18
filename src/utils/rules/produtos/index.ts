@@ -8,5 +8,3 @@ export const productRules = {
   positive: sharedRules.positive,
   numeric: sharedRules.numeric,
 }
-
-

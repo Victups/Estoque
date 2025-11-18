@@ -152,73 +152,73 @@
 </template>
 
 <script lang="ts">
-import type { User } from '@/types'
-import { filterUsers, roleFilterOptions, statusFilterOptions, userTableHeaders } from '@/utils/tramposes/userFilters'
-import { getRoleColor, getRoleIcon } from '@/utils/tramposes'
+  import type { User } from '@/interfaces'
+  import { getRoleColor, getRoleIcon } from '@/utils/tramposes'
+  import { filterUsers, roleFilterOptions, statusFilterOptions, userTableHeaders } from '@/utils/tramposes/userFilters'
 
-export default {
-  name: 'UsersTable',
-  props: {
-    users: {
-      type: Array as () => User[],
-      required: true,
+  export default {
+    name: 'UsersTable',
+    props: {
+      users: {
+        type: Array as () => User[],
+        required: true,
+      },
+      loading: {
+        type: Boolean,
+        default: false,
+      },
+      search: {
+        type: String,
+        default: '',
+      },
+      filterRole: {
+        type: String,
+        default: 'Todos',
+      },
+      filterStatus: {
+        type: String,
+        default: 'Todos',
+      },
     },
-    loading: {
-      type: Boolean,
-      default: false,
+    emits: ['update:search', 'update:filterRole', 'update:filterStatus', 'refresh', 'view', 'edit', 'delete'],
+    data () {
+      return {
+        searchLocal: this.search,
+        filterRoleLocal: this.filterRole,
+        filterStatusLocal: this.filterStatus,
+        headers: userTableHeaders,
+        roleFilterOptions,
+        statusFilterOptions,
+      }
     },
-    search: {
-      type: String,
-      default: '',
+    computed: {
+      filteredUsers (): User[] {
+        return filterUsers(this.users, this.searchLocal, this.filterRoleLocal, this.filterStatusLocal)
+      },
     },
-    filterRole: {
-      type: String,
-      default: 'Todos',
+    watch: {
+      search (newVal) {
+        this.searchLocal = newVal
+      },
+      filterRole (newVal) {
+        this.filterRoleLocal = newVal
+      },
+      filterStatus (newVal) {
+        this.filterStatusLocal = newVal
+      },
     },
-    filterStatus: {
-      type: String,
-      default: 'Todos',
+    methods: {
+      onSearchChange () {
+        this.$emit('update:search', this.searchLocal)
+      },
+      onFiltersChange () {
+        this.$emit('update:filterRole', this.filterRoleLocal)
+        this.$emit('update:filterStatus', this.filterStatusLocal)
+      },
+      getRoleColor,
+      getRoleIcon,
     },
-  },
-  emits: ['update:search', 'update:filterRole', 'update:filterStatus', 'refresh', 'view', 'edit', 'delete'],
-  data () {
-    return {
-      searchLocal: this.search,
-      filterRoleLocal: this.filterRole,
-      filterStatusLocal: this.filterStatus,
-      headers: userTableHeaders,
-      roleFilterOptions,
-      statusFilterOptions,
-    }
-  },
-  computed: {
-    filteredUsers (): User[] {
-      return filterUsers(this.users, this.searchLocal, this.filterRoleLocal, this.filterStatusLocal)
-    },
-  },
-  watch: {
-    search (newVal) {
-      this.searchLocal = newVal
-    },
-    filterRole (newVal) {
-      this.filterRoleLocal = newVal
-    },
-    filterStatus (newVal) {
-      this.filterStatusLocal = newVal
-    },
-  },
-  methods: {
-    onSearchChange () {
-      this.$emit('update:search', this.searchLocal)
-    },
-    onFiltersChange () {
-      this.$emit('update:filterRole', this.filterRoleLocal)
-      this.$emit('update:filterStatus', this.filterStatusLocal)
-    },
-    getRoleColor,
-    getRoleIcon,
-  },
-}
+  }
 </script>
 
 <style scoped>
@@ -226,4 +226,3 @@ export default {
   border-radius: 12px;
 }
 </style>
-

@@ -1,8 +1,21 @@
-import type { BackendUser, User, UserRole } from '@/types'
+﻿import type { BackendUser, RoleBackend, User, UserRole } from '@/interfaces'
 
 /**
  * Utilitários para manipulação de dados de usuários
  */
+const backendToUserRoleMap: Record<RoleBackend, UserRole> = {
+  admin: 'Admin',
+  gestor: 'Gerente',
+  estoquista: 'Operador',
+  relatorios: 'Visualizador',
+}
+
+const userToBackendRoleMap: Record<UserRole, RoleBackend> = {
+  Admin: 'admin',
+  Gerente: 'gestor',
+  Operador: 'estoquista',
+  Visualizador: 'relatorios',
+}
 
 /**
  * Gera as iniciais de um nome
@@ -77,8 +90,8 @@ export function mapBackendToUser (backendUser: BackendUser, index: number): User
     nome: backendUser.nome,
     name: backendUser.nome,
     email: backendUser.email,
-    role: determineRole(backendUser.nome, backendUser.email),
-    status: 'active',
+    role: mapBackendRoleToUserRole(backendUser.role),
+    status: backendUser.ativo === false ? 'inactive' : 'active',
     avatarColor: getAvatarColor(index),
     initials: getInitials(backendUser.nome),
     lastAccess: new Date().toLocaleString('pt-BR'),
@@ -104,3 +117,16 @@ export function calculateUserStats (users: User[]) {
   }
 }
 
+export function mapBackendRoleToUserRole (role?: RoleBackend | null): UserRole {
+  if (!role) {
+    return 'Visualizador'
+  }
+  return backendToUserRoleMap[role] ?? 'Visualizador'
+}
+
+export function mapUserRoleToBackendRole (role: UserRole | ''): RoleBackend {
+  if (!role || !(role in userToBackendRoleMap)) {
+    return 'relatorios'
+  }
+  return userToBackendRoleMap[role as UserRole]
+}

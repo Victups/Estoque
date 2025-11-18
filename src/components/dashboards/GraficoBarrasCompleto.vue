@@ -7,34 +7,34 @@
           v-for="filtro in filtersConfig"
           :key="filtro.name"
           cols="12"
-          sm="6"
           md="4"
+          sm="6"
         >
           <v-select
             v-if="filtro.type === 'select'"
-            v-model="filtrosSelecionados[filtro.name]"
+            clearable
+            density="compact"
             :items="filtro.options"
             :label="filtro.label"
+            :model-value="localFiltros[filtro.name]"
             variant="outlined"
-            density="compact"
-            clearable
-            @update:model-value="onFilterChange"
+            @update:model-value="value => handleFilterInput(filtro.name, value)"
           />
           <v-text-field
             v-else-if="filtro.type === 'text'"
-            v-model="filtrosSelecionados[filtro.name]"
+            clearable
+            density="compact"
             :label="filtro.label"
+            :model-value="localFiltros[filtro.name]"
             :placeholder="filtro.placeholder"
             variant="outlined"
-            density="compact"
-            clearable
-            @update:model-value="onFilterChange"
+            @update:model-value="value => handleFilterInput(filtro.name, value)"
           />
           <v-checkbox
             v-else-if="filtro.type === 'checkbox'"
-            v-model="filtrosSelecionados[filtro.name]"
             :label="filtro.label"
-            @update:model-value="onFilterChange"
+            :model-value="localFiltros[filtro.name]"
+            @update:model-value="value => handleFilterInput(filtro.name, value)"
           />
         </v-col>
       </v-row>
@@ -85,12 +85,11 @@
     placeholder?: string
   }
 
-  export interface DataItem {
+  export type DataItem = {
     nome: string
     valor: number
     cor?: string
-    [key: string]: any
-  }
+  } & Record<string, unknown>
 
   export interface ChartData {
     categorias?: DataItem[] | Record<string, DataItem[]>
@@ -179,7 +178,7 @@
         default: undefined,
       },
     },
-    emits: ['filterChange'],
+    emits: ['filter-change'],
     data () {
       return {
         localFiltros: { ...this.filtrosSelecionados },
@@ -219,8 +218,8 @@
         })
 
         if (this.localFiltros.mostrarTop10) {
-          return [...itemsFiltrados]
-            .sort((a, b) => (b.valor || 0) - (a.valor || 0))
+          return itemsFiltrados
+            .toSorted((a, b) => (b.valor || 0) - (a.valor || 0))
             .slice(0, 10)
         }
 
@@ -367,7 +366,7 @@
       },
       legendItems () {
         if (!this.showLegend) return []
-        
+
         if (this.stacked && this.data?.series) {
           return this.data.series.map(serie => ({
             name: serie.name,
@@ -381,11 +380,6 @@
         }))
       },
     },
-    methods: {
-      onFilterChange () {
-        this.$emit('filterChange', { ...this.localFiltros })
-      },
-    },
     watch: {
       filtrosSelecionados: {
         handler (newVal) {
@@ -393,6 +387,12 @@
         },
         deep: true,
         immediate: true,
+      },
+    },
+    methods: {
+      handleFilterInput (name: string, value: unknown) {
+        this.localFiltros = { ...this.localFiltros, [name]: value }
+        this.$emit('filter-change', { ...this.localFiltros })
       },
     },
   }

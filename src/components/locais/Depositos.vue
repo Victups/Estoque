@@ -15,23 +15,23 @@
       <v-card-text>
         <!-- Tabela de Depósitos -->
         <v-data-table
+          class="elevation-1"
           :headers="headers"
           :items="depositos"
           :loading="loading"
-          class="elevation-1"
         >
           <template #[`item.actions`]="{ item }">
             <v-btn
+              color="primary"
               icon="mdi-pencil"
               size="small"
-              color="primary"
               variant="text"
               @click="editItem(item)"
             />
             <v-btn
+              color="error"
               icon="mdi-delete"
               size="small"
-              color="error"
               variant="text"
               @click="deleteItem(item)"
             />
@@ -51,60 +51,52 @@
           <v-form ref="formRef" v-model="validForm">
             <v-text-field
               v-model="editedItem.nome"
-              label="Nome do Depósito"
-              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), sharedRules.alfanumerico]"
               counter="100"
+              label="Nome do Depósito"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(100), sharedRules.alfanumerico]"
             />
             <v-text-field
               v-model="editedItem.endereco_logradouro"
-              label="Logradouro"
-              :rules="[sharedRules.required, sharedRules.minLength(5), sharedRules.maxLength(100), sharedRules.alfanumerico]"
               counter="100"
+              label="Logradouro"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(5), sharedRules.maxLength(100), sharedRules.alfanumerico]"
             />
             <v-text-field
               v-model="editedItem.endereco_numero"
-              label="Número"
-              :rules="[sharedRules.required, sharedRules.maxLength(20), sharedRules.alfanumerico]"
               counter="20"
+              label="Número"
               required
+              :rules="[sharedRules.required, sharedRules.maxLength(20), sharedRules.alfanumerico]"
             />
             <v-text-field
               v-model="editedItem.endereco_complemento"
+              counter="255"
               label="Complemento"
               :rules="[sharedRules.maxLength(255)]"
-              counter="255"
-            />
-            <v-text-field
-              v-model="editedItem.endereco_cep"
-              label="CEP"
-              :rules="[sharedRules.required, sharedRules.cep]"
-              v-mask="'#####-###'"
-              @keypress="onCEPKeypress"
-              required
             />
             <v-text-field
               v-model="editedItem.endereco_bairro"
-              label="Bairro"
-              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(150), sharedRules.alfanumerico]"
               counter="150"
+              label="Bairro"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(150), sharedRules.alfanumerico]"
             />
             <v-text-field
               v-model="editedItem.endereco_municipio"
-              label="Município"
-              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(150), sharedRules.nome]"
               counter="150"
+              label="Município"
               required
+              :rules="[sharedRules.required, sharedRules.minLength(2), sharedRules.maxLength(150), sharedRules.nome]"
             />
             <v-text-field
               v-model="editedItem.endereco_uf"
-              label="UF"
-              :rules="[sharedRules.required, sharedRules.uf]"
-              maxlength="2"
               counter="2"
+              label="UF"
+              maxlength="2"
               required
+              :rules="[sharedRules.required, sharedRules.uf]"
             />
           </v-form>
         </v-card-text>
@@ -116,8 +108,8 @@
           </v-btn>
           <v-btn
             color="primary"
-            variant="text"
             :disabled="!validForm"
+            variant="text"
             @click="save"
           >
             Salvar
@@ -148,146 +140,135 @@
 </template>
 
 <script lang="ts">
-import type { Deposit } from '@/types'
-import { DepositService } from '@/services'
-import { snackbarMixin } from '@/utils/snackbar'
-import { sharedRules } from '@/utils/rules'
+  import type { Deposit } from '@/interfaces'
+  import { DepositService } from '@/services'
+  import { sharedRules } from '@/utils/rules'
+  import { snackbarMixin } from '@/utils/snackbar'
 
-export default {
-  name: 'Depositos',
-  mixins: [snackbarMixin],
-  computed: {
-    sharedRules() {
-      return sharedRules
-    },
-    formTitle() {
-      return this.editedIndex === -1 ? 'Novo Depósito' : 'Editar Depósito'
-    },
-  },
-  data() {
-    return {
-      loading: false,
-      dialog: false,
-      deleteDialog: false,
-      validForm: false,
-      formRef: null as any,
-      depositos: [] as Deposit[],
-      editedIndex: -1,
-      editedItem: {
-        id: 0,
-        nome: '',
-        endereco_logradouro: '',
-        endereco_numero: '',
-        endereco_complemento: '',
-        endereco_cep: '',
-        endereco_bairro: '',
-        endereco_municipio: '',
-        endereco_uf: '',
-      } as any,
-      defaultItem: {
-        id: 0,
-        nome: '',
-        endereco_logradouro: '',
-        endereco_numero: '',
-        endereco_complemento: '',
-        endereco_cep: '',
-        endereco_bairro: '',
-        endereco_municipio: '',
-        endereco_uf: '',
-      } as any,
-      headers: [
-        { title: 'ID', key: 'id', sortable: true },
-        { title: 'Nome', key: 'nome', sortable: true },
-        { title: 'Endereço', key: 'endereco_logradouro', sortable: true },
-        { title: 'Ações', key: 'actions', sortable: false },
-      ],
-    }
-  },
-  mounted() {
-    this.loadDepositos()
-  },
-  methods: {
-    async loadDepositos() {
-      this.loading = true
-      try {
-        this.depositos = await DepositService.getAll()
-      } catch (error) {
-        this.showError('Erro ao carregar depósitos')
-      } finally {
-        this.loading = false
+  export default {
+    name: 'Depositos',
+    mixins: [snackbarMixin],
+    data () {
+      return {
+        loading: false,
+        dialog: false,
+        deleteDialog: false,
+        validForm: false,
+        formRef: null as any,
+        depositos: [] as Deposit[],
+        editedIndex: -1,
+        editedItem: {
+          id: 0,
+          nome: '',
+          endereco_logradouro: '',
+          endereco_numero: '',
+          endereco_complemento: '',
+          endereco_bairro: '',
+          endereco_municipio: '',
+          endereco_uf: '',
+        } as any,
+        defaultItem: {
+          id: 0,
+          nome: '',
+          endereco_logradouro: '',
+          endereco_numero: '',
+          endereco_complemento: '',
+          endereco_bairro: '',
+          endereco_municipio: '',
+          endereco_uf: '',
+        } as any,
+        headers: [
+          { title: 'ID', key: 'id', sortable: true },
+          { title: 'Nome', key: 'nome', sortable: true },
+          { title: 'Endereço', key: 'endereco_logradouro', sortable: true },
+          { title: 'Ações', key: 'actions', sortable: false },
+        ],
       }
     },
-
-    openDialog() {
-      this.dialog = true
+    computed: {
+      sharedRules () {
+        return sharedRules
+      },
+      formTitle () {
+        return this.editedIndex === -1 ? 'Novo Depósito' : 'Editar Depósito'
+      },
     },
-
-    editItem(item: any) {
-      this.editedIndex = this.depositos.indexOf(item)
-      this.editedItem = { ...item }
-      this.dialog = true
+    mounted () {
+      this.loadDepositos()
     },
-
-    deleteItem(item: any) {
-      this.editedIndex = this.depositos.indexOf(item)
-      this.editedItem = { ...item }
-      this.deleteDialog = true
-    },
-
-    async deleteItemConfirm() {
-      try {
-        await DepositService.delete(this.editedItem.id)
-        this.depositos.splice(this.editedIndex, 1)
-        this.showSuccess('Depósito excluído com sucesso!')
-      } catch (error) {
-        this.showError('Erro ao excluir depósito')
-      }
-      this.closeDeleteDialog()
-    },
-
-    closeDialog() {
-      this.dialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    closeDeleteDialog() {
-      this.deleteDialog = false
-      this.$nextTick(() => {
-        this.editedItem = { ...this.defaultItem }
-        this.editedIndex = -1
-      })
-    },
-
-    onCEPKeypress(event: KeyboardEvent) {
-      const char = String.fromCodePoint(event.which)
-      if (!/[0-9]/.test(char)) {
-        event.preventDefault()
-      }
-    },
-
-    async save() {
-      if (!this.validForm) return
-
-      try {
-        if (this.editedIndex > -1) {
-          const updated = await DepositService.update(this.editedItem.id, this.editedItem)
-          this.depositos[this.editedIndex] = updated
-          this.showSuccess('Depósito atualizado com sucesso!')
-        } else {
-          const newItem = await DepositService.create(this.editedItem)
-          this.depositos.push(newItem)
-          this.showSuccess('Depósito criado com sucesso!')
+    methods: {
+      async loadDepositos () {
+        this.loading = true
+        try {
+          this.depositos = await DepositService.getAll()
+        } catch {
+          this.showError('Erro ao carregar depósitos')
+        } finally {
+          this.loading = false
         }
-        this.closeDialog()
-      } catch (error) {
-        this.showError('Erro ao salvar depósito')
-      }
+      },
+
+      openDialog () {
+        this.dialog = true
+      },
+
+      editItem (item: any) {
+        this.editedIndex = this.depositos.indexOf(item)
+        this.editedItem = { ...item }
+        this.dialog = true
+      },
+
+      deleteItem (item: any) {
+        this.editedIndex = this.depositos.indexOf(item)
+        this.editedItem = { ...item }
+        this.deleteDialog = true
+      },
+
+      async deleteItemConfirm () {
+        try {
+          await DepositService.delete(this.editedItem.id)
+          this.depositos.splice(this.editedIndex, 1)
+          this.showSuccess('Depósito excluído com sucesso!')
+        } catch {
+          this.showError('Erro ao excluir depósito')
+        }
+        this.closeDeleteDialog()
+      },
+
+      closeDialog () {
+        this.dialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      closeDeleteDialog () {
+        this.deleteDialog = false
+        this.$nextTick(() => {
+          this.editedItem = { ...this.defaultItem }
+          this.editedIndex = -1
+        })
+      },
+
+      async save () {
+        if (!this.validForm) return
+
+        try {
+          if (this.editedIndex > -1) {
+            const updated = await DepositService.update(this.editedItem.id, this.editedItem)
+            this.depositos[this.editedIndex] = updated
+            this.showSuccess('Depósito atualizado com sucesso!')
+          } else {
+            const newItem = await DepositService.create(this.editedItem)
+            this.depositos.push(newItem)
+            this.showSuccess('Depósito criado com sucesso!')
+          }
+          this.closeDialog()
+        } catch {
+          this.showError('Erro ao salvar depósito')
+        }
+      },
     },
-  },
-}
+  }
 </script>
-
-

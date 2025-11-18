@@ -1,6 +1,27 @@
-import type { Contact, Supplier } from '@/types'
+import type { Contact, ContatoApi, FornecedorApi, Supplier } from '@/interfaces'
 
-import { api, ArrayResponse } from './api.config'
+import { api } from './api.config'
+
+function mapContact (contato: ContatoApi): Contact {
+  return {
+  id: contato.id,
+  nome: contato.nome,
+  valor: contato.valor ?? '',
+  tipo_contato: contato.tipo_contato ?? 'outro',
+  codigo_pais: contato.codigo_pais ?? null,
+  data_criacao: contato.dataCriacao ?? new Date().toISOString(),
+  }
+}
+
+function mapSupplier (fornecedor: FornecedorApi): Supplier {
+  return {
+  id: fornecedor.id,
+  nome: fornecedor.nome,
+  cnpj: fornecedor.cnpj ?? null,
+  id_contato: fornecedor.contato?.id ?? null,
+  contato: fornecedor.contato ? mapContact(fornecedor.contato) : undefined,
+  }
+}
 
 /**
  * Interface para fornecedor enriquecido
@@ -11,6 +32,18 @@ export interface SupplierEnriched extends Supplier {
   contato_tipo?: string
 }
 
+function cleanPayload<T extends Record<string, unknown>> (payload: T): T {
+  const entries = Object.entries(payload).filter(([, value]) => value !== undefined && value !== null)
+  return Object.fromEntries(entries) as T
+}
+
+type CreateFornecedorPayload = {
+  nome: string
+  cnpj?: string
+  id_contato?: number
+  ativo?: boolean
+}
+
 /**
  * Serviço de API para Fornecedores
  */
@@ -18,150 +51,106 @@ class SupplierServiceClass {
   private endpoint = '/fornecedores'
 
   async getAll (): Promise<Supplier[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Supplier>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar fornecedores')
-    }
+    const fornecedores = await this.fetchAll()
+    return fornecedores.map(fornecedor => mapSupplier(fornecedor))
   }
 
-  /**
-   * Busca fornecedores ENRIQUECIDOS com dados de contato
-   */
   async getAllEnriched (): Promise<SupplierEnriched[]> {
-    try {
-      const [suppliers, contacts] = await Promise.all([
-        this.getAll(),
-        ContactService.getAll(),
-      ])
-
-      const contactMap = new Map(contacts.map(c => [c.id, c]))
-
-      return suppliers.map(supplier => {
-        const contato = contactMap.get(supplier.id_contato)
-
-        return {
-          ...supplier,
-          contato_nome: contato?.nome,
-          contato_valor: contato?.valor,
-          contato_tipo: contato?.tipo_contato,
-        }
-      })
-    } catch {
-      throw new Error('Erro ao buscar fornecedores enriquecidos')
-    }
+    const fornecedores = await this.fetchAll()
+    return fornecedores.map(fornecedor => {
+      const base = mapSupplier(fornecedor)
+      return {
+        ...base,
+        contato_nome: fornecedor.contato?.nome,
+        contato_valor: fornecedor.contato?.valor ?? undefined,
+        contato_tipo: fornecedor.contato?.tipo_contato,
+      }
+    })
   }
 
-  async getById (id: number): Promise<Supplier | undefined> {
-    const suppliers = await this.getAll()
-    return suppliers.find((s: Supplier) => s.id === id)
+  async getById (id: number): Promise<Supplier> {
+    const { data } = await api.get<FornecedorApi>(`${this.endpoint}/${id}`)
+    return mapSupplier(data)
   }
 
   async create (supplierData: Omit<Supplier, 'id'>): Promise<Supplier> {
-    const suppliers = await this.getAll()
+    const payload: CreateFornecedorPayload = cleanPayload({
+      nome: supplierData.nome,
+      cnpj: supplierData.cnpj ?? undefined,
+      id_contato: supplierData.id_contato ?? undefined,
+      ativo: true,
+    })
 
-    const newId: number = suppliers.length > 0
-      ? Math.max(...suppliers.map((s: Supplier) => s.id)) + 1
-      : 1
-
-    const newSupplier: Supplier = {
-      ...supplierData,
-      id: newId,
-    }
-
-    suppliers.push(newSupplier)
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(suppliers).toNestedArray())
-      return newSupplier
-    } catch {
-      throw new Error('Erro ao criar fornecedor')
-    }
+    const { data } = await api.post<FornecedorApi>(this.endpoint, payload)
+    return mapSupplier(data)
   }
 
   async update (id: number, updates: Partial<Omit<Supplier, 'id'>>): Promise<Supplier> {
-    const suppliers = await this.getAll()
-    const supplierIndex = suppliers.findIndex((s: Supplier) => s.id === id)
+    const payload = cleanPayload({
+      nome: updates.nome,
+      cnpj: updates.cnpj,
+      id_contato: updates.id_contato,
+    })
 
-    if (supplierIndex === -1) {
-      throw new Error('Fornecedor não encontrado')
-    }
-
-    const existing = suppliers[supplierIndex]
-    if (!existing) {
-      throw new Error('Fornecedor não encontrado')
-    }
-
-    const updated: Supplier = {
-      ...existing,
-      ...updates,
-      id: existing.id,
-    }
-
-    suppliers[supplierIndex] = updated
-
-    try {
-      await api.put(this.endpoint, new ArrayResponse(suppliers).toNestedArray())
-      return updated
-    } catch {
-      throw new Error('Erro ao atualizar fornecedor')
-    }
+    const { data } = await api.patch<FornecedorApi>(`${this.endpoint}/${id}`, payload)
+    return mapSupplier(data)
   }
 
   async delete (id: number): Promise<void> {
-    const suppliers = await this.getAll()
-    const updated = suppliers.filter((s: Supplier) => s.id !== id)
+    await api.delete(`${this.endpoint}/${id}`)
+  }
 
-    try {
-      await api.put(this.endpoint, new ArrayResponse(updated).toNestedArray())
-    } catch {
-      throw new Error('Erro ao excluir fornecedor')
-    }
+  private async fetchAll (): Promise<FornecedorApi[]> {
+    const { data } = await api.get<FornecedorApi[]>(this.endpoint)
+    return data
   }
 }
 
-/**
- * Serviço de API para Contatos
- */
 class ContactServiceClass {
   private endpoint = '/contatos'
 
   async getAll (): Promise<Contact[]> {
-    try {
-      const response = await api.get(this.endpoint)
-      return new ArrayResponse<Contact>(response.data).get()
-    } catch {
-      throw new Error('Erro ao buscar contatos')
-    }
+    const contatos = await this.fetchAll()
+    return contatos.map(contato => mapContact(contato))
   }
 
-  async getById (id: number): Promise<Contact | undefined> {
-    const contacts = await this.getAll()
-    return contacts.find((c: Contact) => c.id === id)
+  async getById (id: number): Promise<Contact> {
+    const { data } = await api.get<ContatoApi>(`${this.endpoint}/${id}`)
+    return mapContact(data)
   }
 
   async create (contactData: Omit<Contact, 'id' | 'data_criacao'>): Promise<Contact> {
-    const contacts = await this.getAll()
+    const payload = cleanPayload({
+      nome: contactData.nome,
+      valor: contactData.valor,
+      tipo_contato: contactData.tipo_contato,
+      codigo_pais: contactData.codigo_pais,
+      ativo: true,
+    })
 
-    const newId: number = contacts.length > 0
-      ? Math.max(...contacts.map((c: Contact) => c.id)) + 1
-      : 1
+    const { data } = await api.post<ContatoApi>(this.endpoint, payload)
+    return mapContact(data)
+  }
 
-    const newContact: Contact = {
-      ...contactData,
-      id: newId,
-      data_criacao: new Date().toISOString(),
-    }
+  async update (id: number, contactData: Partial<Omit<Contact, 'id' | 'data_criacao'>>): Promise<Contact> {
+    const payload = cleanPayload({
+      nome: contactData.nome,
+      valor: contactData.valor,
+      tipo_contato: contactData.tipo_contato,
+      codigo_pais: contactData.codigo_pais,
+    })
 
-    contacts.push(newContact)
+    const { data } = await api.patch<ContatoApi>(`${this.endpoint}/${id}`, payload)
+    return mapContact(data)
+  }
 
-    try {
-      await api.put(this.endpoint, new ArrayResponse(contacts).toNestedArray())
-      return newContact
-    } catch {
-      throw new Error('Erro ao criar contato')
-    }
+  async delete (id: number): Promise<void> {
+    await api.delete(`${this.endpoint}/${id}`)
+  }
+
+  private async fetchAll (): Promise<ContatoApi[]> {
+    const { data } = await api.get<ContatoApi[]>(this.endpoint)
+    return data
   }
 }
 

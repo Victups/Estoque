@@ -64,36 +64,35 @@
 </template>
 
 <script lang="ts">
-import type { User } from '@/types'
+  import type { User } from '@/interfaces'
 
-export default {
-  name: 'UserViewDialog',
-  props: {
-    modelValue: {
-      type: Boolean,
-      default: false,
-    },
-    user: {
-      type: Object as () => User | null,
-      default: null,
-    },
-  },
-  emits: ['update:modelValue'],
-  computed: {
-    dialog: {
-      get () {
-        return this.modelValue
+  export default {
+    name: 'UserViewDialog',
+    props: {
+      modelValue: {
+        type: Boolean,
+        default: false,
       },
-      set (value: boolean) {
-        this.$emit('update:modelValue', value)
+      user: {
+        type: Object as () => User | null,
+        default: null,
       },
     },
-  },
-  methods: {
-    close () {
-      this.$emit('update:modelValue', false)
+    emits: ['update:modelValue'],
+    computed: {
+      dialog: {
+        get () {
+          return this.modelValue
+        },
+        set (value: boolean) {
+          this.$emit('update:modelValue', value)
+        },
+      },
     },
-  },
-}
+    methods: {
+      close () {
+        this.$emit('update:modelValue', false)
+      },
+    },
+  }
 </script>
-

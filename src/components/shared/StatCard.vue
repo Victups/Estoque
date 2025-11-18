@@ -17,42 +17,42 @@
 </template>
 
 <script>
-export default {
-  name: 'StatCard',
-  props: {
-    label: {
-      type: String,
-      required: true,
+  export default {
+    name: 'StatCard',
+    props: {
+      label: {
+        type: String,
+        required: true,
+      },
+      value: {
+        type: [Number, String],
+        required: true,
+      },
+      color: {
+        type: String,
+        default: 'primary',
+      },
+      icon: {
+        type: String,
+        required: true,
+      },
+      format: {
+        type: String,
+        default: 'number', // 'number', 'currency', 'locale'
+      },
     },
-    value: {
-      type: [Number, String],
-      required: true,
+    computed: {
+      formattedValue () {
+        if (this.format === 'currency') {
+          return Number(this.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+        }
+        if (this.format === 'locale') {
+          return Number(this.value).toLocaleString('pt-BR')
+        }
+        return this.value
+      },
     },
-    color: {
-      type: String,
-      default: 'primary',
-    },
-    icon: {
-      type: String,
-      required: true,
-    },
-    format: {
-      type: String,
-      default: 'number', // 'number', 'currency', 'locale'
-    },
-  },
-  computed: {
-    formattedValue () {
-      if (this.format === 'currency') {
-        return Number(this.value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      }
-      if (this.format === 'locale') {
-        return Number(this.value).toLocaleString('pt-BR')
-      }
-      return this.value
-    },
-  },
-}
+  }
 </script>
 
 <style scoped>
@@ -88,4 +88,3 @@ export default {
   transform: scale(1.1);
 }
 </style>
-

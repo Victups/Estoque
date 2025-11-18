@@ -1,10 +1,13 @@
 import axios from 'axios'
 
+import { getApiBaseUrl } from '@/utils/env'
+import { clearSession, getStoredToken } from './auth.storage'
+
 /**
  * Configuração base do Axios
  */
 export const api = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: getApiBaseUrl(),
   timeout: 10_000,
   headers: {
     'Content-Type': 'application/json',
@@ -16,7 +19,11 @@ export const api = axios.create({
  */
 api.interceptors.request.use(
   config => {
-    // Aqui você pode adicionar tokens de autenticação, etc.
+    const token = getStoredToken()
+    if (token) {
+      config.headers = config.headers ?? {}
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   error => {
@@ -36,6 +43,9 @@ api.interceptors.response.use(
     if (error.response) {
       // Erro com resposta do servidor
       console.error('Erro na resposta:', error.response.status)
+      if (error.response.status === 401) {
+        clearSession()
+      }
     } else if (error.request) {
       // Erro sem resposta do servidor
       console.error('Erro de rede:', error.request)

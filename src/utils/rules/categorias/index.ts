@@ -4,5 +4,3 @@ export const categoriaRules = {
   required: sharedRules.required,
   nome: sharedRules.nome,
 }
-
-

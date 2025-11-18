@@ -22,76 +22,76 @@
       <v-row>
         <!-- Filtro por Categoria -->
         <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="filtros.categoriaId"
-              clearable
-              density="comfortable"
-              item-title="nome"
-              item-value="id"
-              :items="categorias"
-              label="Categoria"
-              :loading="loading"
-              placeholder="Selecione uma categoria"
-              prepend-inner-icon="mdi-tag"
-              variant="outlined"
-            />
+          <v-autocomplete
+            v-model="filtros.categoriaId"
+            clearable
+            density="comfortable"
+            item-title="nome"
+            item-value="id"
+            :items="categorias"
+            label="Categoria"
+            :loading="loading"
+            placeholder="Selecione uma categoria"
+            prepend-inner-icon="mdi-tag"
+            variant="outlined"
+          />
         </v-col>
 
         <!-- Filtro por Tipo de Movimentação -->
         <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="filtros.tipoMovimentacao"
-              clearable
-              density="comfortable"
-              item-title="text"
-              item-value="value"
-              :items="tiposMovimentacao"
-              label="Tipo de Movimentação"
-              placeholder="Selecione o tipo"
-              prepend-inner-icon="mdi-swap-horizontal"
-              variant="outlined"
-            />
+          <v-autocomplete
+            v-model="filtros.tipoMovimentacao"
+            clearable
+            density="comfortable"
+            item-title="text"
+            item-value="value"
+            :items="tiposMovimentacao"
+            label="Tipo de Movimentação"
+            placeholder="Selecione o tipo"
+            prepend-inner-icon="mdi-swap-horizontal"
+            variant="outlined"
+          />
         </v-col>
 
         <!-- Filtro por Usuário -->
         <v-col cols="12" md="4">
-            <v-autocomplete
-              v-model="filtros.usuarioId"
-              clearable
-              density="comfortable"
-              item-title="nome"
-              item-value="id"
-              :items="usuarios"
-              label="Usuário"
-              :loading="loading"
-              placeholder="Selecione um usuário"
-              prepend-inner-icon="mdi-account"
-              variant="outlined"
-            />
+          <v-autocomplete
+            v-model="filtros.usuarioId"
+            clearable
+            density="comfortable"
+            item-title="nome"
+            item-value="id"
+            :items="usuarios"
+            label="Usuário"
+            :loading="loading"
+            placeholder="Selecione um usuário"
+            prepend-inner-icon="mdi-account"
+            variant="outlined"
+          />
         </v-col>
 
         <!-- Filtro por Período -->
         <v-col cols="12" md="6">
           <v-row>
             <v-col cols="6">
-                <v-text-field
-                  v-model="filtros.dataInicio"
-                  density="comfortable"
-                  label="Data Início"
-                  prepend-inner-icon="mdi-calendar-start"
-                  type="date"
-                  variant="outlined"
-                />
+              <v-text-field
+                v-model="filtros.dataInicio"
+                density="comfortable"
+                label="Data Início"
+                prepend-inner-icon="mdi-calendar-start"
+                type="date"
+                variant="outlined"
+              />
             </v-col>
             <v-col cols="6">
-                <v-text-field
-                  v-model="filtros.dataFim"
-                  density="comfortable"
-                  label="Data Fim"
-                  prepend-inner-icon="mdi-calendar-end"
-                  type="date"
-                  variant="outlined"
-                />
+              <v-text-field
+                v-model="filtros.dataFim"
+                density="comfortable"
+                label="Data Fim"
+                prepend-inner-icon="mdi-calendar-end"
+                type="date"
+                variant="outlined"
+              />
             </v-col>
           </v-row>
         </v-col>
@@ -209,148 +209,148 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { CategoryService, UserService } from '@/services'
+  import { defineComponent } from 'vue'
+  import { CategoryService, UserService } from '@/services'
 
-export interface FiltrosData {
-  categoriaId: number | null
-  tipoMovimentacao: string | null
-  usuarioId: number | null
-  dataInicio: string | null
-  dataFim: string | null
-  statusLote: string | null
-}
+  export interface FiltrosData {
+    categoriaId: number | null
+    tipoMovimentacao: string | null
+    usuarioId: number | null
+    dataInicio: string | null
+    dataFim: string | null
+    statusLote: string | null
+  }
 
-export default defineComponent({
-  name: 'FiltrosRelatorios',
-  props: {
-    modelValue: {
-      type: Object,
-      default: () => ({}),
+  export default defineComponent({
+    name: 'FiltrosRelatorios',
+    props: {
+      modelValue: {
+        type: Object,
+        default: () => ({}),
+      },
     },
-  },
-  emits: ['update:modelValue', 'filtros-change', 'aplicar-filtros'],
-  data () {
-    return {
-      categorias: [] as any[],
-      usuarios: [] as any[],
-      loading: false,
-      buscando: false,
-      filtros: {
-        categoriaId: null as number | null,
-        tipoMovimentacao: null as string | null,
-        usuarioId: null as number | null,
-        dataInicio: null as string | null,
-        dataFim: null as string | null,
-        statusLote: null as string | null,
-      } as FiltrosData,
-      tiposMovimentacao: [
-        { text: 'Entrada', value: 'entrada' },
-        { text: 'Saída', value: 'saida' },
-      ],
-      statusLote: [
-        { text: 'Válido', value: 'valido' },
-        { text: 'Próximo ao Vencimento', value: 'proximo_vencimento' },
-        { text: 'Vencido', value: 'vencido' },
-        { text: 'Estoque Baixo', value: 'estoque_baixo' },
-      ],
-    }
-  },
-  computed: {
-    hasActiveFilters (): boolean {
-      return Object.values(this.filtros).some(value => value !== null && value !== '')
+    emits: ['update:modelValue', 'filtros-change', 'aplicar-filtros'],
+    data () {
+      return {
+        categorias: [] as any[],
+        usuarios: [] as any[],
+        loading: false,
+        buscando: false,
+        filtros: {
+          categoriaId: null as number | null,
+          tipoMovimentacao: null as string | null,
+          usuarioId: null as number | null,
+          dataInicio: null as string | null,
+          dataFim: null as string | null,
+          statusLote: null as string | null,
+        } as FiltrosData,
+        tiposMovimentacao: [
+          { text: 'Entrada', value: 'entrada' },
+          { text: 'Saída', value: 'saida' },
+        ],
+        statusLote: [
+          { text: 'Válido', value: 'valido' },
+          { text: 'Próximo ao Vencimento', value: 'proximo_vencimento' },
+          { text: 'Vencido', value: 'vencido' },
+          { text: 'Estoque Baixo', value: 'estoque_baixo' },
+        ],
+      }
     },
-  },
-  watch: {
-    modelValue: {
-      handler (newValue: Record<string, any>) {
-        if (newValue) {
-          this.filtros = { ...this.filtros, ...newValue }
+    computed: {
+      hasActiveFilters (): boolean {
+        return Object.values(this.filtros).some(value => value !== null && value !== '')
+      },
+    },
+    watch: {
+      modelValue: {
+        handler (newValue: Record<string, any>) {
+          if (newValue) {
+            this.filtros = { ...this.filtros, ...newValue }
+          }
+        },
+        deep: true,
+        immediate: true,
+      },
+    },
+    mounted () {
+      this.loadData()
+    },
+    methods: {
+      async loadData () {
+        this.loading = true
+        try {
+          const categoriasData = await CategoryService.getAll()
+          this.categorias = categoriasData
+
+          const usuariosData = await UserService.getAll()
+          this.usuarios = usuariosData
+        } catch (error) {
+          console.error('Erro ao carregar dados dos filtros:', error)
+        } finally {
+          this.loading = false
         }
       },
-      deep: true,
-      immediate: true,
-    },
-  },
-  mounted () {
-    this.loadData()
-  },
-  methods: {
-    async loadData () {
-      this.loading = true
-      try {
-        const categoriasData = await CategoryService.getAll()
-        this.categorias = categoriasData
+      aplicarFiltros () {
+        this.buscando = true
+        this.$emit('update:modelValue', { ...this.filtros })
+        this.$emit('filtros-change', { ...this.filtros })
+        this.$emit('aplicar-filtros', { ...this.filtros })
 
-        const usuariosData = await UserService.getAll()
-        this.usuarios = usuariosData
-      } catch (error) {
-        console.error('Erro ao carregar dados dos filtros:', error)
-      } finally {
-        this.loading = false
-      }
-    },
-    aplicarFiltros () {
-      this.buscando = true
-      this.$emit('update:modelValue', { ...this.filtros })
-      this.$emit('filtros-change', { ...this.filtros })
-      this.$emit('aplicar-filtros', { ...this.filtros })
-      
-      setTimeout(() => {
-        this.buscando = false
-      }, 500)
-    },
-    clearFilters () {
-      this.filtros = {
-        categoriaId: null,
-        tipoMovimentacao: null,
-        usuarioId: null,
-        dataInicio: null,
-        dataFim: null,
-        statusLote: null,
-      }
-      this.aplicarFiltros()
-    },
-    removeFiltro (key: string) {
-      if (key === 'dataInicio' || key === 'dataFim') {
-        this.filtros.dataInicio = null
-        this.filtros.dataFim = null
-      } else {
-        (this.filtros as any)[key] = null
-      }
-      this.aplicarFiltros()
-    },
-    getCategoriaNome (id: number): string {
-      const categoria = this.categorias.find(c => c.id === id)
-      return categoria?.nome || 'Categoria'
-    },
-    getTipoMovimentacaoNome (tipo: string): string {
-      const item = this.tiposMovimentacao.find(t => t.value === tipo)
-      return item?.text || tipo
-    },
-    getUsuarioNome (id: number): string {
-      const usuario = this.usuarios.find(u => u.id === id)
-      return usuario?.nome || 'Usuário'
-    },
-    getStatusLoteNome (status: string): string {
-      const item = this.statusLote.find(s => s.value === status)
-      return item?.text || status
-    },
-    getPeriodoTexto (): string {
-      const inicio = this.filtros.dataInicio
-      const fim = this.filtros.dataFim
+        setTimeout(() => {
+          this.buscando = false
+        }, 500)
+      },
+      clearFilters () {
+        this.filtros = {
+          categoriaId: null,
+          tipoMovimentacao: null,
+          usuarioId: null,
+          dataInicio: null,
+          dataFim: null,
+          statusLote: null,
+        }
+        this.aplicarFiltros()
+      },
+      removeFiltro (key: string) {
+        if (key === 'dataInicio' || key === 'dataFim') {
+          this.filtros.dataInicio = null
+          this.filtros.dataFim = null
+        } else {
+          (this.filtros as any)[key] = null
+        }
+        this.aplicarFiltros()
+      },
+      getCategoriaNome (id: number): string {
+        const categoria = this.categorias.find(c => c.id === id)
+        return categoria?.nome || 'Categoria'
+      },
+      getTipoMovimentacaoNome (tipo: string): string {
+        const item = this.tiposMovimentacao.find(t => t.value === tipo)
+        return item?.text || tipo
+      },
+      getUsuarioNome (id: number): string {
+        const usuario = this.usuarios.find(u => u.id === id)
+        return usuario?.nome || 'Usuário'
+      },
+      getStatusLoteNome (status: string): string {
+        const item = this.statusLote.find(s => s.value === status)
+        return item?.text || status
+      },
+      getPeriodoTexto (): string {
+        const inicio = this.filtros.dataInicio
+        const fim = this.filtros.dataFim
 
-      if (inicio && fim) {
-        return `${inicio} - ${fim}`
-      } else if (inicio) {
-        return `A partir de ${inicio}`
-      } else if (fim) {
-        return `Até ${fim}`
-      }
-      return 'Período'
+        if (inicio && fim) {
+          return `${inicio} - ${fim}`
+        } else if (inicio) {
+          return `A partir de ${inicio}`
+        } else if (fim) {
+          return `Até ${fim}`
+        }
+        return 'Período'
+      },
     },
-  },
-})
+  })
 </script>
 
 <style scoped>

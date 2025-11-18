@@ -214,150 +214,151 @@
 </template>
 
 <script lang="ts">
-import VueApexCharts from 'vue3-apexcharts'
-import DonutChartCard from '@/components/dashboards/DonutChartCard.vue'
-import FiltrosRelatorios from '@/components/shared/FiltrosRelatorios.vue'
-import GraficoBarrasCompleto from '@/components/dashboards/GraficoBarrasCompleto.vue'
-import ReportsStatsCards from '@/components/dashboards/ReportsStatsCards.vue'
-import { CategoryService, LoteService, MovementService, ProductService } from '@/services'
-import {
-  calculateStockStats,
-  prepareDonutChartData,
-  prepareMovementsChartData,
-  getTopLowStockProducts,
-  prepareLowStockChartOptions,
-  prepareLowStockChartSeries,
-  prepareValueChartOptions,
-  prepareValueByCategoryChartData,
-} from '@/utils/tramposes/reports'
+  import type { Category, Product, ProductLote, StockMovement } from '@/interfaces'
+  import VueApexCharts from 'vue3-apexcharts'
+  import DonutChartCard from '@/components/dashboards/DonutChartCard.vue'
+  import GraficoBarrasCompleto from '@/components/dashboards/GraficoBarrasCompleto.vue'
+  import ReportsStatsCards from '@/components/dashboards/ReportsStatsCards.vue'
+  import FiltrosRelatorios from '@/components/shared/FiltrosRelatorios.vue'
+  import { CategoryService, LoteService, MovementService, ProductService } from '@/services'
+  import {
+    calculateStockStats,
+    getTopLowStockProducts,
+    prepareDonutChartData,
+    prepareLowStockChartOptions,
+    prepareLowStockChartSeries,
+    prepareMovementsChartData,
+    prepareValueByCategoryChartData,
+    prepareValueChartOptions,
+  } from '@/utils/tramposes/reports'
 
-export default {
-  name: 'RelatoriosPage',
-  components: {
-    VueApexCharts,
-    DonutChartCard,
-    FiltrosRelatorios,
-    GraficoBarrasCompleto,
-    ReportsStatsCards,
-  },
-  data () {
-    return {
-      loading: true,
-      filtros: {},
-      products: [] as import('@/types').Product[],
-      categories: [] as import('@/types').Category[],
-      movements: [] as import('@/types').StockMovement[],
-      lotes: [] as import('@/types').ProductLote[],
-      movementsChartOptions: {
-        colors: ['#4CAF50', '#F44336'],
-        chart: {
-          toolbar: { show: false },
-          background: 'transparent',
-        },
-        theme: {
-          mode: 'dark',
-        },
-        plotOptions: {
-          bar: {
-            columnWidth: '70%',
-            borderRadius: 6,
+  export default {
+    name: 'RelatoriosPage',
+    components: {
+      VueApexCharts,
+      DonutChartCard,
+      FiltrosRelatorios,
+      GraficoBarrasCompleto,
+      ReportsStatsCards,
+    },
+    data () {
+      return {
+        loading: true,
+        filtros: {},
+        products: [] as Product[],
+        categories: [] as Category[],
+        movements: [] as StockMovement[],
+        lotes: [] as ProductLote[],
+        movementsChartOptions: {
+          colors: ['#4CAF50', '#F44336'],
+          chart: {
+            toolbar: { show: false },
+            background: 'transparent',
           },
-        },
-        dataLabels: {
-          enabled: false,
-        },
-        grid: {
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          strokeDashArray: 4,
-        },
-        xaxis: {
-          labels: {
-            style: {
-              fontSize: '13px',
-              fontWeight: 600,
-              colors: ['#ffffff'],
+          theme: {
+            mode: 'dark',
+          },
+          plotOptions: {
+            bar: {
+              columnWidth: '70%',
+              borderRadius: 6,
+            },
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          grid: {
+            borderColor: 'rgba(255, 255, 255, 0.1)',
+            strokeDashArray: 4,
+          },
+          xaxis: {
+            labels: {
+              style: {
+                fontSize: '13px',
+                fontWeight: 600,
+                colors: ['#ffffff'],
+              },
+            },
+          },
+          yaxis: {
+            labels: {
+              style: {
+                fontSize: '12px',
+                colors: ['#ffffff'],
+              },
             },
           },
         },
-        yaxis: {
-          labels: {
-            style: {
-              fontSize: '12px',
-              colors: ['#ffffff'],
-            },
-          },
-        },
-      },
-    }
-  },
-  computed: {
-    stockStats () {
-      return calculateStockStats(this.products, this.lotes)
-    },
-    donutChartData () {
-      return prepareDonutChartData(this.products, this.categories)
-    },
-    movimentacoesBarrasData () {
-      return prepareMovementsChartData(this.movements)
-    },
-    topLowStockProducts () {
-      return getTopLowStockProducts(this.products, this.lotes, 5)
-    },
-    lowStockChartOptions () {
-      return prepareLowStockChartOptions(this.topLowStockProducts)
-    },
-    lowStockChartSeries () {
-      return prepareLowStockChartSeries(this.topLowStockProducts)
-    },
-    valueChartData () {
-      return prepareValueByCategoryChartData(this.products, this.categories, this.lotes)
-    },
-    valueChartOptions () {
-      return prepareValueChartOptions(this.categories)
-    },
-    valueChartSeries () {
-      const data = this.valueChartData?.series?.[0]?.data ?? []
-      return [
-        {
-          name: 'Valor em Estoque',
-          data,
-        },
-      ]
-    },
-  },
-  mounted () {
-    this.loadData()
-  },
-  methods: {
-    async loadData () {
-      this.loading = true
-      try {
-        const [productsData, categoriesData, movementsData, lotesData] = await Promise.all([
-          ProductService.getAll(),
-          CategoryService.getAll(),
-          MovementService.getAll(),
-          LoteService.getAll(),
-        ])
-
-        this.products = productsData
-        this.categories = categoriesData
-        this.movements = movementsData
-        this.lotes = lotesData
-
-        console.log('📊 Dados carregados:', {
-          produtos: this.products.length,
-          categorias: this.categories.length,
-          movimentações: this.movements.length,
-          lotes: this.lotes.length,
-        })
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error)
-      } finally {
-        this.loading = false
       }
     },
-  },
-}
+    computed: {
+      stockStats () {
+        return calculateStockStats(this.products, this.lotes)
+      },
+      donutChartData () {
+        return prepareDonutChartData(this.products, this.categories)
+      },
+      movimentacoesBarrasData () {
+        return prepareMovementsChartData(this.movements)
+      },
+      topLowStockProducts () {
+        return getTopLowStockProducts(this.products, this.lotes, 5)
+      },
+      lowStockChartOptions () {
+        return prepareLowStockChartOptions(this.topLowStockProducts)
+      },
+      lowStockChartSeries () {
+        return prepareLowStockChartSeries(this.topLowStockProducts)
+      },
+      valueChartData () {
+        return prepareValueByCategoryChartData(this.products, this.categories, this.lotes)
+      },
+      valueChartOptions () {
+        return prepareValueChartOptions(this.categories)
+      },
+      valueChartSeries () {
+        const data = this.valueChartData?.series?.[0]?.data ?? []
+        return [
+          {
+            name: 'Valor em Estoque',
+            data,
+          },
+        ]
+      },
+    },
+    mounted () {
+      this.loadData()
+    },
+    methods: {
+      async loadData () {
+        this.loading = true
+        try {
+          const [productsData, categoriesData, movementsData, lotesData] = await Promise.all([
+            ProductService.getAll(),
+            CategoryService.getAll(),
+            MovementService.getAll(),
+            LoteService.getAll(),
+          ])
+
+          this.products = productsData
+          this.categories = categoriesData
+          this.movements = movementsData
+          this.lotes = lotesData
+
+          console.log('📊 Dados carregados:', {
+            produtos: this.products.length,
+            categorias: this.categories.length,
+            movimentações: this.movements.length,
+            lotes: this.lotes.length,
+          })
+        } catch (error) {
+          console.error('Erro ao carregar dados:', error)
+        } finally {
+          this.loading = false
+        }
+      },
+    },
+  }
 </script>
 
 <route lang="yaml">
