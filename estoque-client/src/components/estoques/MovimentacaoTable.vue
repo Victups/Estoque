@@ -63,11 +63,16 @@
           <v-data-table
             class="elevation-1"
             :headers="headers"
-            :items="filteredMovements"
-            :items-per-page="15"
+            :items="movements"
+            :items-per-page="paginationItemsPerPage"
+            :items-per-page-options="[10, 15, 20, 30, 50]"
+            :items-length="paginationTotal"
+            :page="paginationPage"
             :loading="loading"
             loading-text="Carregando movimentações..."
-            :search="localSearch"
+            server-items-length
+            @update:page="onPageChange"
+            @update:items-per-page="onItemsPerPageChange"
           >
             <template #[`item.tipo_movimento`]="{ item }">
               <v-chip
@@ -96,7 +101,7 @@
 
             <template #[`item.valor_total`]="{ item }">
               <span class="font-weight-bold text-primary">
-                {{ formatCurrency(item.quantidade * item.preco_unitario) }}
+                {{ formatCurrency(item.valor_total) }}
               </span>
             </template>
 
@@ -167,8 +172,20 @@ export default {
       type: String,
       default: '',
     },
+    paginationTotal: {
+      type: Number,
+      default: 0,
+    },
+    paginationPage: {
+      type: Number,
+      default: 1,
+    },
+    paginationItemsPerPage: {
+      type: Number,
+      default: 15,
+    },
   },
-  emits: ['refresh', 'view-movement', 'update:search', 'update:filterType', 'update:filterDate'],
+  emits: ['refresh', 'view-movement', 'update:search', 'update:filterType', 'update:filterDate', 'update:page', 'update:items-per-page'],
   data () {
     return {
       headers: [
@@ -210,19 +227,14 @@ export default {
         this.$emit('update:filterDate', value)
       },
     },
-    filteredMovements (): StockMovementEnriched[] {
-      return this.movements.filter((mov: StockMovementEnriched) => {
-        const typeMatch = this.filterType === 'Todos'
-          || (this.filterType === 'Entrada' && mov.tipo_movimento === 'entrada')
-          || (this.filterType === 'Saída' && mov.tipo_movimento === 'saida')
-
-        const dateMatch = !this.filterDate || mov.data_mov.startsWith(this.filterDate)
-
-        return typeMatch && dateMatch
-      })
-    },
   },
   methods: {
+    onPageChange (newPage) {
+      this.$emit('update:page', newPage)
+    },
+    onItemsPerPageChange (newItemsPerPage) {
+      this.$emit('update:items-per-page', newItemsPerPage)
+    },
     formatNumber (value: number): string {
       return value.toLocaleString('pt-BR')
     },

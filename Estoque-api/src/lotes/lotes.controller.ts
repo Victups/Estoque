@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { LotesService } from './lotes.service';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
@@ -17,6 +17,12 @@ export class LotesController {
 	@Get()
 	findAll() {
 		return this.lotesService.findAll();
+	}
+
+	@Get('vencendo-proximo')
+	getVencendoProximo(@Query('dias') dias?: string) {
+		const diasNum = dias ? parseInt(dias, 10) : 30;
+		return this.lotesService.getVencendoProximo(diasNum);
 	}
 
 	@Get(':id')

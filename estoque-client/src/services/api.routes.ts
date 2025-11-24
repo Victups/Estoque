@@ -8,12 +8,15 @@ export const API_ROUTES = {
   usuarios: {
     base: '/usuarios',
     byId: (id: number) => `/usuarios/${id}`,
+    stats: '/usuarios/stats',
   },
 
  
   produtos: {
     base: '/produtos',
     byId: (id: number) => `/produtos/${id}`,
+    estoqueByProduto: (id: number) => `/produtos/${id}/estoque`,
+    estoqueBaixo: '/produtos/estoque-baixo',
   },
 
   produtoFornecedor: {
@@ -63,6 +66,7 @@ export const API_ROUTES = {
     base: '/lotes',
     byId: (id: number) => `/lotes/${id}`,
     byProduto: (idProduto: number) => `/lotes?produto=${idProduto}`,
+    vencendoProximo: (dias?: number) => `/lotes/vencendo-proximo${dias ? `?dias=${dias}` : ''}`,
   },
 
   
@@ -97,6 +101,7 @@ export const API_ROUTES = {
   
   dashboards: {
     base: '/dashboards',
+    stats: '/dashboards/stats',
   },
 } as const
 

@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, Between, MoreThanOrEqual, LessThanOrEqual, Like } from 'typeorm';
 import { RegistroMovimentacao } from './entities/registro-movimentacao.entity';
 import { CreateEstoqueDto } from './dto/create-estoque.dto';
 import { UpdateEstoqueDto } from './dto/update-estoque.dto';
+import { FilterEstoqueDto } from './dto/filter-estoque.dto';
 import { MovimentacaoEstoque, TipoMovimentacao } from '../movimentacoes/entities/movimentacao-estoque.entity';
 import { ProdutoLote } from '../lotes/entities/produto-lote.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
@@ -69,14 +70,20 @@ export class EstoquesService {
 				? createEstoqueDto.id_localizacao_destino
 				: createEstoqueDto.id_localizacao_origem || createEstoqueDto.id_localizacao;
 
+			// Calcula valor_total automaticamente se preco_unitario for fornecido
+			const precoUnitario = createEstoqueDto.preco_unitario;
+			const valorTotalCalculado = precoUnitario !== undefined && precoUnitario !== null
+				? Number((precoUnitario * quantidade).toFixed(2))
+				: createEstoqueDto.valor_total;
+
 			const registro = registroRepository.create({
 				lote: { id: createEstoqueDto.id_lote } as any,
 				produto: { id: createEstoqueDto.id_produto } as any,
 				usuario: { id: createEstoqueDto.id_usuario } as any,
 				quantidade,
 				tipoMovimento: createEstoqueDto.tipo_movimento,
-				valorTotal: createEstoqueDto.valor_total,
-				precoUnitario: createEstoqueDto.preco_unitario,
+				valorTotal: valorTotalCalculado,
+				precoUnitario: precoUnitario,
 				observacao: createEstoqueDto.observacao,
 				localizacao: idLocalizacaoPrincipal ? ({ id: idLocalizacaoPrincipal } as any) : undefined,
 				localizacaoOrigem: createEstoqueDto.id_localizacao_origem
@@ -137,12 +144,151 @@ export class EstoquesService {
 		'updatedBy',
 	];
 
-	async findAll(): Promise<RegistroMovimentacao[]> {
+	async findAll(filterDto?: FilterEstoqueDto): Promise<RegistroMovimentacao[]> {
 		try {
-			return await this.registroRepo.find({
-				where: { ativo: true },
-				relations: this.defaultRelations,
-			});
+			const queryBuilder = this.registroRepo.createQueryBuilder('registro')
+				.leftJoinAndSelect('registro.produto', 'produto')
+				.leftJoinAndSelect('registro.lote', 'lote')
+				.leftJoinAndSelect('registro.usuario', 'usuario')
+				.leftJoinAndSelect('registro.localizacao', 'localizacao')
+				.leftJoinAndSelect('registro.localizacaoOrigem', 'localizacaoOrigem')
+				.leftJoinAndSelect('registro.localizacaoDestino', 'localizacaoDestino')
+				.leftJoinAndSelect('localizacao.deposito', 'deposito')
+				.leftJoinAndSelect('localizacaoOrigem.deposito', 'depositoOrigem')
+				.leftJoinAndSelect('localizacaoDestino.deposito', 'depositoDestino')
+				.leftJoinAndSelect('registro.createdBy', 'createdBy')
+				.leftJoinAndSelect('registro.updatedBy', 'updatedBy')
+				.where('registro.ativo = :ativo', { ativo: true });
+
+			// Aplica filtros
+			if (filterDto?.id_produto) {
+				queryBuilder.andWhere('produto.id = :idProduto', { idProduto: filterDto.id_produto });
+			}
+
+			if (filterDto?.tipo_movimento) {
+				queryBuilder.andWhere('registro.tipoMovimento = :tipoMovimento', { tipoMovimento: filterDto.tipo_movimento });
+			}
+
+			if (filterDto?.id_usuario) {
+				queryBuilder.andWhere('usuario.id = :idUsuario', { idUsuario: filterDto.id_usuario });
+			}
+
+			if (filterDto?.data_inicio || filterDto?.data_fim) {
+				if (filterDto.data_inicio && filterDto.data_fim) {
+					queryBuilder.andWhere('registro.dataCriacao BETWEEN :dataInicio AND :dataFim', {
+						dataInicio: filterDto.data_inicio,
+						dataFim: filterDto.data_fim,
+					});
+				} else if (filterDto.data_inicio) {
+					queryBuilder.andWhere('registro.dataCriacao >= :dataInicio', { dataInicio: filterDto.data_inicio });
+				} else if (filterDto.data_fim) {
+					queryBuilder.andWhere('registro.dataCriacao <= :dataFim', { dataFim: filterDto.data_fim });
+				}
+			}
+
+			if (filterDto?.quantidade_min !== undefined || filterDto?.quantidade_max !== undefined) {
+				if (filterDto.quantidade_min !== undefined && filterDto.quantidade_max !== undefined) {
+					queryBuilder.andWhere('registro.quantidade BETWEEN :quantidadeMin AND :quantidadeMax', {
+						quantidadeMin: filterDto.quantidade_min,
+						quantidadeMax: filterDto.quantidade_max,
+					});
+				} else if (filterDto.quantidade_min !== undefined) {
+					queryBuilder.andWhere('registro.quantidade >= :quantidadeMin', { quantidadeMin: filterDto.quantidade_min });
+				} else if (filterDto.quantidade_max !== undefined) {
+					queryBuilder.andWhere('registro.quantidade <= :quantidadeMax', { quantidadeMax: filterDto.quantidade_max });
+				}
+			}
+
+			// Busca por texto (nome de produto ou código de lote)
+			if (filterDto?.busca) {
+				const buscaLower = filterDto.busca.toLowerCase();
+				queryBuilder.andWhere(
+					'(LOWER(produto.nome) LIKE :busca OR LOWER(lote.codigoLote) LIKE :busca OR LOWER(registro.observacao) LIKE :busca)',
+					{ busca: `%${buscaLower}%` }
+				);
+			}
+
+			// Aplica paginação se solicitada
+			const pagina = filterDto?.pagina;
+			const tamanho = filterDto?.tamanho;
+			
+			let results: RegistroMovimentacao[];
+			let total: number;
+
+			if (pagina || tamanho) {
+				// Paginação solicitada
+				const page = pagina || 1;
+				const size = tamanho || 20;
+				const skip = (page - 1) * size;
+
+				queryBuilder.skip(skip).take(size).orderBy('registro.dataCriacao', 'DESC');
+				
+				// Clona o query builder para contar sem paginação
+				const countQueryBuilder = this.registroRepo.createQueryBuilder('registro')
+					.leftJoin('registro.produto', 'produto')
+					.leftJoin('registro.lote', 'lote')
+					.where('registro.ativo = :ativo', { ativo: true });
+
+				// Aplica os mesmos filtros no count
+				if (filterDto?.id_produto) {
+					countQueryBuilder.andWhere('produto.id = :idProduto', { idProduto: filterDto.id_produto });
+				}
+				if (filterDto?.tipo_movimento) {
+					countQueryBuilder.andWhere('registro.tipoMovimento = :tipoMovimento', { tipoMovimento: filterDto.tipo_movimento });
+				}
+				if (filterDto?.id_usuario) {
+					countQueryBuilder.andWhere('usuario.id = :idUsuario', { idUsuario: filterDto.id_usuario });
+				}
+				if (filterDto?.data_inicio || filterDto?.data_fim) {
+					if (filterDto.data_inicio && filterDto.data_fim) {
+						countQueryBuilder.andWhere('registro.dataCriacao BETWEEN :dataInicio AND :dataFim', {
+							dataInicio: filterDto.data_inicio,
+							dataFim: filterDto.data_fim,
+						});
+					} else if (filterDto.data_inicio) {
+						countQueryBuilder.andWhere('registro.dataCriacao >= :dataInicio', { dataInicio: filterDto.data_inicio });
+					} else if (filterDto.data_fim) {
+						countQueryBuilder.andWhere('registro.dataCriacao <= :dataFim', { dataFim: filterDto.data_fim });
+					}
+				}
+				if (filterDto?.quantidade_min !== undefined || filterDto?.quantidade_max !== undefined) {
+					if (filterDto.quantidade_min !== undefined && filterDto.quantidade_max !== undefined) {
+						countQueryBuilder.andWhere('registro.quantidade BETWEEN :quantidadeMin AND :quantidadeMax', {
+							quantidadeMin: filterDto.quantidade_min,
+							quantidadeMax: filterDto.quantidade_max,
+						});
+					} else if (filterDto.quantidade_min !== undefined) {
+						countQueryBuilder.andWhere('registro.quantidade >= :quantidadeMin', { quantidadeMin: filterDto.quantidade_min });
+					} else if (filterDto.quantidade_max !== undefined) {
+						countQueryBuilder.andWhere('registro.quantidade <= :quantidadeMax', { quantidadeMax: filterDto.quantidade_max });
+					}
+				}
+				if (filterDto?.busca) {
+					const buscaLower = filterDto.busca.toLowerCase();
+					countQueryBuilder.andWhere(
+						'(LOWER(produto.nome) LIKE :busca OR LOWER(lote.codigoLote) LIKE :busca OR LOWER(registro.observacao) LIKE :busca)',
+						{ busca: `%${buscaLower}%` }
+					);
+				}
+
+				[results, total] = await Promise.all([
+					queryBuilder.getMany(),
+					countQueryBuilder.getCount()
+				]);
+
+				const totalPaginas = Math.ceil(total / size);
+				return {
+					items: results,
+					total,
+					pagina: page,
+					totalPaginas,
+				} as any;
+			}
+
+			// Sem paginação
+			queryBuilder.orderBy('registro.dataCriacao', 'DESC');
+			results = await queryBuilder.getMany();
+			return results;
 		} catch (error) {
 			console.error('Erro ao buscar registros de estoque:', error);
 			throw error;
@@ -178,11 +324,16 @@ export class EstoquesService {
 		const registroAntes = await this.findOne(id);
 		const registro = registroAntes;
 
-		if (updateEstoqueDto.valor_total !== undefined) {
-			registro.valorTotal = updateEstoqueDto.valor_total;
-		}
+		// Se preco_unitario for atualizado, recalcula valor_total automaticamente
 		if (updateEstoqueDto.preco_unitario !== undefined) {
 			registro.precoUnitario = updateEstoqueDto.preco_unitario;
+			// Recalcula valor_total baseado no novo preco_unitario
+			if (updateEstoqueDto.preco_unitario !== null && updateEstoqueDto.preco_unitario !== undefined) {
+				registro.valorTotal = Number((updateEstoqueDto.preco_unitario * registro.quantidade).toFixed(2));
+			}
+		} else if (updateEstoqueDto.valor_total !== undefined) {
+			// Permite atualização manual de valor_total apenas se preco_unitario não foi alterado
+			registro.valorTotal = updateEstoqueDto.valor_total;
 		}
 		if (updateEstoqueDto.observacao !== undefined) {
 			registro.observacao = updateEstoqueDto.observacao;

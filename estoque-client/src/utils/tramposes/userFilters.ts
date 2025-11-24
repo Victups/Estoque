@@ -1,5 +1,4 @@
 import type { User } from '@/interfaces'
-import { calculateUserStats } from './user'
 
 /**
  * Utilitários para cálculos e filtros de usuários
@@ -28,10 +27,23 @@ export function filterUsers (
 }
 
 /**
- * Calcula estatísticas dos usuários
+ * @deprecated Use UserStatsService.getStats() instead
+ * Calcula estatísticas dos usuários localmente (mantido para compatibilidade)
  */
 export function getUserStats (users: User[]) {
-  return calculateUserStats(users)
+  const activeUsers = users.filter((u: User) => u.status === 'active')
+  const inactiveUsers = users.filter((u: User) => u.status === 'inactive')
+  const adminUsers = users.filter((u: User) => u.role === 'Admin')
+
+  return {
+    activeUsers,
+    inactiveUsers,
+    adminUsers,
+    totalUsers: users.length,
+    activeUsersCount: activeUsers.length,
+    inactiveUsersCount: inactiveUsers.length,
+    adminCount: adminUsers.length,
+  }
 }
 
 /**

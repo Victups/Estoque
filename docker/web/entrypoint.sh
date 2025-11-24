@@ -18,4 +18,3 @@ echo "Usando API base URL: ${API_URL}"
 
 echo "Iniciando Vite no modo desenvolvimento..."
 exec npm run dev -- --host 0.0.0.0 --port "${VITE_PORT:-8080}"
-

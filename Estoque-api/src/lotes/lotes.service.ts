@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, LessThanOrEqual, And } from 'typeorm';
 import { ProdutoLote } from './entities/produto-lote.entity';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
@@ -195,6 +195,38 @@ export class LotesService {
 		}
 		
 		return loteAtualizado;
+	}
+
+	async getVencendoProximo(dias: number = 30): Promise<ProdutoLote[]> {
+		const hoje = new Date();
+		hoje.setHours(0, 0, 0, 0);
+		const dataLimite = new Date(hoje);
+		dataLimite.setDate(dataLimite.getDate() + dias);
+		dataLimite.setHours(23, 59, 59, 999);
+
+		// Busca todos os lotes ativos com data de validade
+		const lotes = await this.repo.find({
+			where: {
+				ativo: true,
+			},
+			relations: ['produto', 'produto.categoria', 'produto.marca', 'localizacao'],
+			order: {
+				dataValidade: 'ASC',
+			},
+		});
+
+		// Filtra manualmente para garantir precisão
+		return lotes.filter(lote => {
+			if (!lote.dataValidade) {
+				return false;
+			}
+			const dataValidade = new Date(lote.dataValidade);
+			if (Number.isNaN(dataValidade.getTime())) {
+				return false;
+			}
+			dataValidade.setHours(0, 0, 0, 0);
+			return dataValidade >= hoje && dataValidade <= dataLimite;
+		});
 	}
 
 	async remove(id: number): Promise<void> {

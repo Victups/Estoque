@@ -54,16 +54,115 @@
               {{ error }}
             </v-alert>
 
+            <!-- Filters -->
+            <v-row class="mb-4">
+              <v-col cols="12" md="3">
+                <v-text-field
+                  v-model="filters.filtro"
+                  clearable
+                  density="comfortable"
+                  hide-details
+                  label="Buscar produto"
+                  placeholder="Nome do produto..."
+                  prepend-inner-icon="mdi-magnify"
+                  variant="outlined"
+                  @update:model-value="onFilterChange()"
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select
+                  v-model="filters.status"
+                  clearable
+                  density="comfortable"
+                  hide-details
+                  :items="statusOptions"
+                  label="Status"
+                  prepend-inner-icon="mdi-filter"
+                  variant="outlined"
+                  @update:model-value="onFilterChange()"
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select
+                  v-model="filters.id_categoria"
+                  clearable
+                  density="comfortable"
+                  hide-details
+                  :items="categoriasOptions"
+                  item-title="nome"
+                  item-value="id"
+                  label="Categoria"
+                  prepend-inner-icon="mdi-tag"
+                  variant="outlined"
+                  @update:model-value="onFilterChange()"
+                />
+              </v-col>
+              <v-col cols="12" md="2">
+                <v-select
+                  v-model="filters.id_marca"
+                  clearable
+                  density="comfortable"
+                  hide-details
+                  :items="marcasOptions"
+                  item-title="nome"
+                  item-value="id"
+                  label="Marca"
+                  prepend-inner-icon="mdi-label"
+                  variant="outlined"
+                  @update:model-value="onFilterChange()"
+                />
+              </v-col>
+              <v-col cols="12" md="3">
+                <v-row>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model.number="filters.preco_min"
+                      clearable
+                      density="comfortable"
+                      hide-details
+                      label="Preço Mín"
+                      placeholder="0.00"
+                      prefix="R$"
+                      type="number"
+                      variant="outlined"
+                      @update:model-value="onFilterChange()"
+                    />
+                  </v-col>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model.number="filters.preco_max"
+                      clearable
+                      density="comfortable"
+                      hide-details
+                      label="Preço Máx"
+                      placeholder="0.00"
+                      prefix="R$"
+                      type="number"
+                      variant="outlined"
+                      @update:model-value="onFilterChange()"
+                    />
+                  </v-col>
+                </v-row>
+              </v-col>
+            </v-row>
+
             <!-- Products Table -->
             <v-data-table
               v-if="!loading && !error"
               class="elevation-1 rounded-lg"
               :headers="headers"
               :items="displayProducts"
+              :items-per-page="filters.tamanho"
+              :items-per-page-options="[10, 20, 30, 50]"
+              :items-length="paginationData.total"
+              :page="filters.pagina"
               items-per-page-text="Produtos por página"
               :loading="loading"
               loading-text="Carregando produtos..."
               no-data-text="Nenhum produto encontrado"
+              server-items-length
+              @update:page="onPageChange"
+              @update:items-per-page="onItemsPerPageChange"
             >
               <!-- Product Name -->
               <template #[`item.nome`]="{ item }">
@@ -298,6 +397,7 @@
 <script>
   import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'
+  import { ProductService } from '@/services'
 
   export default {
     name: 'ProdutosPage',
@@ -310,8 +410,24 @@
       return {
         allProducts: [],
         allProductLots: [],
+        categorias: [],
+        marcas: [],
         loading: false,
         error: null,
+        filters: {
+          filtro: '',
+          status: undefined,
+          id_categoria: undefined,
+          id_marca: undefined,
+          preco_min: undefined,
+          preco_max: undefined,
+          pagina: 1,
+          tamanho: 20,
+        },
+        statusOptions: [
+          { title: 'Ativo', value: 'ativo' },
+          { title: 'Inativo', value: 'inativo' },
+        ],
         headers: [
           { title: 'Produto', key: 'nome', sortable: true },
           { title: 'Estoque Total', key: 'totalQuantity', sortable: true },
@@ -325,9 +441,20 @@
         deleteDialog: false,
         deleteLoading: false,
         productToDelete: null,
+        paginationData: {
+          total: 0,
+          pagina: 1,
+          totalPaginas: 0,
+        },
       }
     },
     computed: {
+      categoriasOptions () {
+        return this.categorias.map(cat => ({ id: cat.id, nome: cat.nome }))
+      },
+      marcasOptions () {
+        return this.marcas.map(marca => ({ id: marca.id, nome: marca.nome }))
+      },
       displayProducts () {
         const lotMap = new Map()
         for (const lot of this.allProductLots) {
@@ -368,32 +495,101 @@
       this.loadData()
     },
     methods: {
+      onFilterChange () {
+        // Quando um filtro muda, volta para a primeira página
+        this.filters.pagina = 1
+        this.loadData()
+      },
+      onPageChange (newPage) {
+        // Quando a página muda na tabela, atualiza e faz requisição ao backend
+        console.log('📄 Mudando de página:', this.filters.pagina, '→', newPage)
+        this.filters.pagina = newPage
+        this.loadData()
+      },
+      onItemsPerPageChange (newItemsPerPage) {
+        // Quando o tamanho da página muda na tabela, atualiza e faz requisição ao backend
+        console.log('📏 Mudando tamanho da página:', this.filters.tamanho, '→', newItemsPerPage)
+        this.filters.tamanho = newItemsPerPage
+        this.filters.pagina = 1 // Volta para a primeira página
+        this.loadData()
+      },
       async loadData (forceRefresh = false) {
-        // Verifica se já tem dados no cache
-        const cachedProducts = this.dataCache.getProducts()
-        const cachedLotes = this.dataCache.getLotes()
-
-        if (!forceRefresh && cachedProducts && cachedLotes) {
-          this.allProducts = cachedProducts
-          this.allProductLots = cachedLotes
-          return
-        }
-
-        // Carrega do cache store 
         this.loading = true
         this.error = null
 
         try {
-          const [productsData, lotsData] = await Promise.all([
-            this.dataCache.fetchProducts(forceRefresh),
-            this.dataCache.fetchLotes(forceRefresh),
-          ])
+          // Carrega categorias e marcas se necessário
+          if (this.categorias.length === 0 || forceRefresh) {
+            this.categorias = await this.dataCache.fetchCategories(forceRefresh)
+          }
+          if (this.marcas.length === 0 || forceRefresh) {
+            const { BrandService } = await import('@/services')
+            this.marcas = await BrandService.getAll()
+          }
 
-          this.allProducts = productsData
-          this.allProductLots = lotsData
+          // Carrega lotes se necessário (para cálculos de estoque)
+          if (this.allProductLots.length === 0 || forceRefresh) {
+            this.allProductLots = await this.dataCache.fetchLotes(forceRefresh)
+          }
+
+          // Busca produtos com filtros do backend
+          const filtersForBackend = {}
+
+          if (this.filters.filtro) {
+            filtersForBackend.filtro = this.filters.filtro
+          }
+          if (this.filters.status) {
+            filtersForBackend.status = this.filters.status
+          }
+          if (this.filters.id_categoria) {
+            filtersForBackend.id_categoria = this.filters.id_categoria
+          }
+          if (this.filters.id_marca) {
+            filtersForBackend.id_marca = this.filters.id_marca
+          }
+          if (this.filters.preco_min !== undefined) {
+            filtersForBackend.preco_min = this.filters.preco_min
+          }
+          if (this.filters.preco_max !== undefined) {
+            filtersForBackend.preco_max = this.filters.preco_max
+          }
+          // Sempre envia página e tamanho para garantir paginação
+          filtersForBackend.pagina = this.filters.pagina || 1
+          filtersForBackend.tamanho = this.filters.tamanho || 20
+
+          const result = await ProductService.getAllFiltered(filtersForBackend)
+          this.allProducts = result.items
+          
+          // Atualiza dados de paginação
+          if (result.total !== undefined && result.totalPaginas !== undefined) {
+            // Sincroniza com os dados retornados do backend
+            const paginaAtual = result.pagina || this.filters.pagina || 1
+            
+            this.paginationData = {
+              total: result.total,
+              pagina: paginaAtual,
+              totalPaginas: result.totalPaginas,
+            }
+            
+            // Sincroniza a página atual com o que foi retornado do backend
+            // para garantir alinhamento
+            if (this.filters.pagina !== paginaAtual) {
+              this.filters.pagina = paginaAtual
+            }
+          } else {
+            // Se não retornou paginação, assume que são todos os resultados
+            this.paginationData = {
+              total: result.items.length,
+              pagina: 1,
+              totalPaginas: 1,
+            }
+            if (this.filters.pagina !== 1) {
+              this.filters.pagina = 1
+            }
+          }
         } catch (error_) {
           console.error('Erro ao carregar produtos:', error_)
-          const errorMessage = this.getErrorMessage(error_)
+          const errorMessage = error_?.response?.data?.message || error_?.message || 'Erro desconhecido'
           this.error = errorMessage
           this.showError(`Não foi possível carregar os produtos: ${errorMessage}`)
         } finally {

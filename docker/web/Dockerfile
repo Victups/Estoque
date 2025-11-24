@@ -10,5 +10,3 @@ RUN chmod +x /usr/local/bin/entrypoint-web.sh
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint-web.sh"]
-
-

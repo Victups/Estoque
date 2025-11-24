@@ -8,6 +8,7 @@ import type {
   ProductFornecedorLink,
   ProductLoteResumo,
   ProdutoApi,
+  ProdutoLoteApi,
   UnidadeApi,
   UnitMeasure,
 } from '@/interfaces'
@@ -120,6 +121,67 @@ class ProductServiceClass {
   }
 
   /**
+   * Busca produtos com filtros e paginação aplicados no backend
+   */
+  async getAllFiltered (filters?: {
+    filtro?: string // busca por nome
+    status?: 'ativo' | 'inativo'
+    id_categoria?: number
+    id_marca?: number
+    preco_min?: number
+    preco_max?: number
+    pagina?: number
+    tamanho?: number
+  }): Promise<{ items: Product[]; total: number; pagina: number; totalPaginas: number }> {
+    const params = new URLSearchParams()
+    
+    if (filters?.filtro) {
+      params.append('filtro', filters.filtro)
+    }
+    if (filters?.status) {
+      params.append('status', filters.status)
+    }
+    if (filters?.id_categoria) {
+      params.append('id_categoria', String(filters.id_categoria))
+    }
+    if (filters?.id_marca) {
+      params.append('id_marca', String(filters.id_marca))
+    }
+    if (filters?.preco_min !== undefined) {
+      params.append('preco_min', String(filters.preco_min))
+    }
+    if (filters?.preco_max !== undefined) {
+      params.append('preco_max', String(filters.preco_max))
+    }
+    if (filters?.pagina) {
+      params.append('pagina', String(filters.pagina))
+    }
+    if (filters?.tamanho) {
+      params.append('tamanho', String(filters.tamanho))
+    }
+
+    const url = `${API_ROUTES.produtos.base}${params.toString() ? `?${params.toString()}` : ''}`
+    const { data } = await api.get<{ items: ProdutoApi[]; total: number; pagina: number; totalPaginas: number } | ProdutoApi[]>(url)
+    
+    // Verifica se é resposta paginada ou array simples
+    if (Array.isArray(data)) {
+      return {
+        items: data.map(produto => mapProductBase(produto)),
+        total: data.length,
+        pagina: 1,
+        totalPaginas: 1,
+      }
+    }
+    
+    return {
+      items: data.items.map(produto => mapProductBase(produto)),
+      total: data.total,
+      pagina: data.pagina,
+      totalPaginas: data.totalPaginas,
+    }
+  }
+
+  /**
    * Busca produtos ENRIQUECIDOS com dados dos relacionamentos
    */
   async getAllEnriched (): Promise<ProductEnriched[]> {
@@ -177,6 +239,22 @@ class ProductServiceClass {
 
   async delete (id: number): Promise<void> {
     await api.delete(API_ROUTES.produtos.byId(id))
+  }
+
+  /**
+   * Busca estoque de um produto específico
+   */
+  async getProductStock (id: number): Promise<{ totalStock: number; lotes: ProdutoLoteApi[] }> {
+    const { data } = await api.get<{ totalStock: number; lotes: ProdutoLoteApi[] }>(API_ROUTES.produtos.estoqueByProduto(id))
+    return data
+  }
+
+  /**
+   * Busca produtos com estoque baixo
+   */
+  async getLowStockProducts (): Promise<Product[]> {
+    const { data } = await api.get<ProdutoApi[]>(API_ROUTES.produtos.estoqueBaixo)
+    return data.map(produto => mapProductBase(produto))
   }
 
   async linkToSupplier (productId: number, supplierId: number, usuarioLogId?: number | null): Promise<void> {

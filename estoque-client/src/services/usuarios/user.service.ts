@@ -43,6 +43,51 @@ class UserServiceClass {
     return data.map(usuario => mapUsuario(usuario))
   }
 
+  /**
+   * Busca usuários com filtros e paginação aplicados no backend
+   */
+  async getAllFiltered (filters?: {
+    busca?: string
+    role?: 'admin' | 'gerente' | 'operador' | 'visualizador'
+    status?: 'ativo' | 'inativo'
+    pagina?: number
+    tamanho?: number
+  }): Promise<BackendUser[] | { items: BackendUser[]; total: number; pagina: number; totalPaginas: number }> {
+    const params = new URLSearchParams()
+    
+    if (filters?.busca) {
+      params.append('busca', filters.busca)
+    }
+    if (filters?.role) {
+      params.append('role', filters.role)
+    }
+    if (filters?.status) {
+      params.append('status', filters.status)
+    }
+    if (filters?.pagina) {
+      params.append('pagina', String(filters.pagina))
+    }
+    if (filters?.tamanho) {
+      params.append('tamanho', String(filters.tamanho))
+    }
+
+    const url = `${API_ROUTES.usuarios.base}${params.toString() ? `?${params.toString()}` : ''}`
+    const { data } = await api.get<UsuarioApi[] | { items: UsuarioApi[]; total: number; pagina: number; totalPaginas: number }>(url)
+    
+    // Verifica se é resposta paginada ou array simples
+    if (Array.isArray(data)) {
+      return data.map(usuario => mapUsuario(usuario))
+    }
+    
+    // Resposta paginada
+    return {
+      items: data.items.map(usuario => mapUsuario(usuario)),
+      total: data.total,
+      pagina: data.pagina,
+      totalPaginas: data.totalPaginas,
+    }
+  }
+
   async getById (id: number): Promise<BackendUser> {
     const { data } = await api.get<UsuarioApi>(API_ROUTES.usuarios.byId(id))
     return mapUsuario(data)

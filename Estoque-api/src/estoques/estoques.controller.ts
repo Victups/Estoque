@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { EstoquesService } from './estoques.service';
 import { CreateEstoqueDto } from './dto/create-estoque.dto';
 import { UpdateEstoqueDto } from './dto/update-estoque.dto';
+import { FilterEstoqueDto } from './dto/filter-estoque.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -15,8 +16,8 @@ export class EstoquesController {
   }
 
   @Get()
-  findAll() {
-    return this.estoquesService.findAll();
+  findAll(@Query() filterDto: FilterEstoqueDto) {
+    return this.estoquesService.findAll(filterDto);
   }
 
   @Get(':id')

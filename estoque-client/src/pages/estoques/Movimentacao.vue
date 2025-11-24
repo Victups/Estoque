@@ -14,11 +14,16 @@
         :search="search"
         :filter-type="filterType"
         :filter-date="filterDate"
+        :pagination-total="paginationData.total"
+        :pagination-page="paginationFilters.pagina"
+        :pagination-items-per-page="paginationFilters.tamanho"
         @refresh="loadMovements"
         @view-movement="viewMovement"
-        @update:search="search = $event"
-        @update:filterType="filterType = $event"
-        @update:filterDate="filterDate = $event"
+        @update:search="onFilterChange"
+        @update:filterType="onFilterChange"
+        @update:filterDate="onFilterChange"
+        @update:page="onPageChange"
+        @update:items-per-page="onItemsPerPageChange"
       />
     </v-container>
 
@@ -73,7 +78,7 @@
   import type { MovementDisplay, MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
   import type { VForm } from '@/interfaces/ui/form'
 import type { CreateLoteInput, LocationComplete } from '@/services'
-import { getStoredUser } from '@/services'
+import { getStoredUser, MovementService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
   import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'
@@ -100,6 +105,15 @@ import { getStoredUser } from '@/services'
         filterType: 'Todos',
         filterDate: '',
         movements: [] as MovementDisplay[],
+        paginationFilters: {
+          pagina: 1,
+          tamanho: 15,
+        },
+        paginationData: {
+          total: 0,
+          pagina: 1,
+          totalPaginas: 0,
+        },
         products: [] as Product[],
         lotes: [] as ProductLote[],
         locations: [] as LocationComplete[],
@@ -127,6 +141,22 @@ import { getStoredUser } from '@/services'
       await this.loadData()
     },
     methods: {
+      onFilterChange () {
+        // Quando um filtro muda, volta para a primeira página
+        this.paginationFilters.pagina = 1
+        this.loadMovements()
+      },
+      onPageChange (newPage) {
+        // Quando a página muda na tabela, atualiza e faz requisição ao backend
+        this.paginationFilters.pagina = newPage
+        this.loadMovements()
+      },
+      onItemsPerPageChange (newItemsPerPage) {
+        // Quando o tamanho da página muda na tabela, atualiza e faz requisição ao backend
+        this.paginationFilters.tamanho = newItemsPerPage
+        this.paginationFilters.pagina = 1 // Volta para a primeira página
+        this.loadMovements()
+      },
       async loadData (forceRefresh = false) {
         // Verifica se já tem dados no cache
         const cachedMovements = this.dataCache.getMovements()
@@ -171,7 +201,59 @@ import { getStoredUser } from '@/services'
 
       async loadMovements (forceRefresh = false) {
         try {
-          this.movements = await this.dataCache.fetchMovements(forceRefresh)
+          // Constrói filtros para o backend
+          const filters: {
+            tipo_movimento?: 'entrada' | 'saida'
+            data_inicio?: string
+            data_fim?: string
+            busca?: string
+            pagina?: number
+            tamanho?: number
+          } = {
+            pagina: this.paginationFilters.pagina || 1,
+            tamanho: this.paginationFilters.tamanho || 15,
+          }
+
+          if (this.filterType !== 'Todos') {
+            filters.tipo_movimento = this.filterType === 'Entrada' ? 'entrada' : 'saida'
+          }
+
+          if (this.filterDate) {
+            // Se é uma data específica, busca apenas nesse dia
+            const date = new Date(this.filterDate)
+            const nextDay = new Date(date)
+            nextDay.setDate(nextDay.getDate() + 1)
+            filters.data_inicio = date.toISOString().split('T')[0]
+            filters.data_fim = nextDay.toISOString().split('T')[0]
+          }
+
+          if (this.search) {
+            filters.busca = this.search
+          }
+
+          // Usa filtros do backend com paginação
+          const result = await MovementService.getAllFiltered(filters)
+          
+          // Verifica se retornou paginação ou array simples
+          if (Array.isArray(result)) {
+            this.movements = result
+            this.paginationData = {
+              total: result.length,
+              pagina: 1,
+              totalPaginas: 1,
+            }
+          } else {
+            this.movements = result.items
+            this.paginationData = {
+              total: result.total,
+              pagina: result.pagina || this.paginationFilters.pagina || 1,
+              totalPaginas: result.totalPaginas,
+            }
+            // Sincroniza página atual
+            if (this.paginationFilters.pagina !== this.paginationData.pagina) {
+              this.paginationFilters.pagina = this.paginationData.pagina
+            }
+          }
         } catch (error: any) {
           console.error('Erro ao carregar movimentações:', error)
           const message = error?.response?.data?.message || error?.message || 'Erro desconhecido'

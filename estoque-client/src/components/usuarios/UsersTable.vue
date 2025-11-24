@@ -59,10 +59,16 @@
       <v-data-table
         class="elevation-1"
         :headers="headers"
-        :items="filteredUsers"
-        :items-per-page="10"
+        :items="users"
+        :items-per-page="paginationItemsPerPage"
+        :items-per-page-options="[5, 10, 20, 30, 50]"
+        :items-length="paginationTotal"
+        :page="paginationPage"
         :loading="loading"
         loading-text="Carregando usuários..."
+        server-items-length
+        @update:page="onPageChange"
+        @update:items-per-page="onItemsPerPageChange"
       >
         <template #item.avatar="{ item }">
           <v-avatar :color="item.avatarColor" size="45">
@@ -154,7 +160,7 @@
 <script lang="ts">
   import type { User } from '@/interfaces'
   import { getRoleColor, getRoleIcon } from '@/utils/tramposes'
-  import { filterUsers, roleFilterOptions, statusFilterOptions, userTableHeaders } from '@/utils/tramposes/userFilters'
+  import { roleFilterOptions, statusFilterOptions, userTableHeaders } from '@/utils/tramposes/userFilters'
 
   export default {
     name: 'UsersTable',
@@ -179,8 +185,20 @@
         type: String,
         default: 'Todos',
       },
+      paginationTotal: {
+        type: Number,
+        default: 0,
+      },
+      paginationPage: {
+        type: Number,
+        default: 1,
+      },
+      paginationItemsPerPage: {
+        type: Number,
+        default: 10,
+      },
     },
-    emits: ['update:search', 'update:filterRole', 'update:filterStatus', 'refresh', 'view', 'edit', 'delete'],
+    emits: ['update:search', 'update:filterRole', 'update:filterStatus', 'refresh', 'view', 'edit', 'delete', 'update:page', 'update:items-per-page'],
     data () {
       return {
         searchLocal: this.search,
@@ -190,11 +208,6 @@
         roleFilterOptions,
         statusFilterOptions,
       }
-    },
-    computed: {
-      filteredUsers (): User[] {
-        return filterUsers(this.users, this.searchLocal, this.filterRoleLocal, this.filterStatusLocal)
-      },
     },
     watch: {
       search (newVal) {
@@ -214,6 +227,12 @@
       onFiltersChange () {
         this.$emit('update:filterRole', this.filterRoleLocal)
         this.$emit('update:filterStatus', this.filterStatusLocal)
+      },
+      onPageChange (newPage: number) {
+        this.$emit('update:page', newPage)
+      },
+      onItemsPerPageChange (newItemsPerPage: number) {
+        this.$emit('update:items-per-page', newItemsPerPage)
       },
       getRoleColor,
       getRoleIcon,

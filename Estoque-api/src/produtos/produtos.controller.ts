@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
+import { FilterProdutoDto } from './dto/filter-produto.dto';
 
 @Controller('produtos')
 export class ProdutosController {
@@ -13,8 +14,18 @@ export class ProdutosController {
   }
 
   @Get()
-  findAll() {
-    return this.produtosService.findAll();
+  findAll(@Query() filterDto: FilterProdutoDto) {
+    return this.produtosService.findAll(filterDto);
+  }
+
+  @Get('estoque-baixo')
+  getEstoqueBaixo() {
+    return this.produtosService.getEstoqueBaixo();
+  }
+
+  @Get(':id/estoque')
+  getEstoqueByProdutoId(@Param('id') id: string) {
+    return this.produtosService.getEstoqueByProdutoId(+id);
   }
 
   @Get(':id')

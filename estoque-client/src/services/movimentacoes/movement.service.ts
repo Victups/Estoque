@@ -85,19 +85,90 @@ class MovementServiceClass {
     return data.map(registro => mapMovementDisplay(registro))
   }
 
+  /**
+   * Busca movimentações com filtros aplicados no backend
+   */
+  async getAllFiltered (filters?: {
+    id_produto?: number
+    tipo_movimento?: MovementType
+    id_usuario?: number
+    data_inicio?: string
+    data_fim?: string
+    quantidade_min?: number
+    quantidade_max?: number
+    busca?: string
+    pagina?: number
+    tamanho?: number
+  }): Promise<MovementDisplay[] | { items: MovementDisplay[]; total: number; pagina: number; totalPaginas: number }> {
+    const params = new URLSearchParams()
+    
+    if (filters?.id_produto) {
+      params.append('id_produto', String(filters.id_produto))
+    }
+    if (filters?.tipo_movimento) {
+      params.append('tipo_movimento', filters.tipo_movimento)
+    }
+    if (filters?.id_usuario) {
+      params.append('id_usuario', String(filters.id_usuario))
+    }
+    if (filters?.data_inicio) {
+      params.append('data_inicio', filters.data_inicio)
+    }
+    if (filters?.data_fim) {
+      params.append('data_fim', filters.data_fim)
+    }
+    if (filters?.quantidade_min !== undefined) {
+      params.append('quantidade_min', String(filters.quantidade_min))
+    }
+    if (filters?.quantidade_max !== undefined) {
+      params.append('quantidade_max', String(filters.quantidade_max))
+    }
+    if (filters?.busca) {
+      params.append('busca', filters.busca)
+    }
+    if (filters?.pagina) {
+      params.append('pagina', String(filters.pagina))
+    }
+    if (filters?.tamanho) {
+      params.append('tamanho', String(filters.tamanho))
+    }
+
+    const url = `${API_ROUTES.estoques.base}${params.toString() ? `?${params.toString()}` : ''}`
+    const { data } = await api.get<RegistroMovimentacaoApi[] | { items: RegistroMovimentacaoApi[]; total: number; pagina: number; totalPaginas: number }>(url)
+    
+    // Verifica se é resposta paginada ou array simples
+    if (Array.isArray(data)) {
+      return data.map(registro => mapMovementDisplay(registro))
+    }
+    
+    // Resposta paginada
+    return {
+      items: data.items.map(registro => mapMovementDisplay(registro)),
+      total: data.total,
+      pagina: data.pagina,
+      totalPaginas: data.totalPaginas,
+    }
+  }
+
   async getById (id: number): Promise<MovementDisplay> {
     const { data } = await api.get<RegistroMovimentacaoApi>(API_ROUTES.estoques.byId(id))
     return mapMovementDisplay(data)
   }
 
+  /**
+   * @deprecated Use getAllFiltered({ id_produto }) instead
+   */
   async getByProduct (productId: number): Promise<MovementDisplay[]> {
-    const movements = await this.getAllEnriched()
-    return movements.filter(movement => movement.id_produto === productId)
+    const result = await this.getAllFiltered({ id_produto: productId })
+    return Array.isArray(result) ? result : result.items
   }
 
+  /**
+   * @deprecated Use getAllFiltered({ tipo_movimento }) instead
+   */
   async getByType (type: MovementType): Promise<MovementDisplay[]> {
-    const movements = await this.getAllEnriched()
-    return movements.filter(movement => movement.tipo_movimento === type)
+    const result = await this.getAllFiltered({ tipo_movimento: type })
+    return Array.isArray(result) ? result : result.items
   }
 
   async create (movementData: {
@@ -120,9 +191,7 @@ class MovementServiceClass {
       quantidade: movementData.quantidade,
       tipo_movimento: movementData.tipo_movimento,
       preco_unitario: movementData.preco_unitario,
-      valor_total: movementData.preco_unitario === undefined
-        ? undefined
-        : Number((movementData.preco_unitario * movementData.quantidade).toFixed(2)),
+      // valor_total agora é calculado automaticamente pelo backend
       observacao: movementData.observacao,
       id_localizacao: movementData.id_localizacao ?? undefined,
       id_localizacao_origem: movementData.id_localizacao_origem ?? undefined,

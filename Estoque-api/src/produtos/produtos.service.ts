@@ -1,16 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like, Between } from 'typeorm';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 import { Produto } from './entities/produto.entity';
+import { ProdutoLote } from '../lotes/entities/produto-lote.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { FilterProdutoDto, ProdutoStatus } from './dto/filter-produto.dto';
 
 @Injectable()
 export class ProdutosService {
   constructor(
     @InjectRepository(Produto)
     private readonly repo: Repository<Produto>,
+    @InjectRepository(ProdutoLote)
+    private readonly loteRepo: Repository<ProdutoLote>,
     private readonly auditoriaService: AuditoriaService,
   ) {}
 
@@ -65,9 +69,73 @@ export class ProdutosService {
     return produtoSalvo;
   }
 
-  async findAll(): Promise<Produto[]> {
+  async findAll(filterDto?: FilterProdutoDto): Promise<Produto[] | { items: Produto[]; total: number; pagina: number; totalPaginas: number }> {
     try {
+      const where: any = {};
+      
+      // Filtro por nome/código
+      if (filterDto?.filtro) {
+        where.nome = Like(`%${filterDto.filtro}%`);
+      }
+
+      // Filtro por status
+      if (filterDto?.status && filterDto.status !== ProdutoStatus.TODOS) {
+        where.ativo = filterDto.status === ProdutoStatus.ATIVO;
+      }
+
+      // Filtro por categoria
+      if (filterDto?.id_categoria) {
+        where.categoria = { id: filterDto.id_categoria };
+      }
+
+      // Filtro por marca
+      if (filterDto?.id_marca) {
+        where.marca = { id: filterDto.id_marca };
+      }
+
+      // Se houver paginação ou filtros, retorna resposta paginada
+      if (filterDto?.pagina || filterDto?.tamanho || filterDto?.filtro || filterDto?.status) {
+        const pagina = filterDto.pagina || 1;
+        const tamanho = filterDto.tamanho || 20;
+        const skip = (pagina - 1) * tamanho;
+
+        const [items, total] = await this.repo.findAndCount({
+          where,
+          relations: [
+            'unidadeMedida',
+            'marca',
+            'categoria',
+            'responsavelCadastro',
+            'usuarioLog',
+          ],
+          skip,
+          take: tamanho,
+          order: { id: 'ASC' },
+        });
+
+        // Aplicar filtro de preço em memória (se necessário, pode ser movido para query)
+        let produtosFiltrados = items;
+        if (filterDto.preco_min !== undefined || filterDto.preco_max !== undefined) {
+          produtosFiltrados = items.filter(produto => {
+            // TODO: Implementar cálculo de preço do produto quando houver campo de preço
+            // Por enquanto retorna todos
+            return true;
+          });
+        }
+
+        const totalPaginas = Math.ceil(total / tamanho);
+
+        return {
+          items: produtosFiltrados,
+          total,
+          pagina,
+          totalPaginas,
+        };
+      }
+
+      // Retorno simples sem paginação (compatibilidade com código existente)
       return await this.repo.find({
+        where,
         relations: [
           'unidadeMedida',
           'marca',
@@ -75,6 +143,7 @@ export class ProdutosService {
           'responsavelCadastro',
           'usuarioLog',
         ],
+        order: { id: 'ASC' },
       });
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);
@@ -104,6 +173,57 @@ export class ProdutosService {
     }
     
     return produto;
+  }
+
+  async getEstoqueByProdutoId(id: number): Promise<{ estoqueTotal: number; lotes: any[] }> {
+    const produto = await this.findOne(id);
+    
+    const lotes = await this.loteRepo.find({
+      where: {
+        produto: { id },
+        ativo: true,
+      },
+      relations: ['localizacao'],
+    });
+    
+    const estoqueTotal = lotes.reduce((sum, lote) => {
+      return sum + (Number(lote.quantidade) || 0);
+    }, 0);
+    
+    return {
+      estoqueTotal,
+      lotes: lotes.map(lote => ({
+        id: lote.id,
+        codigo_lote: lote.codigoLote,
+        quantidade: Number(lote.quantidade) || 0,
+        custo_unitario: lote.custoUnitario ? Number(lote.custoUnitario) : null,
+        data_validade: lote.dataValidade,
+        localizacao: lote.localizacao,
+      })),
+    };
+  }
+
+  async getEstoqueBaixo(): Promise<Produto[]> {
+    const produtos = await this.repo.find({
+      where: { ativo: true },
+      relations: ['lotes', 'unidadeMedida', 'marca', 'categoria'],
+    });
+    
+    const lotes = await this.loteRepo.find({
+      where: { ativo: true },
+      relations: ['produto'],
+    });
+    
+    const produtosComEstoqueBaixo = produtos.filter(produto => {
+      const productLotes = lotes.filter(l => l.produto?.id === produto.id);
+      const totalQty = productLotes.reduce((sum, l) => {
+        return sum + (Number(l.quantidade) || 0);
+      }, 0);
+      const estoqueMinimo = Number(produto.estoqueMinimo) || 0;
+      return totalQty < estoqueMinimo;
+    });
+    
+    return produtosComEstoqueBaixo;
   }
 
   async update(id: number, updateProdutoDto: UpdateProdutoDto): Promise<Produto> {

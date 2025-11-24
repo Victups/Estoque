@@ -22,6 +22,8 @@ export {
 } from './produtos/product.service'
 
 export type { ProductDetail, ProductEnriched, ProductFornecedorLink, ProductLoteResumo } from './produtos/product.service'
+export { DashboardService, type DashboardStats } from './dashboards/dashboard.service'
+export { UserStatsService, type UserStats } from './usuarios/user.stats.service'
 
 // Serviços de lotes
 export { LoteService } from './lotes/lote.service'

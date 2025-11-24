@@ -224,9 +224,9 @@
   import GraficoBarrasCompleto from '@/components/dashboards/GraficoBarrasCompleto.vue'
   import ReportsStatsCards from '@/components/dashboards/ReportsStatsCards.vue'
   import FiltrosRelatorios from '@/components/shared/FiltrosRelatorios.vue'
+  import { DashboardService } from '@/services'
   import { useDataCacheStore } from '@/stores/dataCache'
   import {
-    calculateStockStats,
     getTopLowStockProducts,
     prepareDonutChartData,
     prepareLowStockChartOptions,
@@ -257,6 +257,13 @@
         categories: [] as Category[],
         movements: [] as StockMovement[],
         lotes: [] as ProductLote[],
+        stockStats: {
+          totalProducts: 0,
+          totalStock: 0,
+          totalValue: 0,
+          productsNearExpiration: 0,
+          lowStockProducts: 0,
+        },
         movementsChartOptions: {
           colors: ['#4CAF50', '#F44336'],
           chart: {
@@ -300,9 +307,6 @@
       }
     },
     computed: {
-      stockStats () {
-        return calculateStockStats(this.products, this.lotes)
-      },
       donutChartData () {
         return prepareDonutChartData(this.products, this.categories)
       },
@@ -339,25 +343,28 @@
     },
     methods: {
       async loadData (forceRefresh = false) {
-        // Verifica se já tem dados no cache
-        const cachedProducts = this.dataCache.getProducts()
-        const cachedCategories = this.dataCache.getCategories()
-        const cachedMovements = this.dataCache.getMovements()
-        const cachedLotes = this.dataCache.getLotes()
-
-        // Se tem dados válidos no cache e não é refresh forçado, usa do cache
-        if (!forceRefresh && cachedProducts && cachedCategories && cachedMovements && cachedLotes) {
-          this.products = cachedProducts
-          this.categories = cachedCategories
-          this.movements = cachedMovements as any[]
-          this.lotes = cachedLotes
-          this.loading = false
-          return
-        }
-
-        // Carrega do cache store (que vai buscar da API se necessário)
         this.loading = true
         try {
+          // Carrega estatísticas do backend
+          this.stockStats = await DashboardService.getStats()
+
+          // Verifica se já tem dados no cache
+          const cachedProducts = this.dataCache.getProducts()
+          const cachedCategories = this.dataCache.getCategories()
+          const cachedMovements = this.dataCache.getMovements()
+          const cachedLotes = this.dataCache.getLotes()
+
+          // Se tem dados válidos no cache e não é refresh forçado, usa do cache
+          if (!forceRefresh && cachedProducts && cachedCategories && cachedMovements && cachedLotes) {
+            this.products = cachedProducts
+            this.categories = cachedCategories
+            this.movements = cachedMovements as any[]
+            this.lotes = cachedLotes
+            this.loading = false
+            return
+          }
+
+          // Carrega do cache store (que vai buscar da API se necessário)
           const [productsData, categoriesData, movementsData, lotesData] = await Promise.all([
             this.dataCache.fetchProducts(forceRefresh),
             this.dataCache.fetchCategories(forceRefresh),

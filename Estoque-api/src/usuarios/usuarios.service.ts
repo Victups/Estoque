@@ -130,4 +130,28 @@ export class UsuariosService {
     
     await this.repo.remove(usuario);
   }
+
+  /**
+   * Retorna estatísticas dos usuários do sistema
+   */
+  async getStats(): Promise<{
+    totalUsers: number;
+    activeUsersCount: number;
+    inactiveUsersCount: number;
+    adminCount: number;
+  }> {
+    const usuarios = await this.repo.find();
+    
+    const activeUsers = usuarios.filter(u => u.ativo !== false);
+    const inactiveUsers = usuarios.filter(u => u.ativo === false);
+    const adminUsers = usuarios.filter(u => u.role === 'admin');
+    
+    return {
+      totalUsers: usuarios.length,
+      activeUsersCount: activeUsers.length,
+      inactiveUsersCount: inactiveUsers.length,
+      adminCount: adminUsers.length,
+    };
+  }
+
 }
