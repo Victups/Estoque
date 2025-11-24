@@ -792,7 +792,8 @@
   import type { BackendUser, Contact, Municipality, State, User, UserRole } from '@/interfaces'
   import { defineComponent } from 'vue'
   import { useUnauthorized } from '@/composables/useUnauthorized'
-  import { ContactService, MunicipalityService, UfService, UserService } from '@/services'
+  import { ContactService, MunicipalityService, UserService } from '@/services'
+  import { useUsersCacheStore } from '@/stores/usersCache'
   import { useAuthStore } from '@/stores/auth'
   import { userRules } from '@/utils/rules'
   import { getRoleColor, getRoleIcon, mapBackendToUser, mapUserRoleToBackendRole } from '@/utils/tramposes/user'
@@ -825,7 +826,8 @@
     name: 'UserManagementPage',
     setup () {
       const { showUnauthorized } = useUnauthorized()
-      return { showUnauthorized }
+      const usersCache = useUsersCacheStore()
+      return { showUnauthorized, usersCache }
     },
     data () {
       return {
@@ -927,13 +929,18 @@
       },
     },
     mounted () {
-      this.fetchUsers()
-      this.loadUfs()
+      this.loadData()
     },
     methods: {
-      async loadUfs () {
+      async loadData (forceRefresh = false) {
+        await Promise.all([
+          this.fetchUsers(forceRefresh),
+          this.loadUfs(forceRefresh),
+        ])
+      },
+      async loadUfs (forceRefresh = false) {
         try {
-          this.ufs = await UfService.getAll()
+          this.ufs = await this.usersCache.fetchUfs(forceRefresh)
         } catch (error) {
           console.error('Erro ao carregar UFs:', error)
         }
@@ -1002,10 +1009,18 @@
           }
         }
       },
-      async fetchUsers () {
+      async fetchUsers (forceRefresh = false) {
+        // Verifica se já tem dados no cache
+        const cachedUsers = this.usersCache.getUsers()
+        if (!forceRefresh && cachedUsers) {
+          this.users = cachedUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
+          this.loading = false
+          return
+        }
+
         this.loading = true
         try {
-          const backendUsers = await UserService.getAll()
+          const backendUsers = await this.usersCache.fetchUsers(forceRefresh)
           this.users = backendUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
           this.snackbarText = 'Usuários carregados com sucesso!'
           this.snackbarColor = 'success'
@@ -1066,7 +1081,9 @@
           this.changePassword = false
           this.newPassword = ''
           this.confirmPassword = ''
-          await this.fetchUsers()
+          // Invalida cache e força refresh após criar/atualizar/remover
+          this.usersCache.invalidateAfterUserMutation()
+          await this.fetchUsers(true)
         } catch (error) {
           console.error('Erro ao atualizar usuário:', error)
           this.snackbarText = 'Erro ao atualizar usuário'
@@ -1095,7 +1112,9 @@
           this.snackbarText = `Usuário ${this.selectedUser.name} ${activating ? 'ativado' : 'inativado'} com sucesso!`
           this.snackbarColor = 'success'
           this.snackbar = true
-          await this.fetchUsers()
+          // Invalida cache e força refresh após criar/atualizar/remover
+          this.usersCache.invalidateAfterUserMutation()
+          await this.fetchUsers(true)
         } catch (error) {
           console.error('Erro ao alterar status do usuário:', error)
           this.snackbarText = 'Erro ao alterar status do usuário'

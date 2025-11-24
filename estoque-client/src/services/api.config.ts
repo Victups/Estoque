@@ -72,15 +72,15 @@ api.interceptors.response.use(
         clearSession()
       }
     } else if (error.request) {
-      // Erro sem resposta do servidor (servidor não respondeu)
-      console.error('Erro de rede - servidor não respondeu:', {
+
+      console.error('Erro de rede', {
         url: error.config?.url,
         baseURL: error.config?.baseURL,
         message: error.message,
       })
     } else {
       // Erro na configuração da requisição
-      console.error('Erro na configuração da requisição:', error.message)
+      console.error('Erro na requisição:', error.message)
     }
     return Promise.reject(error)
   },

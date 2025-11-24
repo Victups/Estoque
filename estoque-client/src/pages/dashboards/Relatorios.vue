@@ -20,7 +20,7 @@
             color="primary"
             prepend-icon="mdi-refresh"
             variant="elevated"
-            @click="loadData"
+            @click="loadData(true)"
           >
             Atualizar
           </v-btn>
@@ -224,7 +224,7 @@
   import GraficoBarrasCompleto from '@/components/dashboards/GraficoBarrasCompleto.vue'
   import ReportsStatsCards from '@/components/dashboards/ReportsStatsCards.vue'
   import FiltrosRelatorios from '@/components/shared/FiltrosRelatorios.vue'
-  import { CategoryService, LoteService, MovementService, ProductService } from '@/services'
+  import { useDataCacheStore } from '@/stores/dataCache'
   import {
     calculateStockStats,
     getTopLowStockProducts,
@@ -237,6 +237,10 @@
   } from '@/utils/tramposes/reports'
 
   export default {
+    setup () {
+      const dataCache = useDataCacheStore()
+      return { dataCache }
+    },
     name: 'RelatoriosPage',
     components: {
       VueApexCharts,
@@ -334,19 +338,36 @@
       this.loadData()
     },
     methods: {
-      async loadData () {
+      async loadData (forceRefresh = false) {
+        // Verifica se já tem dados no cache
+        const cachedProducts = this.dataCache.getProducts()
+        const cachedCategories = this.dataCache.getCategories()
+        const cachedMovements = this.dataCache.getMovements()
+        const cachedLotes = this.dataCache.getLotes()
+
+        // Se tem dados válidos no cache e não é refresh forçado, usa do cache
+        if (!forceRefresh && cachedProducts && cachedCategories && cachedMovements && cachedLotes) {
+          this.products = cachedProducts
+          this.categories = cachedCategories
+          this.movements = cachedMovements as any[]
+          this.lotes = cachedLotes
+          this.loading = false
+          return
+        }
+
+        // Carrega do cache store (que vai buscar da API se necessário)
         this.loading = true
         try {
           const [productsData, categoriesData, movementsData, lotesData] = await Promise.all([
-            ProductService.getAll(),
-            CategoryService.getAll(),
-            MovementService.getAll(),
-            LoteService.getAll(),
+            this.dataCache.fetchProducts(forceRefresh),
+            this.dataCache.fetchCategories(forceRefresh),
+            this.dataCache.fetchMovements(forceRefresh),
+            this.dataCache.fetchLotes(forceRefresh),
           ])
 
           this.products = productsData
           this.categories = categoriesData
-          this.movements = movementsData
+          this.movements = movementsData as any[]
           this.lotes = lotesData
 
           console.log('📊 Dados carregados:', {

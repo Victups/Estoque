@@ -400,43 +400,7 @@
           this.loading = false
         }
       },
-      getErrorMessage (error) {
-        const errorData = error?.response?.data
-        
-        // Tenta extrair mensagem do backend primeiro
-        if (errorData?.message) {
-          return `Erro do servidor: ${errorData.message}`
-        }
-        
-        if (errorData?.error) {
-          // NestJS geralmente retorna erro assim: { statusCode: 500, message: "...", error: "..." }
-          if (typeof errorData.message === 'string') {
-            return `Erro do servidor: ${errorData.message}`
-          }
-          if (typeof errorData.error === 'string') {
-            return `Erro: ${errorData.error}`
-          }
-        }
-        
-        // Mensagens genéricas por código de status
-        if (error?.response?.status === 500) {
-          return 'Erro interno do servidor. Verifique os logs do backend ou se o banco de dados está conectado.'
-        }
-        if (error?.response?.status === 404) {
-          return 'Recurso não encontrado. Verifique a configuração da API.'
-        }
-        if (error?.response?.status === 401) {
-          return 'Não autorizado. Faça login novamente.'
-        }
-        if (error?.response?.status === 403) {
-          return 'Acesso negado. Você não tem permissão para acessar este recurso.'
-        }
-        if (error?.request && !error?.response) {
-          return 'Erro de conexão. Verifique sua conexão com a internet e se o servidor está rodando na porta 3005.'
-        }
-        
-        return error?.message || 'Erro desconhecido ao conectar com o servidor.'
-      },
+      
       getStatusColor (status) {
         switch (status) {
           case 'Estoque Baixo': {

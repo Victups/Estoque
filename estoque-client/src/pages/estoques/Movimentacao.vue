@@ -80,9 +80,9 @@
 <script lang="ts">
   import type { MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
   import type { CreateLoteInput, LocationComplete } from '@/services'
-  import { LocationService, LoteService, MovementService, ProductService } from '@/services'
   import { getStoredUser } from '@/services/auth.storage'
   import { useAuthStore } from '@/stores/auth'
+  import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'
 
  
@@ -99,7 +99,8 @@
     mixins: [snackbarMixin],
     setup () {
       const authStore = useAuthStore()
-      return { authStore }
+      const dataCache = useDataCacheStore()
+      return { authStore, dataCache }
     },
     data () {
       return {
@@ -112,11 +113,11 @@
         search: '',
         filterType: 'Todos',
         filterDate: '',
-        movements: [] as StockMovementEnriched[],
+        movements: [] as MovementDisplay[],
         products: [] as Product[],
         lotes: [] as ProductLote[],
         locations: [] as LocationComplete[],
-        selectedMovement: null as StockMovementEnriched | null,
+        selectedMovement: null as MovementDisplay | null,
         selectedProduct: null as Product | null,
         selectedLote: null as ProductLote | null,
         formData: {
@@ -138,104 +139,102 @@
     },
     computed: {
       entradasCount (): number {
-        return this.movements.filter((m: StockMovementEnriched) => m.tipo_movimento === 'entrada').length
+        return this.movements.filter((m: MovementDisplay) => m.tipo_movimento === 'entrada').length
       },
       saidasCount (): number {
-        return this.movements.filter((m: StockMovementEnriched) => m.tipo_movimento === 'saida').length
+        return this.movements.filter((m: MovementDisplay) => m.tipo_movimento === 'saida').length
       },
       hojeMov (): number {
         const hoje = new Date().toISOString().split('T')[0]
         if (!hoje) return 0
-        return this.movements.filter((m: StockMovementEnriched) =>
+        return this.movements.filter((m: MovementDisplay) =>
           m.data_mov.startsWith(hoje),
         ).length
       },
     },
     async mounted () {
-      await Promise.all([
-        this.loadMovements(),
-        this.loadProducts(),
-        this.loadLotes(),
-        this.loadLocations(),
-      ])
+      await this.loadData()
     },
     methods: {
+      async loadData (forceRefresh = false) {
+        // Verifica se já tem dados no cache
+        const cachedMovements = this.dataCache.getMovements()
+        const cachedProducts = this.dataCache.getProducts()
+        const cachedLotes = this.dataCache.getLotes()
+        const cachedLocations = this.dataCache.getLocations()
+
+        // Se tem dados válidos no cache e não é refresh forçado, usa do cache
+        if (!forceRefresh && cachedMovements && cachedProducts && cachedLotes) {
+          this.movements = cachedMovements
+          this.products = cachedProducts
+          this.lotes = cachedLotes
+          
+          // Localizações podem variar por UF, então sempre verifica
+          if (cachedLocations) {
+            this.locations = cachedLocations
+          } else {
+            await this.loadLocations(forceRefresh)
+          }
+          return
+        }
+
+        // Carrega do cache store (que vai buscar da API se necessário)
+        this.loading = true
+        try {
+          await Promise.all([
+            this.loadMovements(forceRefresh),
+            this.loadProducts(forceRefresh),
+            this.loadLotes(forceRefresh),
+            this.loadLocations(forceRefresh),
+          ])
+        } finally {
+          this.loading = false
+        }
+      },
       formatBRLFromCents (cents: number): string {
         const value = (cents / 100).toFixed(2)
         const [ints = '0', decs = '00'] = value.split('.')
         const intsFormatted = ints.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
         return `${intsFormatted},${decs}`
       },
-      getErrorMessage (error: any): string {
-        const errorData = error?.response?.data
-        
-        // Tenta extrair mensagem do backend primeiro
-        if (errorData?.message) {
-          return `Erro do servidor: ${errorData.message}`
-        }
-        
-        if (errorData?.error) {
-          // NestJS geralmente retorna erro assim: { statusCode: 500, message: "...", error: "..." }
-          if (typeof errorData.message === 'string') {
-            return `Erro do servidor: ${errorData.message}`
-          }
-          if (typeof errorData.error === 'string') {
-            return `Erro: ${errorData.error}`
-          }
-        }
-        
-        // Mensagens genéricas por código de status
-        if (error?.response?.status === 500) {
-          return 'Erro interno do servidor. Verifique os logs do backend ou se o banco de dados está conectado.'
-        }
-        if (error?.response?.status === 404) {
-          return 'Recurso não encontrado. Verifique a configuração da API.'
-        }
-        if (error?.response?.status === 401) {
-          return 'Não autorizado. Faça login novamente.'
-        }
-        if (error?.response?.status === 403) {
-          return 'Acesso negado. Você não tem permissão para acessar este recurso.'
-        }
-        if (error?.request && !error?.response) {
-          return 'Erro de conexão. Verifique sua conexão com a internet e se o servidor está rodando na porta 3005.'
-        }
-        
-        return error?.message || 'Erro desconhecido ao conectar com o servidor.'
-      },
-      async loadMovements () {
-        this.loading = true
+
+      async loadMovements (forceRefresh = false) {
         try {
-          this.movements = await MovementService.getAllEnriched()
+          this.movements = await this.dataCache.fetchMovements(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar movimentações:', error)
           const message = this.getErrorMessage(error)
           this.showError(`Erro ao carregar movimentações: ${message}`)
-        } finally {
-          this.loading = false
         }
       },
-      async loadProducts () {
+      async loadProducts (forceRefresh = false) {
         try {
-          this.products = await ProductService.getAll()
+          this.products = await this.dataCache.fetchProducts(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar produtos:', error)
           const message = this.getErrorMessage(error)
           this.showError(`Erro ao carregar produtos: ${message}`)
         }
       },
-      async loadLotes () {
+      async loadLotes (forceRefresh = false) {
         try {
-          this.lotes = await LoteService.getAll()
+          this.lotes = await this.dataCache.fetchLotes(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar lotes:', error)
           const message = this.getErrorMessage(error)
           this.showError(`Erro ao carregar lotes: ${message}`)
         }
       },
-      async loadLocations () {
+      async loadLocations (forceRefresh = false) {
         try {
-          this.locations = await LocationService.getAllComplete(this.authStore.ufId)
+          const { LocationService } = await import('@/services')
+          // Verifica se já tem no cache para a mesma UF
+          const cached = this.dataCache.getLocations()
+          if (!forceRefresh && cached && this.dataCache.locationsUfId === this.authStore.ufId) {
+            this.locations = cached
+            return
+          }
+          this.locations = await this.dataCache.fetchLocations(this.authStore.ufId, forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar localizações:', error)
           const message = this.getErrorMessage(error)
@@ -349,6 +348,7 @@
               ativo: true,
             }
 
+            const { LoteService } = await import('@/services')
             const novoLoteCriado = await LoteService.create(payload)
             loteId = novoLoteCriado.id
             this.lotes.push(novoLoteCriado)
@@ -366,6 +366,7 @@
             ? data.id_localizacao_destino
             : data.id_localizacao_origem
 
+          const { MovementService } = await import('@/services')
           await MovementService.create({
             id_produto: data.id_produto,
             id_lote: loteId,
@@ -380,13 +381,19 @@
             usuario_log_id: idUsuario,
           })
 
+          // Invalida cache após criar movimentação
+          this.dataCache.invalidateAfterMutation('movement')
+          if (this.usarNovoLote || data.id_lote === 'novo') {
+            this.dataCache.invalidateAfterMutation('lote')
+          }
+
           this.showSuccess(
             `${this.dialogType === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`,
           )
 
           this.createDialog = false
           this.resetForm()
-          await this.loadMovements()
+          await this.loadMovements(true) // Força refresh após salvar
         } catch (error) {
           console.error('Erro ao salvar movimentação:', error)
           this.showError('Erro ao salvar movimentação')
@@ -394,7 +401,7 @@
           this.saving = false
         }
       },
-      viewMovement (movement: StockMovementEnriched) {
+      viewMovement (movement: MovementDisplay) {
         this.selectedMovement = movement
         this.viewDialog = true
       },
