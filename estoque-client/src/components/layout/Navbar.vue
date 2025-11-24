@@ -250,11 +250,12 @@
             icon: 'mdi-account-group',
             to: '/usuarios',
           },
-          {
-            title: 'Relatórios',
-            icon: 'mdi-chart-line',
-            to: '/relatorios',
-          },
+          // Item de menu de relatórios ocultado temporariamente
+          // {
+          //   title: 'Relatórios',
+          //   icon: 'mdi-chart-line',
+          //   to: '/relatorios',
+          // },
         ],
       }
     },

@@ -7,7 +7,6 @@ interface CacheItem<T> {
   timestamp: number
 }
 
-// Cache de 5 minutos (300000ms)
 const CACHE_DURATION = 5 * 60 * 1000
 
 function isCacheValid (timestamp: number): boolean {
@@ -16,12 +15,12 @@ function isCacheValid (timestamp: number): boolean {
 
 export const useUsersCacheStore = defineStore('usersCache', {
   state: () => ({
-    // Cache de usuários
+ 
     users: null as CacheItem<User[]> | null,
     usersLoading: false,
     usersError: null as string | null,
 
-    // Cache de UFs
+  
     ufs: null as CacheItem<any[]> | null,
     ufsLoading: false,
     ufsError: null as string | null,
@@ -37,7 +36,7 @@ export const useUsersCacheStore = defineStore('usersCache', {
   },
 
   actions: {
-    // ========== USUÁRIOS ==========
+  
     async fetchUsers (forceRefresh = false): Promise<User[]> {
       if (!forceRefresh && this.hasValidUsers && this.users) {
         return this.users.data
@@ -70,7 +69,7 @@ export const useUsersCacheStore = defineStore('usersCache', {
       this.usersError = null
     },
 
-    // ========== UFs ==========
+  
     async fetchUfs (forceRefresh = false): Promise<any[]> {
       if (!forceRefresh && this.hasValidUfs && this.ufs) {
         return this.ufs.data
@@ -103,7 +102,7 @@ export const useUsersCacheStore = defineStore('usersCache', {
       this.ufsError = null
     },
 
-    // Invalida cache de usuários quando há mudanças
+   
     invalidateAfterUserMutation () {
       this.invalidateUsers()
     },

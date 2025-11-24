@@ -7,7 +7,7 @@ interface CacheItem<T> {
   timestamp: number
 }
 
-// Cache de 5 minutos (300000ms)
+
 const CACHE_DURATION = 5 * 60 * 1000
 
 function isCacheValid (timestamp: number): boolean {
@@ -16,26 +16,26 @@ function isCacheValid (timestamp: number): boolean {
 
 export const useDataCacheStore = defineStore('dataCache', {
   state: () => ({
-    // Cache de produtos
+ 
     products: null as CacheItem<Product[]> | null,
     productsLoading: false,
     productsError: null as string | null,
 
-    // Cache de lotes
+    
     lotes: null as CacheItem<ProductLote[]> | null,
     lotesLoading: false,
     lotesError: null as string | null,
 
-    // Cache de movimentações (usando MovementDisplay que é o tipo retornado por getAllEnriched)
+   
     movements: null as CacheItem<MovementDisplay[]> | null,
     movementsLoading: false,
     movementsError: null as string | null,
 
-    // Cache de categorias
+
     categories: null as CacheItem<any[]> | null,
     categoriesLoading: false,
 
-    // Cache de localizações (por UF)
+  
     locations: null as CacheItem<any[]> | null,
     locationsLoading: false,
     locationsUfId: null as number | null,
@@ -60,9 +60,9 @@ export const useDataCacheStore = defineStore('dataCache', {
   },
 
   actions: {
-    // ========== PRODUTOS ==========
+  
     async fetchProducts (forceRefresh = false): Promise<Product[]> {
-      // Se já tem dados válidos no cache e não é refresh forçado, retorna do cache
+     
       if (!forceRefresh && this.hasValidProducts && this.products) {
         return this.products.data
       }
@@ -94,7 +94,7 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.productsError = null
     },
 
-    // ========== LOTES ==========
+  
     async fetchLotes (forceRefresh = false): Promise<ProductLote[]> {
       if (!forceRefresh && this.hasValidLotes && this.lotes) {
         return this.lotes.data
@@ -127,7 +127,6 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.lotesError = null
     },
 
-    // ========== MOVIMENTAÇÕES ==========
     async fetchMovements (forceRefresh = false): Promise<MovementDisplay[]> {
       if (!forceRefresh && this.hasValidMovements && this.movements) {
         return this.movements.data
@@ -160,7 +159,7 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.movementsError = null
     },
 
-    // ========== CATEGORIAS ==========
+  
     async fetchCategories (forceRefresh = false): Promise<any[]> {
       if (!forceRefresh && this.hasValidCategories && this.categories) {
         return this.categories.data
@@ -191,9 +190,9 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.categories = null
     },
 
-    // ========== LOCALIZAÇÕES ==========
+ 
     async fetchLocations (ufId: number | null, forceRefresh = false): Promise<any[]> {
-      // Se já tem dados válidos para a mesma UF e não é refresh forçado
+     
       if (!forceRefresh && this.hasValidLocations && this.locations && this.locationsUfId === ufId) {
         return this.locations.data
       }
@@ -226,7 +225,7 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.locationsUfId = null
     },
 
-    // ========== MÉTODOS GLOBAIS ==========
+   
     invalidateAll () {
       this.invalidateProducts()
       this.invalidateLotes()
@@ -235,7 +234,7 @@ export const useDataCacheStore = defineStore('dataCache', {
       this.invalidateLocations()
     },
 
-    // Invalida apenas quando há mudanças que afetam múltiplos caches
+   
     invalidateAfterMutation (type: 'product' | 'lote' | 'movement') {
       switch (type) {
         case 'product':

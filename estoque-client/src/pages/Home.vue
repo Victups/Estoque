@@ -32,14 +32,15 @@
             route: '/usuarios',
             stats: 'Administração',
           },
-          {
-            title: 'Relatórios e Análises',
-            description: 'Visualize estatísticas e métricas do seu estoque',
-            icon: 'mdi-chart-bar',
-            color: 'warning',
-            route: '/relatorios',
-            stats: 'BI',
-          },
+          // Card de relatórios ocultado temporariamente
+          // {
+          //   title: 'Relatórios e Análises',
+          //   description: 'Visualize estatísticas e métricas do seu estoque',
+          //   icon: 'mdi-chart-bar',
+          //   color: 'warning',
+          //   route: '/relatorios',
+          //   stats: 'BI',
+          // },
         ],
       }
     },

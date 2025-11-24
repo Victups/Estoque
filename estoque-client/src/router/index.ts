@@ -84,15 +84,16 @@ const route = [
       requiresAuth: true,
     },
   },
-  {
-    path: '/relatorios',
-    name: 'Relatorios',
-    component: () => import('@/pages/dashboards/Relatorios.vue'),
-    meta: {
-      layout: 'default',
-      requiresAuth: true,
-    },
-  },
+  // Rota de relatórios ocultada temporariamente
+  // {
+  //   path: '/relatorios',
+  //   name: 'Relatorios',
+  //   component: () => import('@/pages/dashboards/Relatorios.vue'),
+  //   meta: {
+  //     layout: 'default',
+  //     requiresAuth: true,
+  //   },
+  // },
   {
     path: '/perfil',
     name: 'Perfil',
