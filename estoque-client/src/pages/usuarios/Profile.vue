@@ -331,6 +331,12 @@
   export default {
     name: 'ProfilePage',
     data () {
+      const storedUser = getStoredUser()
+      const authStore = useAuthStore()
+      const initialName = storedUser?.nome || authStore.userName || ''
+      const initialEmail = storedUser?.email || authStore.userEmail || ''
+      const initialRole = storedUser?.role ? mapBackendRoleToUserRole(storedUser.role) : 'Visualizador' as UserRole
+
       return {
         tab: 'info',
         validEdit: false,
@@ -344,16 +350,16 @@
         showNewPassword: false,
         showConfirmPassword: false,
         userProfile: {
-          id: 1,
-          name: 'Administrador',
-          email: 'admin@sistema.com',
-          role: 'Admin' as UserRole,
-          initials: 'AD',
+          id: storedUser?.id || 0,
+          name: initialName,
+          email: initialEmail,
+          role: initialRole,
+          initials: initialName ? getInitialsFromUtils(initialName) : '',
           avatarColor: 'primary',
         } as UserProfile,
         editData: {
-          name: '',
-          email: '',
+          name: initialName,
+          email: initialEmail,
         } as EditData,
         passwordData: {
           currentPassword: '',
