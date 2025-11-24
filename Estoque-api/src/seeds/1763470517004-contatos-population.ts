@@ -33,12 +33,12 @@ export class ContatosPopulation1763470517004 implements Seeder {
         await dataSource.query(`
             INSERT INTO public.contatos (nome, valor, tipo_contato, codigo_pais)
             SELECT * FROM (VALUES
-              ('Admin Sys', 'admin@sistema.com', 'email', NULL),
-              ('João Almoxarife', '62988776655', 'whatsapp', '55'),
-              ('Maria Gerente', 'maria.gerente@empresa.com', 'email', NULL),
-              ('Distribuidora Alimentos GO', 'contato@distribuidorago.com', 'email', NULL),
-              ('Laticínios Centro-Oeste', '6232324545', 'telefone', '55'),
-              ('Frios Brasil S.A.', 'vendas@friosbrasil.com', 'email', NULL)
+              ('Admin Sys', 'admin@sistema.com', 'email'::tipo_contato_enum, NULL),
+              ('João Almoxarife', '62988776655', 'whatsapp'::tipo_contato_enum, '55'),
+              ('Maria Gerente', 'maria.gerente@empresa.com', 'email'::tipo_contato_enum, NULL),
+              ('Distribuidora Alimentos GO', 'contato@distribuidorago.com', 'email'::tipo_contato_enum, NULL),
+              ('Laticínios Centro-Oeste', '6232324545', 'telefone'::tipo_contato_enum, '55'),
+              ('Frios Brasil S.A.', 'vendas@friosbrasil.com', 'email'::tipo_contato_enum, NULL)
             ) AS v(nome, valor, tipo_contato, codigo_pais)
             WHERE NOT EXISTS (
                 SELECT 1 FROM public.contatos c 

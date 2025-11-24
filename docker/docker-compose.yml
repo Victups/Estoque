@@ -1,0 +1,71 @@
+services:
+  db-server:
+    build:
+      context: ..
+      dockerfile: docker/db/Dockerfile
+    container_name: db-server
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-produto}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - rede-gerenciamento-estoque
+
+  api-server:
+    build:
+      context: ..
+      dockerfile: docker/api/Dockerfile
+    container_name: api-server
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      DATABASE_HOST: db-server
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASSWORD:-admin}
+      DATABASE_NAME: ${DB_NAME:-produto}
+      JWT_SECRET: ${JWT_SECRET:-changeme-super-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-3600}
+      NODE_ENV: development
+    volumes:
+      - ../Estoque-api:/var/www/app
+      - api-node-modules:/var/www/app/node_modules
+    networks:
+      - rede-gerenciamento-estoque
+    depends_on:
+      - db-server
+
+  app-client:
+    build:
+      context: ..
+      dockerfile: docker/web/Dockerfile
+    container_name: app-client
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3005}
+      VITE_PORT: 8080
+    volumes:
+      - ../estoque-client:/var/www/app
+      - web-node-modules:/var/www/app/node_modules
+    networks:
+      - rede-gerenciamento-estoque
+    depends_on:
+      - api-server
+
+volumes:
+  api-node-modules:
+  web-node-modules:
+  db-data:
+
+networks:
+  rede-gerenciamento-estoque:
+    driver: bridge

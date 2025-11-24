@@ -30,9 +30,9 @@ export class UsuariosPopulation1763470517005 implements Seeder {
             await dataSource.query(`
                 INSERT INTO public.contatos (nome, valor, tipo_contato, codigo_pais)
                 VALUES
-                  ('Admin Sys', 'admin@sistema.com', 'email', NULL),
-                  ('João Almoxarife', '62988776655', 'whatsapp', '55'),
-                  ('Maria Gerente', 'maria.gerente@empresa.com', 'email', NULL)
+                  ('Admin Sys', 'admin@sistema.com', 'email'::tipo_contato_enum, NULL),
+                  ('João Almoxarife', '62988776655', 'whatsapp'::tipo_contato_enum, '55'),
+                  ('Maria Gerente', 'maria.gerente@empresa.com', 'email'::tipo_contato_enum, NULL)
                 ON CONFLICT DO NOTHING;
             `);
             
