@@ -323,7 +323,7 @@
   import { defineComponent } from 'vue'
   import CreateUserDialog from '@/components/usuarios/CreateUserDialog.vue'
   import EditUserDialog from '@/components/usuarios/EditUserDialog.vue'
-  import { useUnauthorized } from '@/composables/useUnauthorized'
+  import { useUnauthorized } from '@/utils/useUnauthorized'
   import { ContactService, UserService } from '@/services'
   import { useUsersCacheStore } from '@/stores/usersCache'
   import { useAuthStore } from '@/stores/auth'
