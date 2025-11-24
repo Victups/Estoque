@@ -1,8 +1,8 @@
-import type { User } from '@/interfaces'
+import type { BackendUser } from '@/interfaces'
 import { defineStore } from 'pinia'
 import { UfService, UserService } from '@/services'
 
-interface CacheItem<T> {
+export interface CacheItem<T> {
   data: T
   timestamp: number
 }
@@ -16,7 +16,7 @@ function isCacheValid (timestamp: number): boolean {
 export const useUsersCacheStore = defineStore('usersCache', {
   state: () => ({
  
-    users: null as CacheItem<User[]> | null,
+    users: null as CacheItem<BackendUser[]> | null,
     usersLoading: false,
     usersError: null as string | null,
 
@@ -37,7 +37,7 @@ export const useUsersCacheStore = defineStore('usersCache', {
 
   actions: {
   
-    async fetchUsers (forceRefresh = false): Promise<User[]> {
+    async fetchUsers (forceRefresh = false): Promise<BackendUser[]> {
       if (!forceRefresh && this.hasValidUsers && this.users) {
         return this.users.data
       }
@@ -60,7 +60,7 @@ export const useUsersCacheStore = defineStore('usersCache', {
       }
     },
 
-    getUsers (): User[] | null {
+    getUsers (): BackendUser[] | null {
       return this.users?.data ?? null
     },
 

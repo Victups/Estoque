@@ -46,7 +46,7 @@
                 <v-text-field
                   v-model="password"
                   :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                  class="mb-2"
+                  class="mb-4"
                   color="primary"
                   label="Senha"
                   prepend-inner-icon="mdi-lock"
@@ -56,18 +56,6 @@
                   variant="outlined"
                   @click:append-inner="showPassword = !showPassword"
                 />
-
-                <v-row class="mb-4">
-                  <v-col cols="6">
-                    <v-checkbox
-                      v-model="rememberMe"
-                      color="primary"
-                      density="compact"
-                      hide-details
-                      label="Lembrar-me"
-                    />
-                  </v-col>
-                </v-row>
 
                 <v-alert
                   v-if="error"
@@ -118,7 +106,6 @@
         valid: false,
         email: '',
         password: '',
-        rememberMe: false,
         showPassword: false,
         loading: false,
         error: null as string | null,
@@ -149,11 +136,6 @@
 
         try {
           const user = await AuthService.login(this.email, this.password)
-
-          if (this.rememberMe) {
-            localStorage.setItem('rememberMe', 'true')
-            localStorage.setItem('userEmail', this.email)
-          }
 
           const auth = useAuthStore()
           auth.setAuth({

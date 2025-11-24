@@ -18,9 +18,8 @@
             </div>
             <v-btn
               color="primary"
-              elevation="2"
               prepend-icon="mdi-plus"
-              size="large"
+              variant="elevated"
               @click="handleCreateUser"
             >
               Novo Usuário
@@ -1010,7 +1009,6 @@
         }
       },
       async fetchUsers (forceRefresh = false) {
-        // Verifica se já tem dados no cache
         const cachedUsers = this.usersCache.getUsers()
         if (!forceRefresh && cachedUsers) {
           this.users = cachedUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
@@ -1022,9 +1020,6 @@
         try {
           const backendUsers = await this.usersCache.fetchUsers(forceRefresh)
           this.users = backendUsers.map((backendUser, index) => mapBackendToUser(backendUser, index))
-          this.snackbarText = 'Usuários carregados com sucesso!'
-          this.snackbarColor = 'success'
-          this.snackbar = true
         } catch (error) {
           console.error('Erro ao buscar usuários:', error)
           this.snackbarText = 'Erro ao carregar usuários'
@@ -1222,7 +1217,6 @@
             logradouro: '',
             numero: '',
             complemento: '',
-            cep: '',
             bairro: '',
           }
         } catch (error) {

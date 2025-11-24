@@ -13,21 +13,19 @@
             Registre entradas e saídas de produtos
           </p>
         </div>
-        <div class="d-flex gap-3">
+        <div class="d-flex button-group">
           <v-btn
             color="success"
-            elevation="2"
             prepend-icon="mdi-plus-circle"
-            size="large"
+            variant="elevated"
             @click="$emit('open-entrada-dialog')"
           >
             Nova Entrada
           </v-btn>
           <v-btn
             color="error"
-            elevation="2"
             prepend-icon="mdi-minus-circle"
-            size="large"
+            variant="elevated"
             @click="$emit('open-saida-dialog')"
           >
             Nova Saída
@@ -44,4 +42,16 @@ export default {
   emits: ['open-entrada-dialog', 'open-saida-dialog'],
 }
 </script>
+
+<style scoped>
+.button-group {
+  gap: 12px;
+}
+
+.button-group :deep(.v-btn) {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  min-width: auto !important;
+}
+</style>
 

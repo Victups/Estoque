@@ -22,7 +22,6 @@ async function bootstrap() {
     credentials: true,
   });
   
-  // Filtro global de exceções - captura todos os tipos de erros
   app.useGlobalFilters(new HttpExceptionFilter());
   
   await app.listen(process.env.PORT ?? 3005);
