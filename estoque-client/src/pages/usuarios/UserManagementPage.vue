@@ -28,70 +28,6 @@
         </v-col>
       </v-row>
 
-      <!-- Stats Cards -->
-      <v-row class="mb-6">
-        <v-col cols="12" md="3" sm="6">
-          <v-card class="stat-card" elevation="3">
-            <v-card-text>
-              <div class="d-flex align-center">
-                <v-avatar class="mr-4" color="primary" size="56">
-                  <v-icon icon="mdi-account-multiple" size="30" />
-                </v-avatar>
-                <div>
-                  <p class="text-caption text-grey mb-1">Total de Usuários</p>
-                  <h2 class="text-h4 font-weight-bold">{{ users.length }}</h2>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3" sm="6">
-          <v-card class="stat-card" elevation="3">
-            <v-card-text>
-              <div class="d-flex align-center">
-                <v-avatar class="mr-4" color="success" size="56">
-                  <v-icon icon="mdi-account-check" size="30" />
-                </v-avatar>
-                <div>
-                  <p class="text-caption text-grey mb-1">Ativos</p>
-                  <h2 class="text-h4 font-weight-bold">{{ activeUsersCount }}</h2>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3" sm="6">
-          <v-card class="stat-card" elevation="3">
-            <v-card-text>
-              <div class="d-flex align-center">
-                <v-avatar class="mr-4" color="warning" size="56">
-                  <v-icon icon="mdi-shield-account" size="30" />
-                </v-avatar>
-                <div>
-                  <p class="text-caption text-grey mb-1">Administradores</p>
-                  <h2 class="text-h4 font-weight-bold">{{ adminCount }}</h2>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="12" md="3" sm="6">
-          <v-card class="stat-card" elevation="3">
-            <v-card-text>
-              <div class="d-flex align-center">
-                <v-avatar class="mr-4" color="info" size="56">
-                  <v-icon icon="mdi-account-clock" size="30" />
-                </v-avatar>
-                <div>
-                  <p class="text-caption text-grey mb-1">Novos (Este mês)</p>
-                  <h2 class="text-h4 font-weight-bold">{{ users.length }}</h2>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
       <!-- Filters and Table Card -->
       <v-row>
         <v-col cols="12">
@@ -895,12 +831,6 @@
           newPasswordMatch: (v: string): boolean | string => userRules.passwordMatch({ value: this.newUser.password })(v),
         }
       },
-      activeUsersCount () {
-        return this.users.filter(u => u.status === 'active').length
-      },
-      adminCount () {
-        return this.users.filter(u => u.role === 'Admin').length
-      },
       filteredUsers (): User[] {
         return this.users.filter(user => {
           const roleMatch = this.filterRole === 'Todos' || user.role === this.filterRole
@@ -1239,16 +1169,6 @@
   min-height: 100vh;
   background: #000000;
   padding: 2rem 0;
-}
-
-.stat-card {
-  border-radius: 12px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
 }
 
 .main-card {

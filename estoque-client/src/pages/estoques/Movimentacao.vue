@@ -7,14 +7,6 @@
         @open-saida-dialog="openDialog('saida')"
       />
 
-      <!-- Stats Cards -->
-      <MovimentacaoStats
-        :total-movements="movements.length"
-        :entradas-count="entradasCount"
-        :saidas-count="saidasCount"
-        :hoje-mov="hojeMov"
-      />
-
       <!-- Filters and Table -->
       <MovimentacaoTable
         :movements="movements"
@@ -136,21 +128,6 @@
           data_validade: '',
         },
       }
-    },
-    computed: {
-      entradasCount (): number {
-        return this.movements.filter((m: MovementDisplay) => m.tipo_movimento === 'entrada').length
-      },
-      saidasCount (): number {
-        return this.movements.filter((m: MovementDisplay) => m.tipo_movimento === 'saida').length
-      },
-      hojeMov (): number {
-        const hoje = new Date().toISOString().split('T')[0]
-        if (!hoje) return 0
-        return this.movements.filter((m: MovementDisplay) =>
-          m.data_mov.startsWith(hoje),
-        ).length
-      },
     },
     async mounted () {
       await this.loadData()
