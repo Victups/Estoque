@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts">
-  import type { MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
+  import type { MovementDisplay, MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
   import type { CreateLoteInput, LocationComplete } from '@/services'
   import { getStoredUser } from '@/services/auth.storage'
   import { useAuthStore } from '@/stores/auth'
@@ -94,7 +94,7 @@
     reset: () => void
   }
 
-  export default {
+  export default defineComponent({
     name: 'MovimentacaoPage',
     mixins: [snackbarMixin],
     setup () {
@@ -203,7 +203,7 @@
           this.movements = await this.dataCache.fetchMovements(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar movimentações:', error)
-          const message = this.getErrorMessage(error)
+          const message = error?.response?.data?.message || error?.message || 'Erro desconhecido'
           this.showError(`Erro ao carregar movimentações: ${message}`)
         }
       },
@@ -212,7 +212,7 @@
           this.products = await this.dataCache.fetchProducts(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar produtos:', error)
-          const message = this.getErrorMessage(error)
+          const message = error?.response?.data?.message || error?.message || 'Erro desconhecido'
           this.showError(`Erro ao carregar produtos: ${message}`)
         }
       },
@@ -221,7 +221,7 @@
           this.lotes = await this.dataCache.fetchLotes(forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar lotes:', error)
-          const message = this.getErrorMessage(error)
+          const message = error?.response?.data?.message || error?.message || 'Erro desconhecido'
           this.showError(`Erro ao carregar lotes: ${message}`)
         }
       },
@@ -236,7 +236,7 @@
           this.locations = await this.dataCache.fetchLocations(null, forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar localizações:', error)
-          const message = this.getErrorMessage(error)
+          const message = error?.response?.data?.message || error?.message || 'Erro desconhecido'
           this.showError(`Erro ao carregar localizações: ${message}`)
         }
       },
@@ -405,7 +405,7 @@
         this.viewDialog = true
       },
     },
-  }
+  })
 </script>
 
 <style scoped>

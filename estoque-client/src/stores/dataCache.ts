@@ -2,7 +2,7 @@ import type { MovementDisplay, Product, ProductLote } from '@/interfaces'
 import { defineStore } from 'pinia'
 import { CategoryService, LoteService, MovementService, ProductService } from '@/services'
 
-interface CacheItem<T> {
+export interface CacheItem<T> {
   data: T
   timestamp: number
 }

@@ -60,7 +60,7 @@
   <div class="home-page">
     <v-container class="py-8" fluid>
       <!-- Módulos Principais -->
-      <v-row class="mt-4">
+      <v-row class="mt-4" justify="center">
         <v-col cols="12">
           <div class="d-flex align-center mb-4">
             <v-icon class="mr-2" color="primary" size="28">mdi-view-dashboard</v-icon>
@@ -77,9 +77,9 @@
           v-for="module in modules"
           :key="module.route"
           cols="12"
-          md="6"
-          lg="3"
-          sm="12"
+          sm="6"
+          md="4"
+          lg="4"
         >
           <v-card
             class="module-card rounded-xl"
