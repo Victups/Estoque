@@ -33,13 +33,6 @@
         </v-btn>
       </div>
       <div class="d-none d-sm-flex align-center ml-2 ml-md-3 user-info ga-2">
-        <!-- Adicionado cursor pointer e click handler no badge de localização -->
-        <div class="location-badge clickable" @click="ufDialog = true">
-          <v-icon class="mr-1" icon="mdi-map-marker" size="x-small" />
-          <span class="text-caption text-md-body-2">{{ ufText }}</span>
-          <v-icon class="ml-1" icon="mdi-chevron-down" size="x-small" />
-        </div>
-
         <div class="user-name d-none d-md-flex">
           <v-icon class="mr-1" icon="mdi-account" size="x-small" />
           <span class="text-caption text-md-body-2 font-weight-medium">{{ displayName || 'Usuário' }}</span>
@@ -62,7 +55,6 @@
         <v-list class="profile-menu" elevation="8" rounded="lg">
           <v-list-item class="user-menu-header">
             <v-list-item-title class="font-weight-bold">{{ displayName || 'Usuário' }}</v-list-item-title>
-            <v-list-item-subtitle>{{ ufText }}</v-list-item-subtitle>
           </v-list-item>
           <v-divider class="my-2" />
           <v-list-item
@@ -88,98 +80,6 @@
       </v-menu>
     </v-container>
   </v-app-bar>
-
-  <!-- Adicionado dialog para seleção de UF -->
-  <v-dialog v-model="ufDialog" max-width="600" scrollable>
-    <v-card class="uf-dialog" rounded="xl">
-      <v-card-title class="uf-dialog-header">
-        <div class="d-flex align-center justify-space-between">
-          <div class="d-flex align-center">
-            <v-icon class="mr-2" color="primary" size="28">mdi-map-marker</v-icon>
-            <span class="text-h6 font-weight-bold">Selecione seu Estado</span>
-          </div>
-          <v-btn
-            icon="mdi-close"
-            size="small"
-            variant="text"
-            @click="ufDialog = false"
-          />
-        </div>
-      </v-card-title>
-
-      <v-divider />
-
-      <v-card-text class="pa-4">
-        <v-text-field
-          v-model="ufSearch"
-          class="mb-4"
-          clearable
-          density="comfortable"
-          hide-details
-          placeholder="Buscar estado..."
-          prepend-inner-icon="mdi-magnify"
-          rounded="lg"
-          variant="outlined"
-        />
-
-        <div v-if="loading" class="text-center py-8">
-          <v-progress-circular color="primary" indeterminate size="48" />
-          <p class="text-body-2 mt-4 text-medium-emphasis">Carregando estados...</p>
-        </div>
-
-        <div v-else-if="filteredUFs.length === 0" class="text-center py-8">
-          <v-icon color="grey" size="48">mdi-map-marker-off</v-icon>
-          <p class="text-body-2 mt-4 text-medium-emphasis">Nenhum estado encontrado</p>
-        </div>
-
-        <div v-else class="uf-grid">
-          <v-card
-            v-for="uf in filteredUFs"
-            :key="uf.id"
-            class="uf-card"
-            :class="{ 'uf-card-selected': selectedUfId === uf.id }"
-            elevation="0"
-            rounded="lg"
-            @click="selectUF(uf.id)"
-          >
-            <div class="uf-card-content">
-              <div class="uf-sigla">{{ uf.sigla }}</div>
-              <div class="uf-nome">{{ uf.nome }}</div>
-              <v-icon
-                v-if="selectedUfId === uf.id"
-                class="uf-check"
-                color="primary"
-                size="20"
-              >
-                mdi-check-circle
-              </v-icon>
-            </div>
-          </v-card>
-        </div>
-      </v-card-text>
-
-      <v-divider />
-
-      <v-card-actions class="pa-4">
-        <v-spacer />
-        <v-btn
-          color="grey"
-          variant="text"
-          @click="cancelUFChange"
-        >
-          Cancelar
-        </v-btn>
-        <v-btn
-          color="primary"
-          :disabled="!selectedUfId"
-          variant="elevated"
-          @click="confirmUFChange"
-        >
-          Confirmar
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
 
   <v-navigation-drawer v-model="drawer" class="mobile-drawer" temporary>
     <div class="drawer-header">
@@ -213,9 +113,7 @@
 </template>
 
 <script lang="ts">
-  import type { State } from '@/interfaces'
   import { defineComponent } from 'vue'
-  import { UfService } from '@/services'
   import { AuthService } from '@/services/auth.service'
   import { useAuthStore } from '@/stores/auth'
 
@@ -224,11 +122,6 @@
     data () {
       return {
         drawer: false,
-        ufDialog: false,
-        ufSearch: '',
-        selectedUfId: null as number | null,
-        loading: false,
-        ufs: [] as State[],
         menuItems: [
           {
             title: 'Home',
@@ -266,57 +159,8 @@
       displayName () {
         return this.auth.displayName
       },
-      ufText () {
-        return this.auth.ufLabel ?? 'UF não definida'
-      },
-      filteredUFs () {
-        if (!this.ufSearch) return this.ufs
-
-        const search = this.ufSearch.toLowerCase()
-        return this.ufs.filter(uf =>
-          uf.sigla.toLowerCase().includes(search)
-          || uf.nome.toLowerCase().includes(search),
-        )
-      },
-    },
-    async mounted () {
-      try {
-        this.loading = true
-        this.ufs = await UfService.getAll()
-        if (this.auth.ufId) {
-          this.selectedUfId = this.auth.ufId
-        }
-      } catch (error) {
-        console.error('Erro ao carregar UFs:', error)
-      } finally {
-        this.loading = false
-      }
     },
     methods: {
-      selectUF (ufId: number) {
-        this.selectedUfId = ufId
-      },
-      cancelUFChange () {
-        this.selectedUfId = this.auth.ufId
-        this.ufDialog = false
-        this.ufSearch = ''
-      },
-      confirmUFChange () {
-        if (this.selectedUfId) {
-          const ufData = this.ufs.find(u => u.id === this.selectedUfId)
-          if (ufData) {
-            const ufLabel = `${ufData.sigla} - ${ufData.nome}`
-            this.auth.setAuth({
-              name: this.auth.userName,
-              email: this.auth.userEmail || '',
-              ufId: this.selectedUfId,
-              ufLabel,
-            })
-          }
-          this.ufDialog = false
-          this.ufSearch = ''
-        }
-      },
       goToProfile () {
         this.$router.push('/perfil')
       },
@@ -449,7 +293,6 @@
   flex-shrink: 0;
 }
 
-.location-badge,
 .user-name {
   background: rgba(255, 255, 255, 0.15);
   padding: 4px 10px;
@@ -465,133 +308,15 @@
 }
 
 @media (max-width: 1280px) {
-  .location-badge,
   .user-name {
     max-width: 120px;
     padding: 4px 8px;
   }
 }
 
-/* Adicionado estilo para badge clicável */
-.location-badge.clickable {
-  cursor: pointer;
-}
-
-.location-badge.clickable:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.location-badge:hover,
 .user-name:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
-}
-
-/* Adicionados estilos para o dialog de seleção de UF */
-.uf-dialog {
-  overflow: hidden;
-}
-
-.uf-dialog-header {
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.05) 0%, rgba(156, 78, 214, 0.05) 100%);
-  padding: 20px 24px;
-}
-
-.uf-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.uf-card {
-  border: 2px solid rgba(123, 44, 191, 0.1);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.uf-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.05) 0%, rgba(156, 78, 214, 0.05) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.uf-card:hover {
-  border-color: rgba(123, 44, 191, 0.3);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(123, 44, 191, 0.15);
-}
-
-.uf-card:hover::before {
-  opacity: 1;
-}
-
-.uf-card-selected {
-  border-color: #7B2CBF !important;
-  background: linear-gradient(135deg, rgba(123, 44, 191, 0.1) 0%, rgba(156, 78, 214, 0.1) 100%);
-}
-
-.uf-card-selected::before {
-  opacity: 1;
-}
-
-.uf-card-content {
-  padding: 16px;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-}
-
-.uf-sigla {
-  font-size: 24px;
-  font-weight: 700;
-  color: #7B2CBF;
-  margin-bottom: 4px;
-  letter-spacing: 1px;
-}
-
-.uf-nome {
-  font-size: 12px;
-  color: #666;
-  font-weight: 500;
-}
-
-.uf-check {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-}
-
-/* Melhorado o scrollbar do grid de UFs */
-.uf-grid::-webkit-scrollbar {
-  width: 8px;
-}
-
-.uf-grid::-webkit-scrollbar-track {
-  background: rgba(123, 44, 191, 0.05);
-  border-radius: 4px;
-}
-
-.uf-grid::-webkit-scrollbar-thumb {
-  background: rgba(123, 44, 191, 0.3);
-  border-radius: 4px;
-  transition: background 0.3s ease;
-}
-
-.uf-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(123, 44, 191, 0.5);
 }
 
 /* Melhorado o botão mobile com animação */

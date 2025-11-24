@@ -57,20 +57,6 @@
                   @click:append-inner="showPassword = !showPassword"
                 />
 
-                <v-select
-                  v-model="selectedUfId"
-                  class="mb-4"
-                  color="primary"
-                  :item-title="'label'"
-                  :item-value="'id'"
-                  :items="ufOptions"
-                  label="UF"
-                  prepend-inner-icon="mdi-map"
-                  required
-                  :rules="[v => !!v || 'UF é obrigatória']"
-                  variant="outlined"
-                />
-
                 <v-row class="mb-4">
                   <v-col cols="6">
                     <v-checkbox
@@ -115,9 +101,8 @@
 </template>
 
 <script lang="ts">
-  import type { State } from '@/interfaces'
   import { defineComponent } from 'vue'
-  import { AuthService, UfService } from '@/services'
+  import { AuthService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
 
   interface VForm {
@@ -133,21 +118,13 @@
         valid: false,
         email: '',
         password: '',
-        selectedUfId: null as number | null,
         rememberMe: false,
         showPassword: false,
         loading: false,
         error: null as string | null,
-        ufs: [] as State[],
       }
     },
     computed: {
-      ufOptions () {
-        return this.ufs.map(uf => ({
-          id: uf.id,
-          label: `${uf.sigla} - ${uf.nome}`,
-        }))
-      },
       emailRules () {
         return [
           (v: string) => !!v || 'E-mail é obrigatório',
@@ -161,17 +138,9 @@
         ]
       },
     },
-    async mounted () {
-      try {
-        this.ufs = await UfService.getAll()
-      } catch (error) {
-        console.error('Erro ao carregar UFs:', error)
-        this.error = 'Erro ao carregar estados. Tente novamente.'
-      }
-    },
     methods: {
       async handleLogin () {
-        if (!this.valid || !this.selectedUfId) {
+        if (!this.valid) {
           return
         }
 
@@ -180,9 +149,6 @@
 
         try {
           const user = await AuthService.login(this.email, this.password)
-
-          const ufData = this.ufs.find(u => u.id === this.selectedUfId)
-          const ufLabel = ufData ? `${ufData.sigla} - ${ufData.nome}` : ''
 
           if (this.rememberMe) {
             localStorage.setItem('rememberMe', 'true')
@@ -193,8 +159,6 @@
           auth.setAuth({
             name: user.nome,
             email: user.email,
-            ufId: this.selectedUfId,
-            ufLabel,
             role: user.role || 'estoquista',
           })
 

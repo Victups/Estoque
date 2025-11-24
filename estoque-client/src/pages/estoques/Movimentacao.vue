@@ -228,13 +228,12 @@
       async loadLocations (forceRefresh = false) {
         try {
           const { LocationService } = await import('@/services')
-          // Verifica se já tem no cache para a mesma UF
           const cached = this.dataCache.getLocations()
-          if (!forceRefresh && cached && this.dataCache.locationsUfId === this.authStore.ufId) {
+          if (!forceRefresh && cached) {
             this.locations = cached
             return
           }
-          this.locations = await this.dataCache.fetchLocations(this.authStore.ufId, forceRefresh)
+          this.locations = await this.dataCache.fetchLocations(null, forceRefresh)
         } catch (error: any) {
           console.error('Erro ao carregar localizações:', error)
           const message = this.getErrorMessage(error)

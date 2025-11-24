@@ -5,8 +5,6 @@ import { clearSession, getStoredUser } from '@/services/auth.storage'
 export interface AuthState {
   userName: string | null
   userEmail: string | null
-  ufId: number | null
-  ufLabel: string | null
   isLoggedIn: boolean
   role: string | null
 }
@@ -32,8 +30,6 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     userName: null,
     userEmail: null,
-    ufId: null,
-    ufLabel: null,
     isLoggedIn: false,
     role: null,
   }),
@@ -59,8 +55,6 @@ export const useAuthStore = defineStore('auth', {
         const data = JSON.parse(raw) as Partial<AuthState>
         this.userName = data.userName ?? null
         this.userEmail = data.userEmail ?? null
-        this.ufId = data.ufId ?? null
-        this.ufLabel = data.ufLabel ?? null
         this.isLoggedIn = Boolean(data.isLoggedIn)
         this.role = data.role ?? null
 
@@ -81,18 +75,14 @@ export const useAuthStore = defineStore('auth', {
       const data: AuthState = {
         userName: this.userName,
         userEmail: this.userEmail,
-        ufId: this.ufId,
-        ufLabel: this.ufLabel,
         isLoggedIn: this.isLoggedIn,
         role: this.role,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     },
-    setAuth (payload: { name?: string | null, email: string, ufId: number, ufLabel: string, role?: string | null }) {
+    setAuth (payload: { name?: string | null, email: string, role?: string | null }) {
       this.userEmail = payload.email
       this.userName = payload.name ?? deriveNameFromEmail(payload.email)
-      this.ufId = payload.ufId
-      this.ufLabel = payload.ufLabel
       this.role = payload.role ?? null
       this.isLoggedIn = true
       this.privateSave()
@@ -100,8 +90,6 @@ export const useAuthStore = defineStore('auth', {
     logout () {
       this.userName = null
       this.userEmail = null
-      this.ufId = null
-      this.ufLabel = null
       this.role = null
       this.isLoggedIn = false
       this.privateSave()
