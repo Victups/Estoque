@@ -9,8 +9,7 @@ export class ProdutosAlergenosPopulation1763470517018 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem produtos-alergenos para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.produtos_alergenos 
             WHERE nome IN (
                 'Contém Lactose',
@@ -20,8 +19,7 @@ export class ProdutosAlergenosPopulation1763470517018 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem os alergenos, não precisa inserir
-        if (existingCount >= 3) {
+                if (existingCount >= 3) {
             console.log('Produtos-alergenos já existem, pulando seed...');
             return;
         }

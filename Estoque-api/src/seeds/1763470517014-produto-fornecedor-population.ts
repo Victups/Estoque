@@ -9,7 +9,6 @@ export class ProdutoFornecedorPopulation1763470517014 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Buscar IDs dos produtos primeiro
         const produtos = await dataSource.query(`
             SELECT DISTINCT ON (codigo) id, codigo 
             FROM public.produtos 
@@ -17,7 +16,6 @@ export class ProdutoFornecedorPopulation1763470517014 implements Seeder {
             ORDER BY codigo, id;
         `);
 
-        // Buscar IDs dos fornecedores primeiro
         const fornecedores = await dataSource.query(`
             SELECT DISTINCT ON (nome) id, nome 
             FROM public.fornecedores 
@@ -25,7 +23,6 @@ export class ProdutoFornecedorPopulation1763470517014 implements Seeder {
             ORDER BY nome, id;
         `);
 
-        // Buscar ID do usuário admin
         const usuarios = await dataSource.query(`
             SELECT DISTINCT ON (email) id, email 
             FROM public.usuarios 
@@ -57,7 +54,6 @@ export class ProdutoFornecedorPopulation1763470517014 implements Seeder {
         const distribuidoraId = fornecedorMap.get('Distribuidora de Alimentos Goiás') || 'NULL';
         const friosBrasilId = fornecedorMap.get('Frios Brasil S.A.') || 'NULL';
 
-        // Verifica se já existem relações produto-fornecedor para evitar duplicação
         const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.produto_fornecedor 
             WHERE (id_produto, id_fornecedor) IN (
@@ -72,7 +68,6 @@ export class ProdutoFornecedorPopulation1763470517014 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todas as relações, não precisa inserir
         if (existingCount >= 6) {
             console.log('Relações produto-fornecedor já existem, pulando seed...');
             return;

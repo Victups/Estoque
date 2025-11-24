@@ -9,16 +9,14 @@ export class UnidadesPopulation1763470517008 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem unidades de medida para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.unidade_medidas 
             WHERE descricao IN ('Unidade', 'Quilograma', 'Litro', 'Pacote', 'Caixa', 'Grama', 'Mililitro');
         `);
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todas as unidades, não precisa inserir
-        if (existingCount >= 7) {
+                if (existingCount >= 7) {
             console.log('Unidades de medida já existem, pulando seed...');
             return;
         }

@@ -9,8 +9,7 @@ export class ProdutosPopulation1763470517013 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Buscar todos os IDs necessários primeiro
-        const unidades = await dataSource.query(`
+                const unidades = await dataSource.query(`
             SELECT DISTINCT ON (descricao) id, descricao 
             FROM public.unidade_medidas 
             WHERE descricao IN ('Litro', 'Unidade', 'Quilograma', 'Pacote', 'Grama')
@@ -73,16 +72,14 @@ export class ProdutosPopulation1763470517013 implements Seeder {
         const adminId = usuarioMap.get('admin@sistema.com') || 'NULL';
         const mariaId = usuarioMap.get('maria.souza@empresa.com') || 'NULL';
 
-        // Verifica se já existem produtos para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.produtos 
             WHERE codigo IN ('PROD001', 'PROD002', 'PROD003', 'PROD004', 'PROD005', 'PROD006');
         `);
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todos os produtos, não precisa inserir
-        if (existingCount >= 6) {
+                if (existingCount >= 6) {
             console.log('Produtos já existem, pulando seed...');
             return;
         }

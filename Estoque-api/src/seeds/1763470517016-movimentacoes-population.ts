@@ -9,21 +9,18 @@ export class MovimentacoesPopulation1763470517016 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem movimentações para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.movimentacao_estoque;
         `);
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem movimentações, não precisa inserir
-        if (existingCount > 0) {
+                if (existingCount > 0) {
             console.log(`Já existem ${existingCount} movimentações, pulando seed...`);
             return;
         }
 
-        // Buscar ID do usuário admin primeiro
-        const usuarios = await dataSource.query(`
+                const usuarios = await dataSource.query(`
             SELECT DISTINCT ON (email) id, email 
             FROM public.usuarios 
             WHERE email = 'admin@sistema.com'

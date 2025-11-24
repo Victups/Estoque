@@ -9,16 +9,14 @@ export class CategoriasPopulation1763470517006 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem categorias para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.categorias 
             WHERE nome IN ('Laticínios', 'Grãos e Cereais', 'Bebidas', 'Mercearia', 'Frios e Embutidos');
         `);
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todas as categorias, não precisa inserir
-        if (existingCount >= 5) {
+                if (existingCount >= 5) {
             console.log('Categorias já existem, pulando seed...');
             return;
         }

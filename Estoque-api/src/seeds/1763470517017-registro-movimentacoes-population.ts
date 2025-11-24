@@ -9,21 +9,18 @@ export class RegistroMovimentacoesPopulation1763470517017 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem registros de movimentações para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.registro_movimentacoes;
         `);
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem registros, não precisa inserir
-        if (existingCount > 0) {
+                if (existingCount > 0) {
             console.log(`Já existem ${existingCount} registros de movimentações, pulando seed...`);
             return;
         }
 
-        // Buscar IDs dos usuários primeiro
-        const usuarios = await dataSource.query(`
+                const usuarios = await dataSource.query(`
             SELECT DISTINCT ON (email) id, email 
             FROM public.usuarios 
             WHERE email IN ('admin@sistema.com', 'maria.souza@empresa.com')

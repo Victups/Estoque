@@ -283,7 +283,6 @@
       try {
         this.loading = true
         this.ufs = await UfService.getAll()
-        // Inicializar UF selecionada com a UF atual do usuário
         if (this.auth.ufId) {
           this.selectedUfId = this.auth.ufId
         }
@@ -298,7 +297,6 @@
         this.selectedUfId = ufId
       },
       cancelUFChange () {
-        // Restaurar a UF atual ao cancelar
         this.selectedUfId = this.auth.ufId
         this.ufDialog = false
         this.ufSearch = ''
@@ -308,7 +306,6 @@
           const ufData = this.ufs.find(u => u.id === this.selectedUfId)
           if (ufData) {
             const ufLabel = `${ufData.sigla} - ${ufData.nome}`
-            // Atualizar a UF no store de autenticação
             this.auth.setAuth({
               name: this.auth.userName,
               email: this.auth.userEmail || '',

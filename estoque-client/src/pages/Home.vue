@@ -6,7 +6,6 @@
     name: 'HomePage',
     data () {
       return {
-        // Módulos principais do sistema
         modules: [
           {
             title: 'Gerenciamento de Produtos',

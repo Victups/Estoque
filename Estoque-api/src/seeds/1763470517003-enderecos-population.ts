@@ -9,8 +9,7 @@ export class EnderecosPopulation1763470517003 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem endereços para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.enderecos 
             WHERE (logradouro, numero, id_municipio) IN (
                 ('Avenida Principal', '100', 5547),
@@ -23,8 +22,7 @@ export class EnderecosPopulation1763470517003 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todos os endereços, não precisa inserir
-        if (existingCount >= 5) {
+                if (existingCount >= 5) {
             console.log('Endereços já existem, pulando seed...');
             return;
         }

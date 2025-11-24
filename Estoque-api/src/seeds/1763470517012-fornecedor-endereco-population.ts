@@ -9,16 +9,14 @@ export class FornecedorEnderecoPopulation1763470517012 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Buscar IDs dos fornecedores primeiro
-        const fornecedores = await dataSource.query(`
+                const fornecedores = await dataSource.query(`
             SELECT DISTINCT ON (nome) id, nome 
             FROM public.fornecedores 
             WHERE nome IN ('Distribuidora de Alimentos Goiás', 'Laticínios Centro-Oeste', 'Frios Brasil S.A.')
             ORDER BY nome, id;
         `);
 
-        // Buscar IDs dos endereços primeiro
-        const enderecos = await dataSource.query(`
+                const enderecos = await dataSource.query(`
             SELECT DISTINCT ON (logradouro) id, logradouro 
             FROM public.enderecos 
             WHERE logradouro IN ('Avenida Comercial', 'Rodovia BR-153', 'Avenida Industrial')
@@ -43,8 +41,7 @@ export class FornecedorEnderecoPopulation1763470517012 implements Seeder {
         const rodoviaId = enderecoMap.get('Rodovia BR-153') || 'NULL';
         const avIndustrialId = enderecoMap.get('Avenida Industrial') || 'NULL';
 
-        // Verifica se já existem relações fornecedor-endereço para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.fornecedor_endereco 
             WHERE id_fornecedor IN (${distribuidoraId}, ${lacticiniosId}, ${friosBrasilId})
             AND id_endereco IN (${avComercialId}, ${rodoviaId}, ${avIndustrialId});
@@ -52,8 +49,7 @@ export class FornecedorEnderecoPopulation1763470517012 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todas as relações, não precisa inserir
-        if (existingCount >= 3) {
+                if (existingCount >= 3) {
             console.log('Relações fornecedor-endereço já existem, pulando seed...');
             return;
         }

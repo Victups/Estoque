@@ -9,8 +9,7 @@ export class ContatosPopulation1763470517004 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem contatos para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.contatos 
             WHERE nome IN (
                 'Admin Sys',
@@ -24,8 +23,7 @@ export class ContatosPopulation1763470517004 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todos os contatos, não precisa inserir
-        if (existingCount >= 6) {
+                if (existingCount >= 6) {
             console.log('Contatos já existem, pulando seed...');
             return;
         }

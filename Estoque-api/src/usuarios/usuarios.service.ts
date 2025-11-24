@@ -25,13 +25,12 @@ export class UsuariosService {
     });
     const usuarioSalvo = await this.repo.save(usuario);
     
-    // Registra auditoria de criação (nota: precisa de um usuário administrador para criar o primeiro)
     try {
       await this.auditoriaService.registrarInsert(
         'usuarios',
         usuarioSalvo.id,
         usuarioSalvo,
-        undefined, // Não temos usuario_log_id no DTO, seria necessário adicionar se quiser rastrear quem criou
+        undefined,
       );
     } catch (error) {
       console.error('Erro ao registrar auditoria de criação de usuário:', error);
@@ -60,7 +59,6 @@ export class UsuariosService {
   }
 
   async update(id: number, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
-    // Busca o usuário antes da atualização para auditoria
     const usuarioAntes = await this.repo.findOne({
       where: { id },
       relations: ['contato'],
@@ -96,14 +94,13 @@ export class UsuariosService {
 
     const usuarioAtualizado = await this.repo.save(usuario);
     
-    // Registra auditoria de atualização
     try {
       await this.auditoriaService.registrarUpdate(
         'usuarios',
         usuarioAtualizado.id,
         usuarioAntes,
         usuarioAtualizado,
-        undefined, // Seria necessário passar o ID do usuário que está fazendo a alteração
+        undefined,
       );
     } catch (error) {
       console.error('Erro ao registrar auditoria de atualização de usuário:', error);
@@ -120,13 +117,12 @@ export class UsuariosService {
   async remove(id: number): Promise<void> {
     const usuario = await this.findOne(id);
     
-    // Registra auditoria de exclusão antes de remover
     try {
       await this.auditoriaService.registrarDelete(
         'usuarios',
         usuario.id,
         usuario,
-        undefined, // Seria necessário passar o ID do usuário que está fazendo a exclusão
+        undefined,
       );
     } catch (error) {
       console.error('Erro ao registrar auditoria de exclusão de usuário:', error);

@@ -9,7 +9,6 @@ export class LotesPopulation1763470517015 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Buscar IDs dos produtos primeiro
         const produtos = await dataSource.query(`
             SELECT DISTINCT ON (codigo) id, codigo 
             FROM public.produtos 
@@ -17,7 +16,6 @@ export class LotesPopulation1763470517015 implements Seeder {
             ORDER BY codigo, id;
         `);
 
-        // Buscar IDs dos usuários primeiro
         const usuarios = await dataSource.query(`
             SELECT DISTINCT ON (email) id, email 
             FROM public.usuarios 
@@ -25,7 +23,6 @@ export class LotesPopulation1763470517015 implements Seeder {
             ORDER BY email, id;
         `);
 
-        // Buscar IDs das localizações primeiro
         const localizacoes = await dataSource.query(`
             SELECT DISTINCT ON (corredor) id, corredor 
             FROM public.localizacoes 
@@ -63,7 +60,6 @@ export class LotesPopulation1763470517015 implements Seeder {
         const b1Id = localizacaoMap.get('B1') || 'NULL';
         const b2Id = localizacaoMap.get('B2') || 'NULL';
 
-        // Verifica se já existem lotes para evitar duplicação
         const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.produto_lotes 
             WHERE codigo_lote IN ('L001', 'L002', 'L003', 'L004', 'L005', 'L006', 'L007', 'L008');
@@ -71,7 +67,6 @@ export class LotesPopulation1763470517015 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todos os lotes, não precisa inserir
         if (existingCount >= 8) {
             console.log('Lotes já existem, pulando seed...');
             return;

@@ -9,8 +9,6 @@ export class UsuariosPopulation1763470517005 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Buscar IDs dos contatos primeiro para evitar erro de subquery retornando múltiplas linhas
-        // Usando DISTINCT ON para garantir apenas um resultado por nome
         const contatos = await dataSource.query(`
             SELECT DISTINCT ON (nome) id, nome 
             FROM public.contatos 
@@ -18,13 +16,11 @@ export class UsuariosPopulation1763470517005 implements Seeder {
             ORDER BY nome, id;
         `);
 
-        // Criar mapa de nome para ID
         const contatoMap = new Map<string, number | null>();
         contatos.forEach((contato: any) => {
             contatoMap.set(contato.nome, contato.id);
         });
 
-        // Se não encontrou os contatos, tenta criar novamente (pode ser que o seed anterior não executou)
         if (contatos.length === 0) {
             console.warn('Contatos não encontrados. Tentando criar contatos primeiro...');
             await dataSource.query(`
@@ -36,7 +32,6 @@ export class UsuariosPopulation1763470517005 implements Seeder {
                 ON CONFLICT DO NOTHING;
             `);
             
-            // Buscar novamente usando DISTINCT ON
             const novosContatos = await dataSource.query(`
                 SELECT DISTINCT ON (nome) id, nome 
                 FROM public.contatos 
@@ -52,12 +47,10 @@ export class UsuariosPopulation1763470517005 implements Seeder {
         const joaoContatoId = contatoMap.get('João Almoxarife') || null;
         const mariaContatoId = contatoMap.get('Maria Gerente') || null;
 
-        // Inserir usuários usando os IDs obtidos (usando NULL se não encontrado)
         const adminId = adminContatoId ? adminContatoId : 'NULL';
         const joaoId = joaoContatoId ? joaoContatoId : 'NULL';
         const mariaId = mariaContatoId ? mariaContatoId : 'NULL';
 
-        // Verifica se já existem usuários para evitar duplicação
         const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.usuarios 
             WHERE email IN ('admin@sistema.com', 'joao.silva@empresa.com', 'maria.souza@empresa.com');
@@ -65,7 +58,6 @@ export class UsuariosPopulation1763470517005 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todos os usuários, não precisa inserir
         if (existingCount >= 3) {
             console.log('Usuários já existem, pulando seed...');
             return;

@@ -9,8 +9,7 @@ export class LocalizacoesPopulation1763470517010 implements Seeder {
         dataSource: DataSource,
         factoryManager: SeederFactoryManager
     ): Promise<any> {
-        // Verifica se já existem localizações para evitar duplicação
-        const countResult = await dataSource.query(`
+                const countResult = await dataSource.query(`
             SELECT COUNT(*) as count FROM public.localizacoes 
             WHERE (corredor, prateleira, secao) IN (
                 ('A1', 'P1', 'S1'),
@@ -22,14 +21,12 @@ export class LocalizacoesPopulation1763470517010 implements Seeder {
         
         const existingCount = parseInt(countResult[0]?.count || '0', 10);
         
-        // Se já existem todas as localizações, não precisa inserir
-        if (existingCount >= 4) {
+                if (existingCount >= 4) {
             console.log('Localizações já existem, pulando seed...');
             return;
         }
 
-        // Buscar IDs dos depósitos primeiro
-        const depositos = await dataSource.query(`
+                const depositos = await dataSource.query(`
             SELECT DISTINCT ON (nome) id, nome 
             FROM public.depositos 
             WHERE nome IN ('Depósito Central', 'Depósito de Refrigerados')
