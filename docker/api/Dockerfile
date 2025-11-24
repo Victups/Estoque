@@ -1,5 +1,6 @@
 FROM node:22-alpine
 
+
 RUN apk add --no-cache bash curl netcat-openbsd
 RUN npm install -g @nestjs/cli
 ## Define o diretório de trabalho dentro do contêiner
