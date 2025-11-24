@@ -296,12 +296,16 @@
 </template>
 
 <script>
-  import { LoteService, ProductService } from '@/services'
+  import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'
 
   export default {
     name: 'ProdutosPage',
     mixins: [snackbarMixin],
+    setup () {
+      const dataCache = useDataCacheStore()
+      return { dataCache }
+    },
     data () {
       return {
         allProducts: [],
@@ -361,9 +365,41 @@
       },
     },
     mounted () {
-      this.fetchData()
+      this.loadData()
     },
     methods: {
+      async loadData (forceRefresh = false) {
+        // Verifica se já tem dados no cache
+        const cachedProducts = this.dataCache.getProducts()
+        const cachedLotes = this.dataCache.getLotes()
+
+        if (!forceRefresh && cachedProducts && cachedLotes) {
+          this.allProducts = cachedProducts
+          this.allProductLots = cachedLotes
+          return
+        }
+
+        // Carrega do cache store (que vai buscar da API se necessário)
+        this.loading = true
+        this.error = null
+
+        try {
+          const [productsData, lotsData] = await Promise.all([
+            this.dataCache.fetchProducts(forceRefresh),
+            this.dataCache.fetchLotes(forceRefresh),
+          ])
+
+          this.allProducts = productsData
+          this.allProductLots = lotsData
+        } catch (error_) {
+          console.error('Erro ao carregar produtos:', error_)
+          const errorMessage = this.getErrorMessage(error_)
+          this.error = errorMessage
+          this.showError(`Não foi possível carregar os produtos: ${errorMessage}`)
+        } finally {
+          this.loading = false
+        }
+      },
       getErrorMessage (error) {
         const errorData = error?.response?.data
         
@@ -400,26 +436,6 @@
         }
         
         return error?.message || 'Erro desconhecido ao conectar com o servidor.'
-      },
-      async fetchData () {
-        this.loading = true
-        this.error = null
-        try {
-          const [productsData, lotsData] = await Promise.all([
-            ProductService.getAll(),
-            LoteService.getAll(),
-          ])
-
-          this.allProducts = productsData
-          this.allProductLots = lotsData
-        } catch (error_) {
-          console.error('Erro ao carregar produtos:', error_)
-          const errorMessage = this.getErrorMessage(error_)
-          this.error = errorMessage
-          this.showError(`Não foi possível carregar os produtos: ${errorMessage}`)
-        } finally {
-          this.loading = false
-        }
       },
       getStatusColor (status) {
         switch (status) {
@@ -460,6 +476,7 @@
         this.detailLoading = true
         this.selectedProductDetail = null
         try {
+          const { ProductService } = await import('@/services')
           this.selectedProductDetail = await ProductService.getDetail(item.id)
         } catch (error_) {
           console.error('Erro ao carregar detalhes do produto:', error_)
@@ -481,11 +498,16 @@
 
         this.deleteLoading = true
         try {
+          const { ProductService } = await import('@/services')
           await ProductService.delete(this.productToDelete.id)
+          
+          // Invalida o cache após deletar
+          this.dataCache.invalidateAfterMutation('product')
+          
           this.showSuccess('Produto excluído com sucesso')
           this.deleteDialog = false
           this.productToDelete = null
-          await this.fetchData()
+          await this.loadData(true) // Força refresh após deletar
         } catch (error_) {
           console.error('Erro ao excluir produto:', error_)
           this.showError('Erro ao excluir produto')
