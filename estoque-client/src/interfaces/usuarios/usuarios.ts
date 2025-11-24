@@ -27,3 +27,29 @@ export interface User {
   initials?: string
   lastAccess?: string
 }
+
+export interface UserProfile {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  initials: string
+  avatarColor: string
+}
+
+export interface NewUserForm {
+  name: string
+  email: string
+  password: string
+  confirmPassword: string
+  role: UserRole | ''
+  tipo_contato: string
+  valor_contato: string
+  codigo_pais: string
+  id_uf: number | null
+  id_municipio: number | null
+  logradouro: string
+  numero: string
+  complemento: string
+  bairro: string
+}

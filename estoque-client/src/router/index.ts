@@ -84,7 +84,7 @@ const route = [
       requiresAuth: true,
     },
   },
-  // Rota de relatórios ocultada temporariamente
+
   // {
   //   path: '/relatorios',
   //   name: 'Relatorios',
@@ -139,7 +139,7 @@ const router = createRouter({
   routes: setupLayouts(route),
 })
 
-// Navigation guard para verificar autenticação e roles
+
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   if (!authStore.isLoggedIn) {

@@ -379,7 +379,7 @@
           return
         }
 
-        // Carrega do cache store (que vai buscar da API se necessário)
+        // Carrega do cache store 
         this.loading = true
         this.error = null
 

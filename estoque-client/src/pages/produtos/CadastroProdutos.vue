@@ -133,17 +133,9 @@ import { getStoredUser } from '@/services/auth.storage'
 import { useAuthStore } from '@/stores/auth'
 import ProductFormFields from '@/components/produtos/ProductFormFields.vue'
 import type { SnackbarColor } from '@/utils/snackbar'
+import type { FornecedorVinculado } from '@/interfaces'
+import type { VForm } from '@/interfaces/ui/form'
 import { defineComponent } from 'vue'
-
-interface VForm {
-  validate: () => Promise<{ valid: boolean }>
-  reset: () => void
-}
-
-interface FornecedorVinculado {
-  id_fornecedor: number
-  nome: string
-}
 
 export default defineComponent({
     name: 'CadastroProdutosPage',
@@ -156,7 +148,6 @@ export default defineComponent({
     },
     data () {
       return {
-        // State
         validForm: false,
         saving: false,
         formRef: null as VForm | null,
@@ -166,13 +157,13 @@ export default defineComponent({
         responsavelCadastroId: null as number | null,
         detalheProduto: null as ProductDetail | null,
 
-        // Data
+        
         categorias: [] as Category[],
         marcas: [] as Brand[],
         unidadesMedida: [] as UnitMeasure[],
         fornecedores: [] as Supplier[],
 
-        // Form data
+        
         formData: {
           nome: '',
           descricao: '',

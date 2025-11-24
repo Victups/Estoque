@@ -20,6 +20,11 @@ export interface ProductFornecedorLink {
   cnpj?: string | null
 }
 
+export interface FornecedorVinculado {
+  id_fornecedor: number
+  nome: string
+}
+
 export interface ProductLoteResumo {
   id: number
   codigo_lote: string

@@ -303,21 +303,12 @@
 </template>
 
 <script lang="ts">
-  import type { UserRole, ValidationRule } from '@/interfaces'
+  import type { UserProfile, UserRole, ValidationRule } from '@/interfaces'
   import { UserService } from '@/services'
   import { getStoredUser, setStoredUser } from '@/services/auth.storage'
   import { useAuthStore } from '@/stores/auth'
   import { userRules } from '@/utils/rules'
   import { getInitials as getInitialsFromUtils, getRoleColor as getRoleColorFromUtils, getRoleIcon as getRoleIconFromUtils, mapBackendRoleToUserRole } from '@/utils/tramposes/user'
-
-  interface UserProfile {
-    id: number
-    name: string
-    email: string
-    role: UserRole
-    initials: string
-    avatarColor: string
-  }
 
   interface EditData {
     name: string

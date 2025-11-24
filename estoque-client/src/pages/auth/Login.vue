@@ -89,14 +89,10 @@
 </template>
 
 <script lang="ts">
+  import type { VForm } from '@/interfaces/ui/form'
   import { defineComponent } from 'vue'
   import { AuthService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
-
-  interface VForm {
-    validate: () => Promise<{ valid: boolean }>
-    reset: () => void
-  }
 
   export default defineComponent({
     name: 'LoginPage',

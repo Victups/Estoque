@@ -136,17 +136,17 @@
         this.viewDialog = true
       },
       editUser (user: User) {
-        // Implementar modal de edição
+
         console.log('Edit user:', user)
         this.showSnackbar('Funcionalidade de edição em desenvolvimento', 'info')
       },
       deleteUser (user: User) {
-        // Implementar confirmação de exclusão
+       
         console.log('Delete user:', user)
         this.showSnackbar('Funcionalidade de exclusão em desenvolvimento', 'info')
       },
       openCreateDialog () {
-        // Implementar modal de criação
+
         console.log('Open create dialog')
         this.showSnackbar('Funcionalidade de criação em desenvolvimento', 'info')
       },

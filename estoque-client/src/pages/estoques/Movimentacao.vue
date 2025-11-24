@@ -71,20 +71,14 @@
 
 <script lang="ts">
   import type { MovementDisplay, MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
+  import type { VForm } from '@/interfaces/ui/form'
   import type { CreateLoteInput, LocationComplete } from '@/services'
   import { getStoredUser } from '@/services/auth.storage'
   import { useAuthStore } from '@/stores/auth'
   import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'
 
- 
-
   type MovementFormDataExtended = Omit<MovementFormData, 'id_lote'> & { id_lote: number | 'novo' | null }
-
-  interface VForm {
-    validate: () => Promise<{ valid: boolean }>
-    reset: () => void
-  }
 
   export default defineComponent({
     name: 'MovimentacaoPage',
@@ -140,7 +134,7 @@
         const cachedLotes = this.dataCache.getLotes()
         const cachedLocations = this.dataCache.getLocations()
 
-        // Se tem dados válidos no cache e não é refresh forçado, usa do cache
+       
         if (!forceRefresh && cachedMovements && cachedProducts && cachedLotes) {
           this.movements = cachedMovements
           this.products = cachedProducts
@@ -155,7 +149,7 @@
           return
         }
 
-        // Carrega do cache store (que vai buscar da API se necessário)
+       
         this.loading = true
         try {
           await Promise.all([

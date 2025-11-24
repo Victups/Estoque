@@ -724,7 +724,8 @@
 </template>
 
 <script lang="ts">
-  import type { BackendUser, Contact, Municipality, State, User, UserRole } from '@/interfaces'
+  import type { BackendUser, Contact, Municipality, NewUserForm, State, User, UserRole } from '@/interfaces'
+  import type { TableHeader } from '@/interfaces/ui/table'
   import { defineComponent } from 'vue'
   import { useUnauthorized } from '@/composables/useUnauthorized'
   import { ContactService, MunicipalityService, UserService } from '@/services'
@@ -732,30 +733,6 @@
   import { useAuthStore } from '@/stores/auth'
   import { userRules } from '@/utils/rules'
   import { getRoleColor, getRoleIcon, mapBackendToUser, mapUserRoleToBackendRole } from '@/utils/tramposes/user'
-
-  interface NewUserForm {
-    name: string
-    email: string
-    password: string
-    confirmPassword: string
-    role: UserRole | ''
-    tipo_contato: string
-    valor_contato: string
-    codigo_pais: string
-    id_uf: number | null
-    id_municipio: number | null
-    logradouro: string
-    numero: string
-    complemento: string
-    bairro: string
-  }
-
-  interface TableHeader {
-    title: string
-    key: string
-    sortable?: boolean
-    width?: string
-  }
 
   export default defineComponent({
     name: 'UserManagementPage',
