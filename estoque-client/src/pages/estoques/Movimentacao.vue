@@ -72,8 +72,8 @@
 <script lang="ts">
   import type { MovementDisplay, MovementFormData, MovementType, Product, ProductLote, StockMovementEnriched } from '@/interfaces'
   import type { VForm } from '@/interfaces/ui/form'
-  import type { CreateLoteInput, LocationComplete } from '@/services'
-  import { getStoredUser } from '@/services/auth.storage'
+import type { CreateLoteInput, LocationComplete } from '@/services'
+import { getStoredUser } from '@/services'
   import { useAuthStore } from '@/stores/auth'
   import { useDataCacheStore } from '@/stores/dataCache'
   import { snackbarMixin } from '@/utils/snackbar'

@@ -129,7 +129,7 @@ import {
   SupplierService,
   UnitMeasureService,
 } from '@/services'
-import { getStoredUser } from '@/services/auth.storage'
+import { getStoredUser } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import ProductFormFields from '@/components/produtos/ProductFormFields.vue'
 import type { SnackbarColor } from '@/utils/snackbar'

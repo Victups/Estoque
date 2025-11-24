@@ -1,6 +1,7 @@
 import type { Contact, ContatoApi, FornecedorApi, Supplier } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 function mapContact (contato: ContatoApi): Contact {
   return {
@@ -48,8 +49,6 @@ type CreateFornecedorPayload = {
  * Serviço de API para Fornecedores
  */
 class SupplierServiceClass {
-  private endpoint = '/fornecedores'
-
   async getAll (): Promise<Supplier[]> {
     const fornecedores = await this.fetchAll()
     return fornecedores.map(fornecedor => mapSupplier(fornecedor))
@@ -69,7 +68,7 @@ class SupplierServiceClass {
   }
 
   async getById (id: number): Promise<Supplier> {
-    const { data } = await api.get<FornecedorApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<FornecedorApi>(API_ROUTES.fornecedores.byId(id))
     return mapSupplier(data)
   }
 
@@ -81,7 +80,7 @@ class SupplierServiceClass {
       ativo: true,
     })
 
-    const { data } = await api.post<FornecedorApi>(this.endpoint, payload)
+    const { data } = await api.post<FornecedorApi>(API_ROUTES.fornecedores.base, payload)
     return mapSupplier(data)
   }
 
@@ -92,30 +91,28 @@ class SupplierServiceClass {
       id_contato: updates.id_contato,
     })
 
-    const { data } = await api.patch<FornecedorApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<FornecedorApi>(API_ROUTES.fornecedores.byId(id), payload)
     return mapSupplier(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.fornecedores.byId(id))
   }
 
   private async fetchAll (): Promise<FornecedorApi[]> {
-    const { data } = await api.get<FornecedorApi[]>(this.endpoint)
+    const { data } = await api.get<FornecedorApi[]>(API_ROUTES.fornecedores.base)
     return data
   }
 }
 
 class ContactServiceClass {
-  private endpoint = '/contatos'
-
   async getAll (): Promise<Contact[]> {
     const contatos = await this.fetchAll()
     return contatos.map(contato => mapContact(contato))
   }
 
   async getById (id: number): Promise<Contact> {
-    const { data } = await api.get<ContatoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<ContatoApi>(API_ROUTES.contatos.byId(id))
     return mapContact(data)
   }
 
@@ -128,7 +125,7 @@ class ContactServiceClass {
       ativo: true,
     })
 
-    const { data } = await api.post<ContatoApi>(this.endpoint, payload)
+    const { data } = await api.post<ContatoApi>(API_ROUTES.contatos.base, payload)
     return mapContact(data)
   }
 
@@ -140,19 +137,20 @@ class ContactServiceClass {
       codigo_pais: contactData.codigo_pais,
     })
 
-    const { data } = await api.patch<ContatoApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<ContatoApi>(API_ROUTES.contatos.byId(id), payload)
     return mapContact(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.contatos.byId(id))
   }
 
   private async fetchAll (): Promise<ContatoApi[]> {
-    const { data } = await api.get<ContatoApi[]>(this.endpoint)
+    const { data } = await api.get<ContatoApi[]>(API_ROUTES.contatos.base)
     return data
   }
 }
 
 export const SupplierService = new SupplierServiceClass()
 export const ContactService = new ContactServiceClass()
+

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 import { getApiBaseUrl } from '@/utils/env'
-import { clearSession, getStoredToken } from './auth.storage'
+import { clearSession, getStoredToken } from './auth/auth.storage'
 
 /**
  * Configuração base do Axios
@@ -65,7 +65,7 @@ api.interceptors.response.use(
         if (errorData?.stack) {
           console.error('Stack trace:', errorData.stack)
         }
-        console.error('========================')
+        console.error('')
       }
       
       if (status === 401) {

@@ -12,7 +12,8 @@ import type {
   UnitMeasure,
 } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 function toNumber (value: string | number | null | undefined, fallback = 0): number {
   if (value === null || value === undefined) {
@@ -113,9 +114,6 @@ type CreateProdutoPayload = {
  * Serviço de API para Produtos
  */
 class ProductServiceClass {
-  private endpoint = '/produtos'
-  private supplierEndpoint = '/produto-fornecedor'
-
   async getAll (): Promise<Product[]> {
     const produtos = await this.fetchAll()
     return produtos.map(produto => mapProductBase(produto))
@@ -130,12 +128,12 @@ class ProductServiceClass {
   }
 
   async getById (id: number): Promise<Product> {
-    const { data } = await api.get<ProdutoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<ProdutoApi>(API_ROUTES.produtos.byId(id))
     return mapProductBase(data)
   }
 
   async getDetail (id: number): Promise<ProductDetail> {
-    const { data } = await api.get<ProdutoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<ProdutoApi>(API_ROUTES.produtos.byId(id))
     return mapProductDetail(data)
   }
 
@@ -154,7 +152,7 @@ class ProductServiceClass {
       is_perecivel: productData.is_perecivel,
     })
 
-    const { data } = await api.post<ProdutoApi>(this.endpoint, payload)
+    const { data } = await api.post<ProdutoApi>(API_ROUTES.produtos.base, payload)
     return mapProductBase(data)
   }
 
@@ -173,16 +171,16 @@ class ProductServiceClass {
       is_perecivel: updates.is_perecivel,
     })
 
-    const { data } = await api.patch<ProdutoApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<ProdutoApi>(API_ROUTES.produtos.byId(id), payload)
     return mapProductBase(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.produtos.byId(id))
   }
 
   async linkToSupplier (productId: number, supplierId: number, usuarioLogId?: number | null): Promise<void> {
-    await api.post(this.supplierEndpoint, {
+    await api.post(API_ROUTES.produtoFornecedor.base, {
       id_produto: productId,
       id_fornecedor: supplierId,
       usuario_log_id: usuarioLogId ?? null,
@@ -190,11 +188,11 @@ class ProductServiceClass {
   }
 
   async unlinkFromSupplier (productId: number, supplierId: number): Promise<void> {
-    await api.delete(`${this.supplierEndpoint}/${productId}/${supplierId}`)
+    await api.delete(`${API_ROUTES.produtoFornecedor.base}/${productId}/${supplierId}`)
   }
 
   private async fetchAll (): Promise<ProdutoApi[]> {
-    const { data } = await api.get<ProdutoApi[]>(this.endpoint)
+    const { data } = await api.get<ProdutoApi[]>(API_ROUTES.produtos.base)
     return data
   }
 }
@@ -203,30 +201,28 @@ class ProductServiceClass {
  * Serviço de API para Categorias
  */
 class CategoryServiceClass {
-  private endpoint = '/categorias'
-
   async getAll (): Promise<Category[]> {
-    const { data } = await api.get<CategoriaApi[]>(this.endpoint)
+    const { data } = await api.get<CategoriaApi[]>(API_ROUTES.categorias.base)
     return data
   }
 
   async getById (id: number): Promise<Category> {
-    const { data } = await api.get<CategoriaApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<CategoriaApi>(API_ROUTES.categorias.byId(id))
     return data
   }
 
   async create (categoryData: Omit<Category, 'id'>): Promise<Category> {
-    const { data } = await api.post<CategoriaApi>(this.endpoint, categoryData)
+    const { data } = await api.post<CategoriaApi>(API_ROUTES.categorias.base, categoryData)
     return data
   }
 
   async update (id: number, updates: Partial<Omit<Category, 'id'>>): Promise<Category> {
-    const { data } = await api.patch<CategoriaApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    const { data } = await api.patch<CategoriaApi>(API_ROUTES.categorias.byId(id), cleanPayload(updates))
     return data
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.categorias.byId(id))
   }
 }
 
@@ -234,30 +230,28 @@ class CategoryServiceClass {
  * Serviço de API para Marcas
  */
 class BrandServiceClass {
-  private endpoint = '/marcas'
-
   async getAll (): Promise<Brand[]> {
-    const { data } = await api.get<MarcaApi[]>(this.endpoint)
+    const { data } = await api.get<MarcaApi[]>(API_ROUTES.marcas.base)
     return data
   }
 
   async getById (id: number): Promise<Brand> {
-    const { data } = await api.get<MarcaApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<MarcaApi>(API_ROUTES.marcas.byId(id))
     return data
   }
 
   async create (brandData: Omit<Brand, 'id'>): Promise<Brand> {
-    const { data } = await api.post<MarcaApi>(this.endpoint, brandData)
+    const { data } = await api.post<MarcaApi>(API_ROUTES.marcas.base, brandData)
     return data
   }
 
   async update (id: number, updates: Partial<Omit<Brand, 'id'>>): Promise<Brand> {
-    const { data } = await api.patch<MarcaApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    const { data } = await api.patch<MarcaApi>(API_ROUTES.marcas.byId(id), cleanPayload(updates))
     return data
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.marcas.byId(id))
   }
 }
 
@@ -265,30 +259,28 @@ class BrandServiceClass {
  * Serviço de API para Unidades de Medida
  */
 class UnitMeasureServiceClass {
-  private endpoint = '/unidades'
-
   async getAll (): Promise<UnitMeasure[]> {
-    const { data } = await api.get<UnidadeApi[]>(this.endpoint)
+    const { data } = await api.get<UnidadeApi[]>(API_ROUTES.unidades.base)
     return data
   }
 
   async getById (id: number): Promise<UnitMeasure> {
-    const { data } = await api.get<UnidadeApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<UnidadeApi>(API_ROUTES.unidades.byId(id))
     return data
   }
 
   async create (unitData: Omit<UnitMeasure, 'id'>): Promise<UnitMeasure> {
-    const { data } = await api.post<UnidadeApi>(this.endpoint, unitData)
+    const { data } = await api.post<UnidadeApi>(API_ROUTES.unidades.base, unitData)
     return data
   }
 
   async update (id: number, updates: Partial<Omit<UnitMeasure, 'id'>>): Promise<UnitMeasure> {
-    const { data } = await api.patch<UnidadeApi>(`${this.endpoint}/${id}`, cleanPayload(updates))
+    const { data } = await api.patch<UnidadeApi>(API_ROUTES.unidades.byId(id), cleanPayload(updates))
     return data
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.unidades.byId(id))
   }
 }
 
@@ -298,3 +290,4 @@ export const BrandService = new BrandServiceClass()
 export const UnitMeasureService = new UnitMeasureServiceClass()
 
 export { type ProductDetail, type ProductFornecedorLink, type ProductLoteResumo } from '@/interfaces'
+

@@ -1,6 +1,7 @@
 import type { LoteApi, ProductLote } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 function toNumber (value: string | number | null | undefined, fallback = 0): number {
   if (value === null || value === undefined) {
@@ -125,8 +126,6 @@ export type CreateLoteInput = CreateLotePayload
  * Serviço de API para Lotes de Produtos
  */
 class LoteServiceClass {
-  private endpoint = '/lotes'
-
   async getAll (): Promise<ProductLote[]> {
     const lotes = await this.fetchAll()
     return lotes.map(lote => mapLoteBase(lote))
@@ -150,7 +149,7 @@ class LoteServiceClass {
   }
 
   async getById (id: number): Promise<ProductLote> {
-    const { data } = await api.get<LoteApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<LoteApi>(API_ROUTES.lotes.byId(id))
     return mapLoteBase(data)
   }
 
@@ -203,7 +202,7 @@ class LoteServiceClass {
       ativo: loteData.ativo,
     })
 
-    const { data } = await api.post<LoteApi>(this.endpoint, payload)
+    const { data } = await api.post<LoteApi>(API_ROUTES.lotes.base, payload)
     return mapLoteBase(data)
   }
 
@@ -221,18 +220,19 @@ class LoteServiceClass {
       ativo: updates.ativo,
     })
 
-    const { data } = await api.patch<LoteApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<LoteApi>(API_ROUTES.lotes.byId(id), payload)
     return mapLoteBase(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.lotes.byId(id))
   }
 
   private async fetchAll (): Promise<LoteApi[]> {
-    const { data } = await api.get<LoteApi[]>(this.endpoint)
+    const { data } = await api.get<LoteApi[]>(API_ROUTES.lotes.base)
     return data
   }
 }
 
 export const LoteService = new LoteServiceClass()
+

@@ -1,6 +1,7 @@
 import type { BackendUser } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 import { clearSession, getStoredToken, getStoredUser, saveSession } from './auth.storage'
 
 interface LoginResponse {
@@ -10,7 +11,7 @@ interface LoginResponse {
 
 class AuthServiceClass {
   async login (email: string, senha: string): Promise<BackendUser> {
-    const { data } = await api.post<LoginResponse>('/auth/login', {
+    const { data } = await api.post<LoginResponse>(API_ROUTES.auth.login, {
       email: email.trim().toLowerCase(),
       senha,
     })
@@ -37,3 +38,4 @@ class AuthServiceClass {
 }
 
 export const AuthService = new AuthServiceClass()
+

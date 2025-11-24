@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProdutoLote } from './entities/produto-lote.entity';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { Produto } from '../produtos/entities/produto.entity';
 
 @Injectable()
 export class LotesService {
@@ -15,6 +16,18 @@ export class LotesService {
 	) {}
 
 	async create(createDto: CreateLoteDto): Promise<ProdutoLote> {
+		// Validação: se produto é perecível, data_validade é obrigatória
+		const produtoRepo = this.repo.manager.getRepository(Produto);
+		const produto = await produtoRepo.findOne({ where: { id: createDto.id_produto } });
+		
+		if (!produto) {
+			throw new NotFoundException(`Produto com ID ${createDto.id_produto} não encontrado`);
+		}
+
+		if (produto.isPerecivel && !createDto.data_validade) {
+			throw new BadRequestException('Data de validade é obrigatória para produtos perecíveis');
+		}
+
 		const codigoInformado = createDto.codigo_lote?.trim();
 		let codigoLote = codigoInformado;
 		let id: number | undefined;

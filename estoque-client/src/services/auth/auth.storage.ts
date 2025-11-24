@@ -51,3 +51,4 @@ export function setStoredUser (user: BackendUser): void {
   }
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
 }
+

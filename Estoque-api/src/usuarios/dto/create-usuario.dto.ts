@@ -20,8 +20,8 @@ export class CreateUsuarioDto {
 
 	@Type(() => Number)
 	@IsInt()
-	@IsOptional()
-	id_contato?: number;
+	@IsNotEmpty()
+	id_contato: number;
 
 	@IsIn(['admin','gestor','estoquista','relatorios'])
 	@IsOptional()
@@ -29,8 +29,8 @@ export class CreateUsuarioDto {
 
 	@Type(() => Number)
 	@IsInt()
-	@IsOptional()
-	id_uf?: number;
+	@IsNotEmpty()
+	id_uf: number;
 
 	@IsBoolean()
 	@IsOptional()

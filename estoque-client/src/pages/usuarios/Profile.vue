@@ -304,8 +304,7 @@
 
 <script lang="ts">
   import type { UserProfile, UserRole, ValidationRule } from '@/interfaces'
-  import { UserService } from '@/services'
-  import { getStoredUser, setStoredUser } from '@/services/auth.storage'
+  import { UserService, getStoredUser, setStoredUser } from '@/services'
   import { useAuthStore } from '@/stores/auth'
   import { userRules } from '@/utils/rules'
   import { getInitials as getInitialsFromUtils, getRoleColor as getRoleColorFromUtils, getRoleIcon as getRoleIconFromUtils, mapBackendRoleToUserRole } from '@/utils/tramposes/user'

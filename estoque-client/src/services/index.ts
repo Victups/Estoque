@@ -4,31 +4,14 @@
 
 // Configuração e utilitários
 export { api, ApiError, ArrayResponse } from './api.config'
+export { API_ROUTES } from './api.routes'
+
 // Serviços de autenticação
-export { AuthService } from './auth.service'
+export { AuthService } from './auth/auth.service'
+export { clearSession, getStoredToken, getStoredUser, saveSession, setStoredUser } from './auth/auth.storage'
 
-// Serviços de endereços (locais)
-export { AddressService } from './locais/address.service'
-
-export type { AddressEnriched } from './locais/address.service'
-// Serviços de localizações (locais)
-export {
-  DepositService,
-  LocationService,
-} from './locais/location.service'
-export type { DepositEnriched, LocationComplete } from './locais/location.service'
-
-// Serviços de UF e municípios (locais)
-export {
-  MunicipalityService,
-  UfService,
-} from './locais/uf.service'
-// Serviços de lotes
-export { LoteService } from './lote.service'
-
-export type { CreateLoteInput, LoteComplete, LoteEnriched } from './lote.service'
-// Serviços de movimentações
-export { MovementService } from './movement.service'
+// Serviços de usuários
+export { UserService } from './usuarios/user.service'
 
 // Serviços de produtos
 export {
@@ -36,15 +19,39 @@ export {
   CategoryService,
   ProductService,
   UnitMeasureService,
-} from './product.service'
+} from './produtos/product.service'
 
-export type { ProductDetail, ProductEnriched, ProductFornecedorLink, ProductLoteResumo } from './product.service'
+export type { ProductDetail, ProductEnriched, ProductFornecedorLink, ProductLoteResumo } from './produtos/product.service'
+
+// Serviços de lotes
+export { LoteService } from './lotes/lote.service'
+export type { CreateLoteInput, LoteComplete, LoteEnriched } from './lotes/lote.service'
+
+// Serviços de movimentações
+export { MovementService } from './movimentacoes/movement.service'
+
 // Serviços de fornecedores e contatos
 export {
   ContactService,
   SupplierService,
-} from './supplier.service'
+} from './fornecedores/supplier.service'
 
-export type { SupplierEnriched } from './supplier.service'
-// Serviços de usuários
-export { UserService } from './user.service'
+export type { SupplierEnriched } from './fornecedores/supplier.service'
+
+// Serviços de endereços (locais)
+export { AddressService } from './locais/address.service'
+export type { AddressEnriched } from './locais/address.service'
+
+// Serviços de localizações (locais)
+export {
+  DepositService,
+  LocationService,
+} from './locais/location.service'
+
+export type { DepositEnriched, LocationComplete } from './locais/location.service'
+
+// Serviços de UF e municípios (locais)
+export {
+  MunicipalityService,
+  UfService,
+} from './locais/uf.service'

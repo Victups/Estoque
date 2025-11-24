@@ -13,8 +13,10 @@ declare module 'vue' {
   export interface GlobalComponents {
     Categorias: typeof import('./components/categorias/Categorias.vue')['default']
     CreateMovementDialog: typeof import('./components/estoques/CreateMovementDialog.vue')['default']
+    CreateUserDialog: typeof import('./components/usuarios/CreateUserDialog.vue')['default']
     Depositos: typeof import('./components/locais/Depositos.vue')['default']
     DonutChartCard: typeof import('./components/dashboards/DonutChartCard.vue')['default']
+    EditUserDialog: typeof import('./components/usuarios/EditUserDialog.vue')['default']
     FiltrosRelatorios: typeof import('./components/shared/FiltrosRelatorios.vue')['default']
     Footer: typeof import('./components/layout/Footer.vue')['default']
     Fornecedores: typeof import('./components/fornecedores/Fornecedores.vue')['default']

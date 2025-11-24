@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { clearSession, getStoredUser } from '@/services/auth.storage'
+import { clearSession, getStoredUser } from '@/services'
 
 export interface AuthState {
   userName: string | null

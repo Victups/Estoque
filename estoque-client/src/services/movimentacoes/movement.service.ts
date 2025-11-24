@@ -5,7 +5,8 @@ import type {
   StockMovement,
 } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 type MovementType = StockMovement['tipo_movimento']
 
@@ -74,20 +75,18 @@ function mapMovementDisplay (registro: RegistroMovimentacaoApi): MovementDisplay
 }
 
 class MovementServiceClass {
-  private readonly endpoint = '/estoques'
-
   async getAll (): Promise<StockMovement[]> {
-    const { data } = await api.get<RegistroMovimentacaoApi[]>(this.endpoint)
+    const { data } = await api.get<RegistroMovimentacaoApi[]>(API_ROUTES.estoques.base)
     return data.map(registro => mapStockMovement(registro))
   }
 
   async getAllEnriched (): Promise<MovementDisplay[]> {
-    const { data } = await api.get<RegistroMovimentacaoApi[]>(this.endpoint)
+    const { data } = await api.get<RegistroMovimentacaoApi[]>(API_ROUTES.estoques.base)
     return data.map(registro => mapMovementDisplay(registro))
   }
 
   async getById (id: number): Promise<MovementDisplay> {
-    const { data } = await api.get<RegistroMovimentacaoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<RegistroMovimentacaoApi>(API_ROUTES.estoques.byId(id))
     return mapMovementDisplay(data)
   }
 
@@ -131,7 +130,7 @@ class MovementServiceClass {
       usuario_log_id: movementData.usuario_log_id ?? undefined,
     }
 
-    const { data } = await api.post<RegistroMovimentacaoApi>(this.endpoint, payload)
+    const { data } = await api.post<RegistroMovimentacaoApi>(API_ROUTES.estoques.base, payload)
     return mapMovementDisplay(data)
   }
 
@@ -154,13 +153,14 @@ class MovementServiceClass {
       usuario_log_id: updates.usuario_log_id ?? undefined,
     }
 
-    const { data } = await api.patch<RegistroMovimentacaoApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<RegistroMovimentacaoApi>(API_ROUTES.estoques.byId(id), payload)
     return mapMovementDisplay(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.estoques.byId(id))
   }
 }
 
 export const MovementService = new MovementServiceClass()
+

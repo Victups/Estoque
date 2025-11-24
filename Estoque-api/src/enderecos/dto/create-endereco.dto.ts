@@ -17,8 +17,8 @@ export class CreateEnderecoDto {
   complemento?: string;
 
   @IsNumber()
-  @IsOptional()
-  id_municipio?: number;
+  @IsNotEmpty()
+  id_municipio: number;
 
   @IsBoolean()
   @IsOptional()

@@ -1,6 +1,7 @@
 import type { Address, EnderecoApi } from '@/interfaces'
 
 import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 export interface AddressEnriched extends Address {
   municipio_nome?: string
@@ -34,20 +35,18 @@ function mapAddressEnriched (endereco: EnderecoApi): AddressEnriched {
 }
 
 class AddressServiceClass {
-  private endpoint = '/enderecos'
-
   async getAll (): Promise<Address[]> {
-    const { data } = await api.get<EnderecoApi[]>(this.endpoint)
+    const { data } = await api.get<EnderecoApi[]>(API_ROUTES.enderecos.base)
     return data.map(endereco => mapAddress(endereco))
   }
 
   async getAllEnriched (): Promise<AddressEnriched[]> {
-    const { data } = await api.get<EnderecoApi[]>(this.endpoint)
+    const { data } = await api.get<EnderecoApi[]>(API_ROUTES.enderecos.base)
     return data.map(endereco => mapAddressEnriched(endereco))
   }
 
   async getById (id: number): Promise<AddressEnriched> {
-    const { data } = await api.get<EnderecoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<EnderecoApi>(API_ROUTES.enderecos.byId(id))
     return mapAddressEnriched(data)
   }
 
@@ -60,7 +59,7 @@ class AddressServiceClass {
       ativo: true,
     }
 
-    const { data } = await api.post<EnderecoApi>(this.endpoint, payload)
+    const { data } = await api.post<EnderecoApi>(API_ROUTES.enderecos.base, payload)
     return mapAddressEnriched(data)
   }
 
@@ -72,12 +71,12 @@ class AddressServiceClass {
       id_municipio: updates.id_municipio,
     }
 
-    const { data } = await api.patch<EnderecoApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<EnderecoApi>(API_ROUTES.enderecos.byId(id), payload)
     return mapAddressEnriched(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.enderecos.byId(id))
   }
 }
 

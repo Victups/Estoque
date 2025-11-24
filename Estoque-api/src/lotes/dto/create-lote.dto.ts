@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsString, IsInt, IsNotEmpty, IsOptional, MaxLength, IsDate, IsNumber, Min, IsBoolean } from 'class-validator';
+import { IsString, IsInt, IsNotEmpty, IsOptional, MaxLength, IsDate, IsNumber, Min, IsBoolean, ValidateIf } from 'class-validator';
 
 export class CreateLoteDto {
   @Type(() => Number)

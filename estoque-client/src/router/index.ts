@@ -7,7 +7,7 @@
 import { setupLayouts } from 'virtual:generated-layouts'
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
-import { AuthService } from '@/services/auth.service'
+import { AuthService } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useUnauthorizedStore } from '@/stores/unauthorized'
 

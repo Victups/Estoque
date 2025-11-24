@@ -1,6 +1,7 @@
 import type { BackendUser, Contact, ContatoApi, UsuarioApi } from '@/interfaces'
 
-import { api } from './api.config'
+import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 function mapContact (contato: ContatoApi): Contact {
   return {
@@ -37,15 +38,13 @@ type CreateUsuarioPayload = {
 }
 
 class UserServiceClass {
-  private endpoint = '/usuarios'
-
   async getAll (): Promise<BackendUser[]> {
-    const { data } = await api.get<UsuarioApi[]>(this.endpoint)
+    const { data } = await api.get<UsuarioApi[]>(API_ROUTES.usuarios.base)
     return data.map(usuario => mapUsuario(usuario))
   }
 
   async getById (id: number): Promise<BackendUser> {
-    const { data } = await api.get<UsuarioApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<UsuarioApi>(API_ROUTES.usuarios.byId(id))
     return mapUsuario(data)
   }
 
@@ -60,7 +59,7 @@ class UserServiceClass {
       ativo: userData.ativo ?? true,
     }
 
-    const { data } = await api.post<UsuarioApi>(this.endpoint, payload)
+    const { data } = await api.post<UsuarioApi>(API_ROUTES.usuarios.base, payload)
     return mapUsuario(data)
   }
 
@@ -75,12 +74,12 @@ class UserServiceClass {
       ativo: updates.ativo,
     }
 
-    const { data } = await api.patch<UsuarioApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<UsuarioApi>(API_ROUTES.usuarios.byId(id), payload)
     return mapUsuario(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.usuarios.byId(id))
   }
 
   async emailExists (email: string, excludeId?: number): Promise<boolean> {
@@ -90,3 +89,4 @@ class UserServiceClass {
 }
 
 export const UserService = new UserServiceClass()
+

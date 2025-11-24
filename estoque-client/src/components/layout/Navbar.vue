@@ -114,7 +114,7 @@
 
 <script lang="ts">
   import { defineComponent } from 'vue'
-  import { AuthService } from '@/services/auth.service'
+  import { AuthService } from '@/services'
   import { useAuthStore } from '@/stores/auth'
 
   export default defineComponent({

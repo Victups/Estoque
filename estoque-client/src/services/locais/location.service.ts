@@ -1,6 +1,7 @@
 import type { Deposit, DepositoApi, EnderecoApi, LocalizacaoApi, Location } from '@/interfaces'
 
 import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
 
 /**
  * Interface para localização COMPLETA (com toda hierarquia)
@@ -50,8 +51,6 @@ function buildEnderecoCompleto (endereco?: EnderecoApi | null): string | undefin
 }
 
 class LocationServiceClass {
-  private endpoint = '/locais'
-
   async getAll (): Promise<Location[]> {
     const localizacoes = await this.fetchAll()
     return localizacoes.map(loc => mapLocation(loc))
@@ -96,7 +95,7 @@ class LocationServiceClass {
   }
 
   async getById (id: number): Promise<Location> {
-    const { data } = await api.get<LocalizacaoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<LocalizacaoApi>(API_ROUTES.locais.byId(id))
     return mapLocation(data)
   }
 
@@ -114,7 +113,7 @@ class LocationServiceClass {
       ativo: true,
     }
 
-    const { data } = await api.post<LocalizacaoApi>(this.endpoint, payload)
+    const { data } = await api.post<LocalizacaoApi>(API_ROUTES.locais.base, payload)
     return mapLocation(data)
   }
 
@@ -126,16 +125,16 @@ class LocationServiceClass {
       id_deposito: updates.id_deposito,
     }
 
-    const { data } = await api.patch<LocalizacaoApi>(`${this.endpoint}/${id}`, payload)
+    const { data } = await api.patch<LocalizacaoApi>(API_ROUTES.locais.byId(id), payload)
     return mapLocation(data)
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.locais.byId(id))
   }
 
   private async fetchAll (): Promise<LocalizacaoApi[]> {
-    const { data } = await api.get<LocalizacaoApi[]>(this.endpoint)
+    const { data } = await api.get<LocalizacaoApi[]>(API_ROUTES.locais.base)
     return data
   }
 }
@@ -155,8 +154,6 @@ export interface DepositEnriched extends Deposit {
  * Serviço de API para Depósitos
  */
 class DepositServiceClass {
-  private endpoint = '/depositos'
-
   async getAll (): Promise<Deposit[]> {
     const depositos = await this.fetchAll()
     return depositos.map(deposito => ({
@@ -181,7 +178,7 @@ class DepositServiceClass {
   }
 
   async getById (id: number): Promise<Deposit> {
-    const { data } = await api.get<DepositoApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<DepositoApi>(API_ROUTES.depositos.byId(id))
     return {
       id: data.id,
       nome: data.nome,
@@ -190,7 +187,7 @@ class DepositServiceClass {
   }
 
   async create (depositData: Omit<Deposit, 'id'>): Promise<Deposit> {
-    const { data } = await api.post<DepositoApi>(this.endpoint, {
+    const { data } = await api.post<DepositoApi>(API_ROUTES.depositos.base, {
       nome: depositData.nome,
       id_endereco: depositData.id_endereco,
       ativo: true,
@@ -204,7 +201,7 @@ class DepositServiceClass {
   }
 
   async update (id: number, updates: Partial<Omit<Deposit, 'id'>>): Promise<Deposit> {
-    const { data } = await api.patch<DepositoApi>(`${this.endpoint}/${id}`, {
+    const { data } = await api.patch<DepositoApi>(API_ROUTES.depositos.byId(id), {
       nome: updates.nome,
       id_endereco: updates.id_endereco,
     })
@@ -217,11 +214,11 @@ class DepositServiceClass {
   }
 
   async delete (id: number): Promise<void> {
-    await api.delete(`${this.endpoint}/${id}`)
+    await api.delete(API_ROUTES.depositos.byId(id))
   }
 
   private async fetchAll (): Promise<DepositoApi[]> {
-    const { data } = await api.get<DepositoApi[]>(this.endpoint)
+    const { data } = await api.get<DepositoApi[]>(API_ROUTES.depositos.base)
     return data
   }
 }

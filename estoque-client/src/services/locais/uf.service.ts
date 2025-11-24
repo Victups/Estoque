@@ -1,6 +1,8 @@
 import type { Municipality, MunicipioApi, State, UfApi } from '@/interfaces'
 
 import { api } from '../api.config'
+import { API_ROUTES } from '../api.routes'
+
 
 function mapUf (uf: UfApi): State {
   return {
@@ -15,39 +17,34 @@ function mapMunicipio (municipio: MunicipioApi): Municipality {
     id: municipio.id,
     nome: municipio.nome,
     id_uf: municipio.idUf ?? municipio.uf?.id ?? 0,
-    bairro: municipio.bairro ?? '',
   }
 }
 
 class UfServiceClass {
-  private endpoint = '/uf'
-
   async getAll (): Promise<State[]> {
-    const { data } = await api.get<UfApi[]>(this.endpoint)
+    const { data } = await api.get<UfApi[]>(API_ROUTES.uf.base)
     return data.map(uf => mapUf(uf))
   }
 
   async getById (id: number): Promise<State> {
-    const { data } = await api.get<UfApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<UfApi>(`${API_ROUTES.uf.base}/${id}`)
     return mapUf(data)
   }
 }
 
 class MunicipalityServiceClass {
-  private endpoint = '/municipios'
-
   async getAll (): Promise<Municipality[]> {
-    const { data } = await api.get<MunicipioApi[]>(this.endpoint)
+    const { data } = await api.get<MunicipioApi[]>(API_ROUTES.municipios.base)
     return data.map(municipio => mapMunicipio(municipio))
   }
 
   async getById (id: number): Promise<Municipality> {
-    const { data } = await api.get<MunicipioApi>(`${this.endpoint}/${id}`)
+    const { data } = await api.get<MunicipioApi>(`${API_ROUTES.municipios.base}/${id}`)
     return mapMunicipio(data)
   }
 
   async getByUf (ufId: number): Promise<Municipality[]> {
-    const { data } = await api.get<MunicipioApi[]>(`${this.endpoint}/uf/${ufId}`)
+    const { data } = await api.get<MunicipioApi[]>(API_ROUTES.municipios.byUf(ufId))
     return data.map(municipio => mapMunicipio(municipio))
   }
 }
